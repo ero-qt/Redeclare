@@ -1,0 +1,36 @@
+<Project>
+
+  <PropertyGroup Label="Shared Paths">
+    <RootPath>$(MSBuildThisFileDirectory)</RootPath>
+
+    <SrcPath>$(RootPath)/src</SrcPath>
+    <SamplesPath>$(RootPath)/samples</SamplesPath>
+    <TestPath>$(RootPath)/test</TestPath>
+
+    <ArtifactsPath>$(RootPath)/artifacts</ArtifactsPath>
+  </PropertyGroup>
+
+  <PropertyGroup Label="Identity">
+    <Authors>ero</Authors>
+    <RepositoryUrl>https://github.com/ero-qt/Redeclare</RepositoryUrl>
+
+    <PackageLicenseExpression>MIT</PackageLicenseExpression>
+  </PropertyGroup>
+
+  <PropertyGroup Label="Shared Properties">
+    <LangVersion>latest</LangVersion>
+
+    <GenerateDocumentationFile>true</GenerateDocumentationFile>
+    <ImplicitUsings>disable</ImplicitUsings>
+    <Nullable>enable</Nullable>
+
+    <AnalysisLevel>latest-all</AnalysisLevel>
+    <EnforceCodeStyleInBuild>true</EnforceCodeStyleInBuild>
+    <TreatWarningsAsErrors>true</TreatWarningsAsErrors>
+  </PropertyGroup>
+
+  <ItemGroup Label="Shared Items">
+    <InternalsVisibleTo Include="$(MSBuildProjectName).Tests" />
+  </ItemGroup>
+
+</Project>
