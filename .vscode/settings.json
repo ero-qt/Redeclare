@@ -1,0 +1,14 @@
+{
+  "editor.rulers": [
+    120,
+    150,
+  ],
+  "explorer.fileNesting.enabled": true,
+  "explorer.fileNesting.patterns": {
+    ".gitignore": ".gitattributes",
+    "*.cs": "${capture}.*.cs",
+  },
+  "files.exclude": {
+    "**/artifacts/": true,
+  },
+}
