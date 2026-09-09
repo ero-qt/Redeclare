@@ -6,6 +6,7 @@
   "explorer.fileNesting.enabled": true,
   "explorer.fileNesting.patterns": {
     ".gitignore": ".gitattributes",
+    "Redeclare.slnx": ".editorconfig, Directory.Build.props, Directory.Packages.props, global.json",
     "*.cs": "${capture}.*.cs",
   },
   "files.exclude": {
