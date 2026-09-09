@@ -28,12 +28,6 @@ jobs:
         with:
           global-json-file: global.json
 
-      - uses: actions/cache@v6
-        with:
-          path: ~/.nuget/packages
-          key: nuget-${{ runner.os }}-${{ hashFiles('Directory.Packages.props') }}
-          restore-keys: nuget-${{ runner.os }}-
-
       # Warnings are errors and code style is enforced in the build, so a clean build is the style check.
       - name: Build
         run: dotnet build Redeclare.slnx
