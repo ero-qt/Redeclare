@@ -1,0 +1,13 @@
+# Tests are public by NUnit's rules, named in Osherove's Unit_Scenario_Expectation form, and assert against
+# values written inline. Each of those trips a rule meant for a library's surface.
+[*.cs]
+# CS
+dotnet_diagnostic.CS1591.severity = none # Missing XML comment for publicly visible type or member
+
+# CA
+dotnet_diagnostic.CA1515.severity = none # Consider making public types internal
+dotnet_diagnostic.CA1707.severity = none # Identifiers should not contain underscores
+dotnet_diagnostic.CA1861.severity = none # Prefer static readonly fields over constant array arguments
+
+# IDE
+dotnet_diagnostic.IDE0300.severity = none # Collection initialization can be simplified

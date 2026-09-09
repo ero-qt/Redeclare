@@ -1,0 +1,19 @@
+<Solution>
+
+  <Folder Name="/build/">
+    <File Path=".editorconfig" />
+    <File Path="Directory.Build.props" />
+    <File Path="Directory.Packages.props" />
+    <File Path="global.json" />
+  </Folder>
+
+  <Folder Name="/src/">
+    <Project Path="src/Redeclare/Redeclare.csproj" />
+  </Folder>
+
+  <Folder Name="/test/">
+    <File Path="test/.editorconfig" />
+    <Project Path="test/Redeclare.Tests/Redeclare.Tests.csproj" />
+  </Folder>
+
+</Solution>
