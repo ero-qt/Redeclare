@@ -11,4 +11,9 @@
     <Project Path="src/Redeclare/Redeclare.csproj" />
   </Folder>
 
+  <Folder Name="/test/">
+    <File Path="test/.editorconfig" />
+    <Project Path="test/Redeclare.Tests/Redeclare.Tests.csproj" />
+  </Folder>
+
 </Solution>
