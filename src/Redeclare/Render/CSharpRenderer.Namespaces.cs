@@ -56,6 +56,13 @@ internal static partial class CSharpRenderer
         Collect(type.EnumUnderlyingType, namespaces);
         Collect(type.ReturnType, namespaces);
         Collect(type.Members, namespaces);
+
+        // The renderer writes the containing chain as partial parts, and a part repeats its type parameters,
+        // so their constraints and attributes are in the file even though nothing else of the outer type is.
+        for (var outer = type.ContainingType; outer is not null; outer = outer.ContainingType)
+        {
+            Collect(outer.TypeParameters, namespaces);
+        }
     }
 
     private static void Collect(EquatableArray<MemberDeclaration> members, SortedSet<string> namespaces)
