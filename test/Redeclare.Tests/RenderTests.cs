@@ -524,4 +524,13 @@ public sealed class RenderTests
 
         Assert.That(() => unit.Render(), Throws.TypeOf<RenderException>().With.Message.Contains("enum members"));
     }
+
+    [Test]
+    public void Render_MultiLineConstructorInitializer_IndentsItsLaterLines()
+    {
+        var constructor = new ConstructorDeclaration(Body: Snippet.Empty, Initializer: Snippet.From("base(\n    1)"));
+        var unit = new CompilationUnit(Members: [new TypeDeclaration(Name: "C", Members: [constructor])]);
+
+        Assert.That(unit.Render(), Does.Contain("    C() : base(\n        1)\n    {"));
+    }
 }

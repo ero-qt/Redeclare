@@ -11,17 +11,57 @@ internal static partial class CSharpRenderer
     public static StringBuilder AppendSnippet(this StringBuilder text, Snippet snippet, RenderOptions options)
     {
         var lines = snippet.Lines;
+        int indentStart = lines.Length > 1 ? LineStart(text) : text.Length;
+        int indentEnd = lines.Length > 1 ? IndentEnd(text, indentStart) : indentStart;
+
         for (int i = 0; i < lines.Length; i++)
         {
             if (i > 0)
             {
                 text.Append('\n');
+
+                // A later line continues the line the snippet started on, so it repeats that line's indentation.
+                if (lines[i].Length > 0)
+                {
+                    for (int j = indentStart; j < indentEnd; j++)
+                    {
+                        text.Append(text[j]);
+                    }
+                }
             }
 
             text.AppendSnippetLine(lines[i], snippet.Holes, options);
         }
 
         return text;
+    }
+
+    /// <summary>
+    ///     The index where the last line of the buffer begins.
+    /// </summary>
+    private static int LineStart(StringBuilder text)
+    {
+        int start = text.Length;
+        while (start > 0 && text[start - 1] != '\n')
+        {
+            start--;
+        }
+
+        return start;
+    }
+
+    /// <summary>
+    ///     The index just past the leading whitespace of the line beginning at <paramref name="start"/>.
+    /// </summary>
+    private static int IndentEnd(StringBuilder text, int start)
+    {
+        int end = start;
+        while (end < text.Length && (text[end] == ' ' || text[end] == '\t'))
+        {
+            end++;
+        }
+
+        return end;
     }
 
     /// <summary>
