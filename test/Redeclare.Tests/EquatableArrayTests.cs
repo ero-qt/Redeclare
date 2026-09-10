@@ -97,4 +97,19 @@ public sealed class EquatableArrayTests
             Assert.That(a.AddRange([]), Is.EqualTo(a));
         }
     }
+
+    [Test]
+    public void Equals_RecordsHoldingEqualArrays_IsTrue()
+    {
+        var a = new TypeDeclaration(Name: "T", Members: [new FieldDeclaration(Type: Types.Int32, Name: "x")]);
+        var b = new TypeDeclaration(Name: "T", Members: [new FieldDeclaration(Type: Types.Int32, Name: "x")]);
+        var c = b.AddMembers(new FieldDeclaration(Type: Types.Int32, Name: "y"));
+
+        using (Assert.EnterMultipleScope())
+        {
+            Assert.That(a, Is.EqualTo(b));
+            Assert.That(a.GetHashCode(), Is.EqualTo(b.GetHashCode()));
+            Assert.That(a, Is.Not.EqualTo(c));
+        }
+    }
 }
