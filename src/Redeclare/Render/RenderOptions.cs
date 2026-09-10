@@ -126,7 +126,7 @@ internal enum Qualification
 
 /// <summary>
 ///     Everything the renderer needs to decide, with a value for every field: the language version that
-///     gates syntax, and how types are spelled.
+///     gates syntax, indentation and line endings, and how types are spelled.
 /// </summary>
 /// <remarks>
 ///     Style preferences degrade when the language version cannot express them: a <c>?</c> on a reference
@@ -134,11 +134,15 @@ internal enum Qualification
 ///     set with <c>with</c>: <c>RenderOptions.Default with { Qualification = Qualification.Minimal }</c>.
 /// </remarks>
 /// <param name="Version">The language version that gates syntax.</param>
+/// <param name="Indent">One level of indentation.</param>
+/// <param name="NewLine">The line ending.</param>
 /// <param name="Qualification">How type references are qualified.</param>
 /// <param name="PredefinedTypeKeywords">Whether predefined types render as keywords (<c>int</c>) rather than names (<c>System.Int32</c>).</param>
 /// <param name="NullableAnnotations">Whether reference types keep their <c>?</c>. Always off below C# 8.</param>
 internal sealed record RenderOptions(
     CSharpVersion Version = CSharpVersion.Latest,
+    string Indent = "    ",
+    string NewLine = "\n",
     Qualification Qualification = Qualification.Global,
     bool PredefinedTypeKeywords = true,
     bool NullableAnnotations = true)
@@ -161,6 +165,8 @@ internal sealed record RenderOptions(
         return this with
         {
             Version = overrides.Version ?? Version,
+            Indent = overrides.Indent ?? Indent,
+            NewLine = overrides.NewLine ?? NewLine,
             Qualification = overrides.Qualification ?? Qualification,
             PredefinedTypeKeywords = overrides.PredefinedTypeKeywords ?? PredefinedTypeKeywords,
             NullableAnnotations = overrides.NullableAnnotations ?? NullableAnnotations,
@@ -181,11 +187,15 @@ internal sealed record RenderOptions(
 ///     The renderer applies it over the inherited options.
 /// </summary>
 /// <param name="Version">The language version, when it differs from the inherited options.</param>
+/// <param name="Indent">One level of indentation, when it differs.</param>
+/// <param name="NewLine">The line ending, when it differs.</param>
 /// <param name="Qualification">How type references are qualified, when it differs.</param>
 /// <param name="PredefinedTypeKeywords">Whether predefined types render as keywords, when it differs.</param>
 /// <param name="NullableAnnotations">Whether reference types keep their <c>?</c>, when it differs.</param>
 internal sealed record RenderOverrides(
     CSharpVersion? Version = null,
+    string? Indent = null,
+    string? NewLine = null,
     Qualification? Qualification = null,
     bool? PredefinedTypeKeywords = null,
     bool? NullableAnnotations = null);
