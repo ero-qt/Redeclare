@@ -52,4 +52,13 @@ internal static class Compiling
 
         return type!;
     }
+
+    /// <summary>
+    ///     The type read as a declaration and put back in its namespace, the way a generator writes one file per
+    ///     type.
+    /// </summary>
+    public static CompilationUnit ToFile(this INamedTypeSymbol type, ReadOptions? options = null)
+    {
+        return new CompilationUnit(Members: [type.ContainingNamespace.ToDeclaration() with { Members = [type.ToDeclaration(options)] }]);
+    }
 }
