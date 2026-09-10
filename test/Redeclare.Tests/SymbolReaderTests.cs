@@ -153,8 +153,6 @@ public sealed class SymbolReaderTests
 
     private static readonly ReadOptions _withDocs = new(IncludeDocumentationComments: true);
 
-    private static readonly ReadOptions _shapeOnly = new(IncludeMembers: false, IncludeAttributes: false);
-
     private static CSharpCompilation Compilation => field ??= Compiling.AssertCompiles(FixtureSource);
 
     private static TypeDeclaration Repository => Compilation.Type("Fixture.Repository`1").ToDeclaration(_withDocs);
@@ -539,10 +537,10 @@ public sealed class SymbolReaderTests
     }
 
     [Test]
-    public void ToDeclaration_ShapeOnlyWithPartial_CompilesAsANewPart()
+    public void ToDeclaration_ShapeWithPartial_CompilesAsANewPart()
     {
         var type = Compilation.Type("Fixture.Repository`1");
-        var shape = type.ToDeclaration(_shapeOnly);
+        var shape = type.ToDeclaration(ReadOptions.Shape);
         var part = shape with
         {
             Modifiers = shape.Modifiers | Modifiers.Partial,
@@ -579,7 +577,7 @@ public sealed class SymbolReaderTests
     public void ToDeclaration_WithoutAttributes_LeavesThemOffTypeParametersToo()
     {
         var marked = Compilation.Type("Fixture.Marked`1");
-        var shape = marked.ToDeclaration(_shapeOnly);
+        var shape = marked.ToDeclaration(ReadOptions.Shape);
         var unit = new CompilationUnit(Members: [marked.ContainingNamespace.ToDeclaration() with
         {
             Members = [shape with { Modifiers = shape.Modifiers | Modifiers.Partial }],
