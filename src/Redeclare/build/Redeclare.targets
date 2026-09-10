@@ -8,4 +8,31 @@
     <DefineConstants>$(DefineConstants);REDECLARE_EXCLUDE_POLYFILLS</DefineConstants>
   </PropertyGroup>
 
+  <!-- The sources are C# 12. Compiled under an older language version they fail across a dozen files, reporting
+       whichever feature the parser reached first, so say it once up front instead. A language version is new enough
+       when it is a word meaning the newest, or a number from 12 on. An unset version takes the framework's default,
+       which reaches 12 with .NET 8. -->
+  <Target Name="RedeclareVerifyLanguageVersion" BeforeTargets="CoreCompile">
+
+    <PropertyGroup>
+      <_RedeclareLang>$(LangVersion.ToLowerInvariant())</_RedeclareLang>
+      <_RedeclareFramework>$(TargetFrameworkVersion.TrimStart('vV'))</_RedeclareFramework>
+      <_RedeclareFrameworkOk>$([MSBuild]::VersionGreaterThanOrEquals('$(_RedeclareFramework)', '8.0'))</_RedeclareFrameworkOk>
+      <_RedeclareIsNumber>$([System.Text.RegularExpressions.Regex]::IsMatch('$(_RedeclareLang)', '^[0-9]'))</_RedeclareIsNumber>
+      <_RedeclareNumber Condition="'$(_RedeclareIsNumber)' == 'true'">$(_RedeclareLang)</_RedeclareNumber>
+
+      <_RedeclareOk>false</_RedeclareOk>
+      <_RedeclareOk Condition="$(_RedeclareLang.StartsWith('latest')) or '$(_RedeclareLang)' == 'preview'">true</_RedeclareOk>
+      <_RedeclareOk Condition="'$(_RedeclareNumber)' != ''">$([MSBuild]::VersionGreaterThanOrEquals('$(_RedeclareNumber)', '12'))</_RedeclareOk>
+      <_RedeclareOk Condition="'$(_RedeclareLang)' == '' or '$(_RedeclareLang)' == 'default'">$(_RedeclareFrameworkOk)</_RedeclareOk>
+
+      <_RedeclareWas>'$(LangVersion)'</_RedeclareWas>
+      <_RedeclareWas Condition="'$(LangVersion)' == ''">unset</_RedeclareWas>
+    </PropertyGroup>
+
+    <Error Code="REDECLARE0001" Condition="'$(_RedeclareOk)' != 'true'"
+           Text="Redeclare requires setting 'LangVersion' to '12.0' or greater (was $(_RedeclareWas))." />
+
+  </Target>
+
 </Project>
