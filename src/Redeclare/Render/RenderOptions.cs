@@ -125,13 +125,60 @@ internal enum Qualification
 }
 
 /// <summary>
+///     Specifies when an expression body renders as <c>=&gt; expression;</c> rather than a block. The values
+///     match what <c>csharp_style_expression_bodied_*</c> in an editorconfig accepts.
+/// </summary>
+internal enum ExpressionBodyPreference
+{
+    /// <summary>
+    ///     Always a block. Editorconfig <c>false</c>.
+    /// </summary>
+    Never = 0,
+
+    /// <summary>
+    ///     Always an arrow. Editorconfig <c>true</c>.
+    /// </summary>
+    WhenPossible,
+
+    /// <summary>
+    ///     An arrow when the expression is on one line. Editorconfig <c>when_on_single_line</c>.
+    /// </summary>
+    WhenOnSingleLine,
+}
+
+/// <summary>
+///     Specifies how a namespace declaration renders. The values match what
+///     <c>csharp_style_namespace_declarations</c> in an editorconfig accepts.
+/// </summary>
+internal enum NamespaceDeclarationPreference
+{
+    /// <summary>
+    ///     <c>namespace N { }</c>.
+    /// </summary>
+    BlockScoped = 0,
+
+    /// <summary>
+    ///     <c>namespace N;</c>. Needs C# 10, and degrades to block-scoped below it.
+    /// </summary>
+    FileScoped,
+}
+
+/// <summary>
 ///     Everything the renderer needs to decide, with a value for every field: the language version that
-///     gates syntax, indentation and line endings, and how types are spelled.
+///     gates syntax, indentation and line endings, how types are spelled, and when members use expression
+///     bodies.
 /// </summary>
 /// <remarks>
-///     Style preferences degrade when the language version cannot express them: a <c>?</c> on a reference
-///     type disappears under C# 7. Features with meaning throw <see cref="RenderException"/>. Every field is
-///     set with <c>with</c>: <c>RenderOptions.Default with { Qualification = Qualification.Minimal }</c>.
+///     <para>
+///         Style preferences degrade when the language version cannot express them: a file-scoped namespace
+///         becomes block-scoped under C# 9, an arrow becomes a block under C# 5, a <c>?</c> on a reference type
+///         disappears under C# 7. Features with meaning, a <c>record struct</c> under C# 9, throw
+///         <see cref="RenderException"/>.
+///     </para>
+///     <para>
+///         The defaults for expression bodies are Roslyn's defaults for the matching editorconfig keys. Every
+///         field is set with <c>with</c>: <c>RenderOptions.Default with { Qualification = Qualification.Minimal }</c>.
+///     </para>
 /// </remarks>
 /// <param name="Version">The language version that gates syntax.</param>
 /// <param name="Indent">One level of indentation.</param>
@@ -139,13 +186,27 @@ internal enum Qualification
 /// <param name="Qualification">How type references are qualified.</param>
 /// <param name="PredefinedTypeKeywords">Whether predefined types render as keywords (<c>int</c>) rather than names (<c>System.Int32</c>).</param>
 /// <param name="NullableAnnotations">Whether reference types keep their <c>?</c>. Always off below C# 8.</param>
+/// <param name="NamespaceDeclarations">The namespace declaration style.</param>
+/// <param name="Methods">The expression body preference for methods and operators.</param>
+/// <param name="Constructors">The expression body preference for constructors.</param>
+/// <param name="Properties">The expression body preference for getter-only properties.</param>
+/// <param name="Indexers">The expression body preference for getter-only indexers.</param>
+/// <param name="Accessors">The expression body preference for accessors.</param>
+/// <param name="BlankLineBetweenMembers">Whether a blank line separates members.</param>
 internal sealed record RenderOptions(
     CSharpVersion Version = CSharpVersion.Latest,
     string Indent = "    ",
     string NewLine = "\n",
     Qualification Qualification = Qualification.Global,
     bool PredefinedTypeKeywords = true,
-    bool NullableAnnotations = true)
+    bool NullableAnnotations = true,
+    NamespaceDeclarationPreference NamespaceDeclarations = NamespaceDeclarationPreference.FileScoped,
+    ExpressionBodyPreference Methods = ExpressionBodyPreference.Never,
+    ExpressionBodyPreference Constructors = ExpressionBodyPreference.Never,
+    ExpressionBodyPreference Properties = ExpressionBodyPreference.WhenOnSingleLine,
+    ExpressionBodyPreference Indexers = ExpressionBodyPreference.WhenOnSingleLine,
+    ExpressionBodyPreference Accessors = ExpressionBodyPreference.WhenOnSingleLine,
+    bool BlankLineBetweenMembers = true)
 {
     /// <summary>
     ///     Gets the defaults.
@@ -170,6 +231,13 @@ internal sealed record RenderOptions(
             Qualification = overrides.Qualification ?? Qualification,
             PredefinedTypeKeywords = overrides.PredefinedTypeKeywords ?? PredefinedTypeKeywords,
             NullableAnnotations = overrides.NullableAnnotations ?? NullableAnnotations,
+            NamespaceDeclarations = overrides.NamespaceDeclarations ?? NamespaceDeclarations,
+            Methods = overrides.Methods ?? Methods,
+            Constructors = overrides.Constructors ?? Constructors,
+            Properties = overrides.Properties ?? Properties,
+            Indexers = overrides.Indexers ?? Indexers,
+            Accessors = overrides.Accessors ?? Accessors,
+            BlankLineBetweenMembers = overrides.BlankLineBetweenMembers ?? BlankLineBetweenMembers,
         };
     }
 
@@ -192,10 +260,24 @@ internal sealed record RenderOptions(
 /// <param name="Qualification">How type references are qualified, when it differs.</param>
 /// <param name="PredefinedTypeKeywords">Whether predefined types render as keywords, when it differs.</param>
 /// <param name="NullableAnnotations">Whether reference types keep their <c>?</c>, when it differs.</param>
+/// <param name="NamespaceDeclarations">The namespace declaration style, when it differs.</param>
+/// <param name="Methods">The expression body preference for methods, when it differs.</param>
+/// <param name="Constructors">The expression body preference for constructors, when it differs.</param>
+/// <param name="Properties">The expression body preference for properties, when it differs.</param>
+/// <param name="Indexers">The expression body preference for indexers, when it differs.</param>
+/// <param name="Accessors">The expression body preference for accessors, when it differs.</param>
+/// <param name="BlankLineBetweenMembers">Whether a blank line separates members, when it differs.</param>
 internal sealed record RenderOverrides(
     CSharpVersion? Version = null,
     string? Indent = null,
     string? NewLine = null,
     Qualification? Qualification = null,
     bool? PredefinedTypeKeywords = null,
-    bool? NullableAnnotations = null);
+    bool? NullableAnnotations = null,
+    NamespaceDeclarationPreference? NamespaceDeclarations = null,
+    ExpressionBodyPreference? Methods = null,
+    ExpressionBodyPreference? Constructors = null,
+    ExpressionBodyPreference? Properties = null,
+    ExpressionBodyPreference? Indexers = null,
+    ExpressionBodyPreference? Accessors = null,
+    bool? BlankLineBetweenMembers = null);

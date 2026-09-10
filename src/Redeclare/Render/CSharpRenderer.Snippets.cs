@@ -24,7 +24,49 @@ internal static partial class CSharpRenderer
         return text;
     }
 
-    private static StringBuilder AppendSnippetLine(this StringBuilder text, string line, EquatableArray<SnippetHole> holes, RenderOptions options)
+    /// <summary>
+    ///     Writes a snippet into the writer one line at a time, each at the current depth, holes filled.
+    /// </summary>
+    private static void WriteSnippet(this SourceWriter writer, Snippet snippet, RenderOptions options)
+    {
+        var lines = snippet.Lines;
+        for (int i = 0; i < lines.Length; i++)
+        {
+            if (lines[i].Length > 0)
+            {
+                writer.BeginLine().AppendSnippetLine(lines[i], snippet.Holes, options);
+            }
+
+            writer.EndLine();
+        }
+    }
+
+    /// <summary>
+    ///     Writes a snippet that continues the current line, an initializer say. Its further lines start at the
+    ///     writer's depth, so a multi-line value stays aligned under its member.
+    /// </summary>
+    private static void WriteInline(this SourceWriter writer, Snippet snippet, RenderOptions options)
+    {
+        var lines = snippet.Lines;
+        for (int i = 0; i < lines.Length; i++)
+        {
+            if (i > 0)
+            {
+                writer.EndLine();
+            }
+
+            if (lines[i].Length > 0)
+            {
+                writer.BeginLine().AppendSnippetLine(lines[i], snippet.Holes, options);
+            }
+        }
+    }
+
+    private static StringBuilder AppendSnippetLine(
+        this StringBuilder text,
+        string line,
+        EquatableArray<SnippetHole> holes,
+        RenderOptions options)
     {
         int start = line.IndexOf(Snippet.HoleStart);
         if (start < 0)

@@ -83,4 +83,12 @@ internal sealed record CompilationUnit(
             return name.Append("g.cs").ToString();
         }
     }
+
+    /// <summary>
+    ///     Renders the file to text.
+    /// </summary>
+    public string Render(RenderOptions? options = null)
+    {
+        return CSharpRenderer.Render(this, options ?? RenderOptions.Default);
+    }
 }
