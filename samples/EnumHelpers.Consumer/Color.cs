@@ -1,7 +1,7 @@
 namespace EnumHelpers.Consumer;
 
 /// <summary>
-///     A colour. <c>Azure</c> aliases <c>Blue</c>, which the generator must not turn into a second switch arm.
+///     A color. <c>Azure</c> aliases <c>Blue</c>, which the generator must not turn into a second switch arm.
 /// </summary>
 [EnumHelpers]
 public enum Color
@@ -50,9 +50,9 @@ internal enum Size : byte
 public static class Demo
 {
     /// <summary>
-    ///     The colour's name, from the generated <c>ToStringFast</c>.
+    ///     The color's name, from the generated <c>ToStringFast</c>.
     /// </summary>
-    /// <param name="color">The colour.</param>
+    /// <param name="color">The color.</param>
     /// <returns>The member's name.</returns>
     public static string Name(Color color)
     {

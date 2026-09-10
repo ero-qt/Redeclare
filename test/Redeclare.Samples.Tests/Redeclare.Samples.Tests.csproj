@@ -10,6 +10,7 @@
 
   <ItemGroup>
     <ProjectReference Include="$(SamplesPath)/EnumHelpers.Generator/EnumHelpers.Generator.csproj" />
+    <ProjectReference Include="$(SamplesPath)/Notify.Generator/Notify.Generator.csproj" />
   </ItemGroup>
 
   <ItemGroup>
