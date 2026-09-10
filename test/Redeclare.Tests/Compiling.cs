@@ -7,7 +7,8 @@ using System.Linq;
 namespace Redeclare.Tests;
 
 /// <summary>
-///     Compiles C# text against the .NET 10 reference assemblies, so rendered code is proven to be C#.
+///     Compiles C# text against the .NET 10 reference assemblies, so rendered code is proven to be C#, and finds
+///     the symbols a test reads from the result.
 /// </summary>
 internal static class Compiling
 {
@@ -38,5 +39,17 @@ internal static class Compiling
         Assert.That(errors, Is.Empty, () => $"Rendered source did not compile:\n{source}\n\nErrors:\n{string.Join("\n", errors)}");
 
         return compilation;
+    }
+
+    /// <summary>
+    ///     The type with this full metadata name, which the test knows exists.
+    /// </summary>
+    public static INamedTypeSymbol Type(this Compilation compilation, string fullMetadataName)
+    {
+        var type = compilation.GetTypeByMetadataName(fullMetadataName);
+
+        Assert.That(type, Is.Not.Null, () => $"No type '{fullMetadataName}' in the compilation.");
+
+        return type!;
     }
 }
