@@ -8,33 +8,12 @@ namespace Redeclare.Tests;
 [TestFixture]
 public sealed class TypeReferenceTests
 {
-    private static readonly NamedTypeReference _int = new(
-        Name: "Int32",
-        ContainingNamespace: "System",
-        TypeKind: TypeKind.Struct,
-        SpecialType: SpecialType.System_Int32);
-
-    private static readonly NamedTypeReference _void = new(
-        Name: "Void",
-        ContainingNamespace: "System",
-        TypeKind: TypeKind.Struct,
-        SpecialType: SpecialType.System_Void);
-
-    private static readonly NamedTypeReference _string = new(
-        Name: "String",
-        ContainingNamespace: "System",
-        SpecialType: SpecialType.System_String);
-
-    private static readonly NamedTypeReference _list = new(Name: "List", ContainingNamespace: "System.Collections.Generic", Arity: 1);
-
-    private static readonly NamedTypeReference _stringBuilder = new(Name: "StringBuilder", ContainingNamespace: "System.Text");
-
     private static readonly RenderOptions _minimal = RenderOptions.Default with { Qualification = Qualification.Minimal };
 
     [Test]
     public void RenderType_ThreeQualifications_SpellsOneTypeThreeWays()
     {
-        var type = _list.Construct(_stringBuilder with { NullableAnnotation = NullableAnnotation.Annotated })
+        var type = Types.List.Construct(Types.StringBuilder with { NullableAnnotation = NullableAnnotation.Annotated })
             with { NullableAnnotation = NullableAnnotation.Annotated };
 
         using (Assert.EnterMultipleScope())
@@ -50,27 +29,27 @@ public sealed class TypeReferenceTests
     [Test]
     public void RenderType_PredefinedTypes_WritesKeywordsUnlessToldNotTo()
     {
-        var nint = _int with { Name = "IntPtr", SpecialType = SpecialType.System_IntPtr, IsNativeIntegerType = true };
+        var nint = Types.Int32 with { Name = "IntPtr", SpecialType = SpecialType.System_IntPtr, IsNativeIntegerType = true };
         var names = RenderOptions.Default with { PredefinedTypeKeywords = false };
 
         using (Assert.EnterMultipleScope())
         {
-            Assert.That(_int.ToString(), Is.EqualTo("int"));
-            Assert.That(_string.ToString(), Is.EqualTo("string"));
+            Assert.That(Types.Int32.ToString(), Is.EqualTo("int"));
+            Assert.That(Types.String.ToString(), Is.EqualTo("string"));
             Assert.That(nint.ToString(), Is.EqualTo("nint"));
-            Assert.That(CSharpRenderer.RenderType(_int, names), Is.EqualTo("global::System.Int32"));
-            Assert.That(CSharpRenderer.RenderType(_void, names), Is.EqualTo("void"), "void has no other spelling");
+            Assert.That(CSharpRenderer.RenderType(Types.Int32, names), Is.EqualTo("global::System.Int32"));
+            Assert.That(CSharpRenderer.RenderType(Types.Void, names), Is.EqualTo("void"), "void has no other spelling");
         }
     }
 
     [Test]
     public void RenderType_Arrays_WritesOuterRankFirstWithAnnotationsShifted()
     {
-        var nullableInt = _int with { NullableAnnotation = NullableAnnotation.Annotated };
-        var jagged = new ArrayTypeReference(ElementType: new ArrayTypeReference(ElementType: _int), Rank: 2);
-        var nullableMatrix = new ArrayTypeReference(ElementType: _int, Rank: 2, NullableAnnotation: NullableAnnotation.Annotated);
+        var nullableInt = Types.Int32 with { NullableAnnotation = NullableAnnotation.Annotated };
+        var jagged = new ArrayTypeReference(ElementType: new ArrayTypeReference(ElementType: Types.Int32), Rank: 2);
+        var nullableMatrix = new ArrayTypeReference(ElementType: Types.Int32, Rank: 2, NullableAnnotation: NullableAnnotation.Annotated);
         var arrayOfNullableArrays = new ArrayTypeReference(
-            ElementType: new ArrayTypeReference(ElementType: _int, NullableAnnotation: NullableAnnotation.Annotated));
+            ElementType: new ArrayTypeReference(ElementType: Types.Int32, NullableAnnotation: NullableAnnotation.Annotated));
 
         using (Assert.EnterMultipleScope())
         {
@@ -84,12 +63,12 @@ public sealed class TypeReferenceTests
     [Test]
     public void RenderType_TuplesPointersParametersAndDynamic_SpellsThemAsCSharpDoes()
     {
-        var tuple = new TupleTypeReference(Elements: [new TupleElement(Type: _int, Name: "a"), new TupleElement(Type: _string)]);
+        var tuple = new TupleTypeReference(Elements: [new TupleElement(Type: Types.Int32, Name: "a"), new TupleElement(Type: Types.String)]);
 
         using (Assert.EnterMultipleScope())
         {
             Assert.That(tuple.ToString(), Is.EqualTo("(int a, string)"));
-            Assert.That(new PointerTypeReference(PointedAtType: _int).ToString(), Is.EqualTo("int*"));
+            Assert.That(new PointerTypeReference(PointedAtType: Types.Int32).ToString(), Is.EqualTo("int*"));
             Assert.That(new TypeParameterReference(Name: "T", NullableAnnotation: NullableAnnotation.Annotated).ToString(), Is.EqualTo("T?"));
             Assert.That(new DynamicTypeReference().ToString(), Is.EqualTo("dynamic"));
             Assert.That(new ErrorTypeReference(Text: "Missing<int>").ToString(), Is.EqualTo("Missing<int>"), "an error type renders as written");
@@ -99,7 +78,7 @@ public sealed class TypeReferenceTests
     [Test]
     public void RenderType_NestedAndUnboundGenerics_QualifiesThroughTheOutermostType()
     {
-        var container = new NamedTypeReference(Name: "Container", ContainingNamespace: "Outer", Arity: 1).Construct(_int);
+        var container = new NamedTypeReference(Name: "Container", ContainingNamespace: "Outer", Arity: 1).Construct(Types.Int32);
         var inner = new NamedTypeReference(Name: "Inner", ContainingType: container);
         var dictionary = new NamedTypeReference(Name: "Dictionary", ContainingNamespace: "System.Collections.Generic", Arity: 2);
         var enumerator = new NamedTypeReference(Name: "Enumerator", ContainingType: dictionary, TypeKind: TypeKind.Struct);
@@ -127,14 +106,14 @@ public sealed class TypeReferenceTests
     [Test]
     public void Construct_WrongNumberOfArguments_Throws()
     {
-        Assert.That(() => _list.Construct(_int, _int), Throws.ArgumentException);
+        Assert.That(() => Types.List.Construct(Types.Int32, Types.Int32), Throws.ArgumentException);
     }
 
     [Test]
     public void RenderType_AnnotationsOffOrBelowCSharp8_DropsTheQuestionMarkOnReferenceTypesOnly()
     {
-        var reference = _string with { NullableAnnotation = NullableAnnotation.Annotated };
-        var value = _int with { NullableAnnotation = NullableAnnotation.Annotated };
+        var reference = Types.String with { NullableAnnotation = NullableAnnotation.Annotated };
+        var value = Types.Int32 with { NullableAnnotation = NullableAnnotation.Annotated };
         var old = RenderOptions.Default with { Version = CSharpVersion.CSharp7_3 };
 
         using (Assert.EnterMultipleScope())
@@ -149,8 +128,8 @@ public sealed class TypeReferenceTests
     public void RenderType_FunctionPointer_WritesTheCallingConventionAndNeedsCSharp9()
     {
         var pointer = new FunctionPointerTypeReference(
-            ReturnType: _void,
-            Parameters: [new FunctionPointerParameter(Type: _int), new FunctionPointerParameter(Type: _int, RefKind: RefKind.Ref)],
+            ReturnType: Types.Void,
+            Parameters: [new FunctionPointerParameter(Type: Types.Int32), new FunctionPointerParameter(Type: Types.Int32, RefKind: RefKind.Ref)],
             CallingConvention: SignatureCallingConvention.CDecl);
 
         using (Assert.EnterMultipleScope())

@@ -4,9 +4,6 @@ using System.Text;
 
 namespace Redeclare;
 
-/// <summary>
-///     Rendering a <see cref="TypeReference"/>: qualification, arrays, pointers, tuples, function pointers.
-/// </summary>
 internal static partial class CSharpRenderer
 {
     /// <summary>
@@ -74,15 +71,23 @@ internal static partial class CSharpRenderer
             switch (options.Qualification)
             {
                 case Qualification.Global:
+                {
                     text.Append("global::").AppendQualifiedName(ns).Append('.');
                     break;
+                }
                 case Qualification.Full:
+                {
                     text.AppendQualifiedName(ns).Append('.');
                     break;
+                }
                 case Qualification.Minimal:
+                {
                     break;
+                }
                 default:
+                {
                     throw new RenderException($"Unknown qualification {options.Qualification}.");
+                }
             }
         }
 

@@ -5,7 +5,7 @@ using System.Text;
 namespace Redeclare;
 
 /// <summary>
-///     The pieces every rendering shares: identifiers, ref kinds, joins, and the version gate.
+///     Provides methods that render the model to C# text under <see cref="RenderOptions"/>.
 /// </summary>
 internal static partial class CSharpRenderer
 {
@@ -60,15 +60,23 @@ internal static partial class CSharpRenderer
         switch (refKind)
         {
             case RefKind.None:
+            {
                 return "";
+            }
             case RefKind.Ref:
+            {
                 Require(options, CSharpVersion.CSharp7, "a ref return", what);
                 return "ref ";
+            }
             case RefKind.RefReadOnly:
+            {
                 Require(options, CSharpVersion.CSharp7_2, "a ref readonly return", what);
                 return "ref readonly ";
+            }
             default:
+            {
                 throw new RenderException($"{what} has ref kind {refKind}. A return may only be ref or ref readonly.");
+            }
         }
     }
 
@@ -80,19 +88,31 @@ internal static partial class CSharpRenderer
         switch (refKind)
         {
             case RefKind.None:
+            {
                 return "";
+            }
             case RefKind.Ref:
+            {
                 return "ref ";
+            }
             case RefKind.Out:
+            {
                 return "out ";
+            }
             case RefKind.In:
+            {
                 Require(options, CSharpVersion.CSharp7_2, "an in parameter", what);
                 return "in ";
+            }
             case RefKind.RefReadOnlyParameter:
+            {
                 Require(options, CSharpVersion.CSharp12, "a ref readonly parameter", what);
                 return "ref readonly ";
+            }
             default:
+            {
                 throw new RenderException($"{what} has a parameter with unknown ref kind {refKind}.");
+            }
         }
     }
 
