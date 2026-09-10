@@ -533,4 +533,21 @@ public sealed class RenderTests
 
         Assert.That(unit.Render(), Does.Contain("    C() : base(\n        1)\n    {"));
     }
+
+    [Test]
+    public void Render_BlankLineInsideAnExpressionBody_StaysEmpty()
+    {
+        var method = new MethodDeclaration(ReturnType: Types.Int32, Name: "Get", Body: Snippet.Expression("a\n\n+ b"));
+        var unit = new CompilationUnit(Members: [new TypeDeclaration(Name: "C", Members: [method])]);
+
+        using (Assert.EnterMultipleScope())
+        {
+            Assert.That(
+                unit.Render(RenderOptions.Default with { Methods = ExpressionBodyPreference.Never }),
+                Does.Contain("        return a\n\n        + b;"));
+            Assert.That(
+                unit.Render(RenderOptions.Default with { Methods = ExpressionBodyPreference.WhenPossible }),
+                Does.Contain("    int Get() =>\n        a\n\n        + b;"));
+        }
+    }
 }

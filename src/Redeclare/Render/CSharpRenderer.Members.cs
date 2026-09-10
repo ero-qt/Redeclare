@@ -369,6 +369,13 @@ internal static partial class CSharpRenderer
                 var lines = expression.Lines;
                 for (int i = 0; i < lines.Length; i++)
                 {
+                    // Dedent trims blank edges, so only an interior line is empty, and it stays empty.
+                    if (lines[i].Length == 0)
+                    {
+                        writer.EndLine();
+                        continue;
+                    }
+
                     var text = writer.BeginLine();
                     if (i == 0 && returnsValue)
                     {
@@ -437,6 +444,12 @@ internal static partial class CSharpRenderer
         writer.Indent();
         for (int i = 0; i < lines.Length; i++)
         {
+            if (lines[i].Length == 0)
+            {
+                writer.EndLine();
+                continue;
+            }
+
             var text = writer.BeginLine().AppendSnippetLine(lines[i], expression.Holes, options);
             if (i == lines.Length - 1)
             {
