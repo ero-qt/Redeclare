@@ -26,12 +26,10 @@ namespace Redeclare;
 ///     The namespaces and types, in order. A type here is in the global namespace. A lone namespace renders
 ///     file-scoped when the options ask for it. Anything else renders as blocks.
 /// </param>
-/// <param name="Overrides">Render options for the whole file, applied over the options the file is rendered with.</param>
 internal sealed record CompilationUnit(
     Snippet? Header = null,
     EquatableArray<string> Usings = default,
-    EquatableArray<MemberDeclaration> Members = default,
-    RenderOverrides? Overrides = null)
+    EquatableArray<MemberDeclaration> Members = default)
 {
     /// <summary>
     ///     Gets a file name for <c>AddSource</c>: the namespaces, the types the file's type is declared in, then

@@ -18,13 +18,8 @@ namespace Redeclare;
 /// <param name="Attributes">The attributes, each rendered on its own line.</param>
 /// <param name="Accessibility">The accessibility. <see cref="Accessibility.NotApplicable"/> writes no modifier.</param>
 /// <param name="Modifiers">The modifiers other than accessibility.</param>
-/// <param name="Overrides">
-///     Render options for this declaration and everything under it, applied over what it inherits. Takes part
-///     in equality, as the output depends on it.
-/// </param>
 internal abstract record MemberDeclaration(
     string? DocumentationComment,
     EquatableArray<AttributeSpecification> Attributes,
     Accessibility Accessibility,
-    Modifiers Modifiers,
-    RenderOverrides? Overrides);
+    Modifiers Modifiers);

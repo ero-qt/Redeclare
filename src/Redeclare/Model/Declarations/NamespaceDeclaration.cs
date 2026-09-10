@@ -17,9 +17,7 @@ namespace Redeclare;
 ///     stand at the top of the file with no <c>namespace</c> line.
 /// </param>
 /// <param name="Members">The types and namespaces declared in it.</param>
-/// <param name="Overrides">Render options for this namespace and everything under it.</param>
 internal sealed record NamespaceDeclaration(
     string Name,
-    EquatableArray<MemberDeclaration> Members = default,
-    RenderOverrides? Overrides = null)
-    : MemberDeclaration(null, default, Accessibility.NotApplicable, Modifiers.None, Overrides);
+    EquatableArray<MemberDeclaration> Members = default)
+    : MemberDeclaration(null, default, Accessibility.NotApplicable, Modifiers.None);

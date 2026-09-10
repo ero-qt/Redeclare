@@ -9,11 +9,9 @@ namespace Redeclare;
 /// <param name="Value">The value, the part after <c>=</c>, or <see langword="null"/> to let the compiler count.</param>
 /// <param name="DocumentationComment">The documentation comment.</param>
 /// <param name="Attributes">The attributes.</param>
-/// <param name="Overrides">Render options for this declaration.</param>
 internal sealed record EnumMemberDeclaration(
     string Name,
     Snippet? Value = null,
     string? DocumentationComment = null,
-    EquatableArray<AttributeSpecification> Attributes = default,
-    RenderOverrides? Overrides = null)
-    : MemberDeclaration(DocumentationComment, Attributes, Accessibility.NotApplicable, Modifiers.None, Overrides);
+    EquatableArray<AttributeSpecification> Attributes = default)
+    : MemberDeclaration(DocumentationComment, Attributes, Accessibility.NotApplicable, Modifiers.None);

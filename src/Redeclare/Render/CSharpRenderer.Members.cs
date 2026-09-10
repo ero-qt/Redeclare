@@ -84,7 +84,7 @@ internal static partial class CSharpRenderer
                 throw new RenderException($"Enum '{type.Name}' holds a {member.GetType().Name}. An enum may only hold enum members.");
             }
 
-            RenderEnumMember(writer, enumMember, options.Apply(member.Overrides));
+            RenderEnumMember(writer, enumMember, options);
         }
     }
 

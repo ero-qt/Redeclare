@@ -15,10 +15,8 @@ namespace Redeclare;
 /// <param name="Receiver">The receiver parameter: its type, its name or an empty name, and how it is passed.</param>
 /// <param name="TypeParameters">The type parameters, constraints included.</param>
 /// <param name="Members">The extension members, in render order.</param>
-/// <param name="Overrides">Render options for this block and everything under it.</param>
 internal sealed record ExtensionDeclaration(
     ParameterDeclaration Receiver,
     EquatableArray<TypeParameterDeclaration> TypeParameters = default,
-    EquatableArray<MemberDeclaration> Members = default,
-    RenderOverrides? Overrides = null)
-    : MemberDeclaration(null, default, Accessibility.NotApplicable, Modifiers.None, Overrides);
+    EquatableArray<MemberDeclaration> Members = default)
+    : MemberDeclaration(null, default, Accessibility.NotApplicable, Modifiers.None);
