@@ -121,6 +121,7 @@ internal static partial class CSharpRenderer
                     Collect(@event.Type, namespaces);
                     Collect(@event.Adder?.Body, namespaces);
                     Collect(@event.Remover?.Body, namespaces);
+                    Collect(@event.ExplicitInterfaceSpecifier, namespaces);
                     break;
                 }
                 case EnumMemberDeclaration enumMember:

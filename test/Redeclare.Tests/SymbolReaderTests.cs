@@ -130,6 +130,17 @@ public sealed class SymbolReaderTests
                 public class Only { }
             }
 
+            public interface IWatched
+            {
+                event EventHandler Changed;
+            }
+
+            public sealed class Watched : IWatched
+            {
+                event EventHandler IWatched.Changed { add { } remove { } }
+                public event EventHandler Ticked { add { } remove { } }
+            }
+
             public partial class Marked<[Mark("param")] T> { }
 
             public sealed class ClashAttribute : Attribute
@@ -728,5 +739,40 @@ public sealed class SymbolReaderTests
                 new CompilationUnit(Members: [new TypeDeclaration(Name: "C", Members: [pointer])], Header: Header).Render(),
                 Does.Contain("public unsafe int* Pointer"));
         }
+    }
+
+    [Test]
+    public void ToDeclaration_EventsWithAccessors_ReadThemAsShape()
+    {
+        var events = Compilation.Type("Fixture.Watched").ToDeclaration().Members.OfType<EventDeclaration>().ToDictionary(e => e.Name);
+
+        using (Assert.EnterMultipleScope())
+        {
+            Assert.That(events["Ticked"].Adder, Is.EqualTo(new AccessorDeclaration()));
+            Assert.That(events["Ticked"].Remover, Is.EqualTo(new AccessorDeclaration()));
+            Assert.That(events["Ticked"].ExplicitInterfaceSpecifier, Is.Null);
+            Assert.That(events["Changed"].Name, Is.EqualTo("Changed"), "the interface is not part of the name");
+            Assert.That(events["Changed"].ExplicitInterfaceSpecifier?.ToString(), Is.EqualTo("global::Fixture.IWatched"));
+            Assert.That(events["Changed"].Accessibility, Is.EqualTo(Accessibility.NotApplicable));
+            Assert.That(Repository.Members.OfType<EventDeclaration>().Single().Adder, Is.Null, "a field-like event has no accessors of its own");
+        }
+    }
+
+    [Test]
+    public void Render_ReadEventsWithBodiesAdded_CompileAgain()
+    {
+        var watched = Compilation.Type("Fixture.Watched").ToDeclaration();
+        var withBodies = watched with
+        {
+            Members = [.. watched.Members.Select(m => m is EventDeclaration e
+                ? e with { Adder = new AccessorDeclaration(Body: Snippet.Empty), Remover = new AccessorDeclaration(Body: Snippet.Empty) }
+                : m)],
+        };
+        var unit = new CompilationUnit(Members: [new NamespaceDeclaration(Name: "Fixture", Members: [withBodies])], Header: Header);
+
+        var text = unit.Render();
+
+        Assert.That(text, Does.Contain("event global::System.EventHandler global::Fixture.IWatched.Changed"));
+        Compiling.AssertCompiles(text, LanguageVersion.Latest, "namespace Fixture { public interface IWatched { event System.EventHandler Changed; } }");
     }
 }

@@ -296,6 +296,11 @@ internal static partial class CSharpRenderer
             throw new RenderException($"{what} declares one accessor. C# requires an event with accessors to have both add and remove.");
         }
 
+        if (fieldLike && @event.ExplicitInterfaceSpecifier is not null)
+        {
+            throw new RenderException($"{what} is an explicit implementation. C# requires an explicit implementation to declare both accessors.");
+        }
+
         RenderDocumentation(writer, @event.DocumentationComment);
         RenderAttributes(writer, @event.Attributes, options);
 
@@ -303,8 +308,13 @@ internal static partial class CSharpRenderer
             .AppendModifiers(@event.Accessibility, @event.Modifiers, options, what)
             .Append("event ")
             .AppendType(@event.Type, options)
-            .Append(' ')
-            .AppendIdentifier(@event.Name);
+            .Append(' ');
+        if (@event.ExplicitInterfaceSpecifier is { } explicitInterface)
+        {
+            head.AppendType(explicitInterface, options).Append('.');
+        }
+
+        head.AppendIdentifier(@event.Name);
 
         if (fieldLike)
         {

@@ -550,4 +550,13 @@ public sealed class RenderTests
                 Does.Contain("    int Get() =>\n        a\n\n        + b;"));
         }
     }
+
+    [Test]
+    public void Render_ExplicitEventWithoutAccessors_Throws()
+    {
+        var @event = new EventDeclaration(Type: Types.EventHandler, Name: "Changed", ExplicitInterfaceSpecifier: Types.IDisposable);
+        var unit = new CompilationUnit(Members: [new TypeDeclaration(Name: "C", Members: [@event])]);
+
+        Assert.That(() => unit.Render(), Throws.InstanceOf<RenderException>());
+    }
 }

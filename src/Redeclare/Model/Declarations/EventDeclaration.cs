@@ -13,6 +13,10 @@ namespace Redeclare;
 /// <param name="Name">The name.</param>
 /// <param name="Adder">The <c>add</c> accessor, or <see langword="null"/> for a field-like event.</param>
 /// <param name="Remover">The <c>remove</c> accessor, or <see langword="null"/> for a field-like event.</param>
+/// <param name="ExplicitInterfaceSpecifier">
+///     The interface for an explicit implementation, <c>event T IFoo.Name</c>, or <see langword="null"/>. C# requires
+///     an explicit implementation to declare both accessors.
+/// </param>
 /// <param name="Accessibility">The accessibility.</param>
 /// <param name="Modifiers">The modifiers other than accessibility.</param>
 /// <param name="DocumentationComment">The documentation comment.</param>
@@ -22,6 +26,7 @@ internal sealed record EventDeclaration(
     string Name,
     AccessorDeclaration? Adder = null,
     AccessorDeclaration? Remover = null,
+    TypeReference? ExplicitInterfaceSpecifier = null,
     Accessibility Accessibility = Accessibility.NotApplicable,
     Modifiers Modifiers = Modifiers.None,
     string? DocumentationComment = null,
