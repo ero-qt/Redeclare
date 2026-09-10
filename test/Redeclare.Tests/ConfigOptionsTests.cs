@@ -21,17 +21,17 @@ public sealed class ConfigOptionsTests
     }
 
     [Test]
-    public void ToRenderOptions_EmptyConfig_IsDefault()
+    public void From_EmptyConfig_IsDefault()
     {
-        Assert.That(new FakeConfig().ToRenderOptions(), Is.EqualTo(RenderOptions.Default));
+        Assert.That(RenderOptions.From(new FakeConfig()), Is.EqualTo(RenderOptions.Default));
     }
 
     [Test]
-    public void ToRenderOptions_IndentAndNewLine_ReadAsEditorconfigWritesThem()
+    public void From_IndentAndNewLine_ReadAsEditorconfigWritesThem()
     {
-        var tabs = new FakeConfig { ["indent_style"] = "tab", ["end_of_line"] = "crlf" }.ToRenderOptions();
-        var two = new FakeConfig { ["indent_style"] = "space", ["indent_size"] = "2" }.ToRenderOptions();
-        var sizeOnly = new FakeConfig { ["indent_size"] = "3" }.ToRenderOptions();
+        var tabs = RenderOptions.From(new FakeConfig { ["indent_style"] = "tab", ["end_of_line"] = "crlf" });
+        var two = RenderOptions.From(new FakeConfig { ["indent_style"] = "space", ["indent_size"] = "2" });
+        var sizeOnly = RenderOptions.From(new FakeConfig { ["indent_size"] = "3" });
 
         using (Assert.EnterMultipleScope())
         {
@@ -43,16 +43,16 @@ public sealed class ConfigOptionsTests
     }
 
     [Test]
-    public void ToRenderOptions_StyleRules_IgnoreTheSeverity()
+    public void From_StyleRules_IgnoreTheSeverity()
     {
-        var options = new FakeConfig
+        var options = RenderOptions.From(new FakeConfig
         {
             ["csharp_style_namespace_declarations"] = "block_scoped:warning",
             ["dotnet_style_predefined_type_for_locals_parameters_members"] = "false:suggestion",
             ["csharp_style_expression_bodied_methods"] = "when_on_single_line:silent",
             ["csharp_style_expression_bodied_properties"] = "true",
             ["csharp_style_expression_bodied_accessors"] = "false",
-        }.ToRenderOptions();
+        });
 
         using (Assert.EnterMultipleScope())
         {
