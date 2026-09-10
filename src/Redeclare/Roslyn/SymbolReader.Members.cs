@@ -17,25 +17,25 @@ internal static partial class SymbolReader
 
         string name = method.MethodKind switch
         {
-            MethodKind.UserDefinedOperator => "operator " + OperatorToken(method.Name),
+            MethodKind.UserDefinedOperator => "operator " + GetOperatorToken(method.Name),
             MethodKind.ExplicitInterfaceImplementation when method.ExplicitInterfaceImplementations.Length > 0
                 => method.ExplicitInterfaceImplementations[0].Name,
             _ => method.Name,
         };
 
         return new MethodDeclaration(
-            DocumentationComment: Documentation(method, options),
-            Attributes: Attributes(method, options),
-            Accessibility: MemberAccessibility(method),
-            Modifiers: MemberModifiers(method),
+            DocumentationComment: ReadDocumentation(method, options),
+            Attributes: ReadAttributes(method, options),
+            Accessibility: ReadMemberAccessibility(method),
+            Modifiers: ReadMemberModifiers(method),
             ReturnType: ReadTypeReference(method.ReturnType),
             RefKind: method.RefKind,
             Name: name,
             ExplicitInterfaceSpecifier: method.ExplicitInterfaceImplementations.Length > 0
                 ? ReadTypeReference(method.ExplicitInterfaceImplementations[0].ContainingType)
                 : null,
-            TypeParameters: TypeParameters(method.TypeParameters, options),
-            Parameters: Parameters(method.Parameters, method.IsExtensionMethod, options));
+            TypeParameters: ReadTypeParameters(method.TypeParameters, options),
+            Parameters: ReadParameters(method.Parameters, method.IsExtensionMethod, options));
     }
 
     /// <summary>
@@ -51,11 +51,11 @@ internal static partial class SymbolReader
         }
 
         return new ConstructorDeclaration(
-            DocumentationComment: Documentation(constructor, options),
-            Attributes: Attributes(constructor, options),
+            DocumentationComment: ReadDocumentation(constructor, options),
+            Attributes: ReadAttributes(constructor, options),
             Accessibility: constructor.IsStatic ? Accessibility.NotApplicable : constructor.DeclaredAccessibility,
             Modifiers: constructor.IsStatic ? Modifiers.Static : Modifiers.None,
-            Parameters: Parameters(constructor.Parameters, isExtension: false, options),
+            Parameters: ReadParameters(constructor.Parameters, isExtension: false, options),
             Body: Snippet.Empty);
     }
 
@@ -66,8 +66,8 @@ internal static partial class SymbolReader
     {
         options ??= ReadOptions.Default;
 
-        var accessibility = MemberAccessibility(property);
-        var modifiers = MemberModifiers(property);
+        var accessibility = ReadMemberAccessibility(property);
+        var modifiers = ReadMemberModifiers(property);
         if (property.IsRequired)
         {
             modifiers |= Modifiers.Required;
@@ -82,16 +82,16 @@ internal static partial class SymbolReader
         }
 
         var getter = property.GetMethod is { } get
-            ? new AccessorDeclaration(Accessibility: AccessorAccessibility(get, accessibility))
+            ? new AccessorDeclaration(Accessibility: ReadAccessorAccessibility(get, accessibility))
             : null;
 
         var setter = property.SetMethod is { } set
-            ? new AccessorDeclaration(Accessibility: AccessorAccessibility(set, accessibility), IsInitOnly: set.IsInitOnly)
+            ? new AccessorDeclaration(Accessibility: ReadAccessorAccessibility(set, accessibility), IsInitOnly: set.IsInitOnly)
             : null;
 
         return new PropertyDeclaration(
-            DocumentationComment: Documentation(property, options),
-            Attributes: Attributes(property, options),
+            DocumentationComment: ReadDocumentation(property, options),
+            Attributes: ReadAttributes(property, options),
             Accessibility: accessibility,
             Modifiers: modifiers,
             Type: ReadTypeReference(property.Type),
@@ -105,7 +105,7 @@ internal static partial class SymbolReader
             ExplicitInterfaceSpecifier: property.ExplicitInterfaceImplementations.Length > 0
                 ? ReadTypeReference(property.ExplicitInterfaceImplementations[0].ContainingType)
                 : null,
-            Parameters: property.IsIndexer ? Parameters(property.Parameters, isExtension: false, options) : default,
+            Parameters: property.IsIndexer ? ReadParameters(property.Parameters, isExtension: false, options) : default,
             Getter: getter,
             Setter: setter);
     }
@@ -143,14 +143,14 @@ internal static partial class SymbolReader
         }
 
         return new FieldDeclaration(
-            DocumentationComment: Documentation(field, options),
-            Attributes: Attributes(field, options),
+            DocumentationComment: ReadDocumentation(field, options),
+            Attributes: ReadAttributes(field, options),
             Accessibility: field.DeclaredAccessibility,
             Modifiers: modifiers,
             Type: ReadTypeReference(field.Type),
             RefKind: field.RefKind,
             Name: field.Name,
-            Initializer: field.IsConst && field.HasConstantValue ? Constant(field.ConstantValue, field.Type) : null);
+            Initializer: field.IsConst && field.HasConstantValue ? FormatConstant(field.ConstantValue, field.Type) : null);
     }
 
     /// <summary>
@@ -161,8 +161,8 @@ internal static partial class SymbolReader
         options ??= ReadOptions.Default;
 
         return new EnumMemberDeclaration(
-            DocumentationComment: Documentation(field, options),
-            Attributes: Attributes(field, options),
+            DocumentationComment: ReadDocumentation(field, options),
+            Attributes: ReadAttributes(field, options),
             Name: field.Name,
             Value: field.HasConstantValue && field.ConstantValue is { } value
                 ? Snippet.From(Convert.ToString(value, CultureInfo.InvariantCulture) ?? "0")
@@ -177,10 +177,10 @@ internal static partial class SymbolReader
         options ??= ReadOptions.Default;
 
         return new EventDeclaration(
-            DocumentationComment: Documentation(@event, options),
-            Attributes: Attributes(@event, options),
-            Accessibility: MemberAccessibility(@event),
-            Modifiers: MemberModifiers(@event),
+            DocumentationComment: ReadDocumentation(@event, options),
+            Attributes: ReadAttributes(@event, options),
+            Accessibility: ReadMemberAccessibility(@event),
+            Modifiers: ReadMemberModifiers(@event),
             Type: ReadTypeReference(@event.Type),
             Name: @event.Name);
     }
@@ -193,17 +193,17 @@ internal static partial class SymbolReader
         options ??= ReadOptions.Default;
 
         return new ParameterDeclaration(
-            Attributes: Attributes(parameter, options),
+            Attributes: ReadAttributes(parameter, options),
             RefKind: parameter.RefKind,
             IsParams: parameter.IsParams,
             IsThis: isThis,
             IsScoped: parameter.ScopedKind != ScopedKind.None,
             Type: ReadTypeReference(parameter.Type),
             Name: parameter.Name,
-            Default: parameter.HasExplicitDefaultValue ? Constant(parameter.ExplicitDefaultValue, parameter.Type) : null);
+            Default: parameter.HasExplicitDefaultValue ? FormatConstant(parameter.ExplicitDefaultValue, parameter.Type) : null);
     }
 
-    private static EquatableArray<ParameterDeclaration> Parameters(
+    private static EquatableArray<ParameterDeclaration> ReadParameters(
         ImmutableArray<IParameterSymbol> parameters,
         bool isExtension,
         ReadOptions options)
@@ -217,7 +217,7 @@ internal static partial class SymbolReader
         return result;
     }
 
-    private static EquatableArray<TypeParameterDeclaration> TypeParameters(
+    private static EquatableArray<TypeParameterDeclaration> ReadTypeParameters(
         ImmutableArray<ITypeParameterSymbol> typeParameters,
         ReadOptions options)
     {
@@ -242,7 +242,7 @@ internal static partial class SymbolReader
                 HasNotNullConstraint: parameter.HasNotNullConstraint,
                 HasConstructorConstraint: parameter.HasConstructorConstraint,
                 ConstraintTypes: constraintTypes,
-                Attributes: Attributes(parameter, options));
+                Attributes: ReadAttributes(parameter, options));
         }
 
         return result;
@@ -252,7 +252,7 @@ internal static partial class SymbolReader
     ///     Interface members are public by default, and writing it needs C# 8 for nothing. An explicit interface
     ///     implementation may carry no modifier at all, whatever Roslyn reports for it.
     /// </summary>
-    private static Accessibility MemberAccessibility(ISymbol member)
+    private static Accessibility ReadMemberAccessibility(ISymbol member)
     {
         if (member.ContainingType is { TypeKind: TypeKind.Interface } && member.DeclaredAccessibility == Accessibility.Public)
         {
@@ -270,7 +270,7 @@ internal static partial class SymbolReader
         return isExplicit ? Accessibility.NotApplicable : member.DeclaredAccessibility;
     }
 
-    private static Accessibility AccessorAccessibility(IMethodSymbol accessor, Accessibility propertyAccessibility)
+    private static Accessibility ReadAccessorAccessibility(IMethodSymbol accessor, Accessibility propertyAccessibility)
     {
         var accessibility = accessor.DeclaredAccessibility;
 
@@ -279,7 +279,7 @@ internal static partial class SymbolReader
             : accessibility;
     }
 
-    private static Modifiers MemberModifiers(ISymbol member)
+    private static Modifiers ReadMemberModifiers(ISymbol member)
     {
         var modifiers = Modifiers.None;
         bool inInterface = member.ContainingType is { TypeKind: TypeKind.Interface };

@@ -50,12 +50,12 @@ internal static partial class SymbolReader
         List<Snippet> arguments = [];
         foreach (var argument in attribute.ConstructorArguments)
         {
-            arguments.Add(Constant(argument));
+            arguments.Add(FormatConstant(argument));
         }
 
         foreach (var named in attribute.NamedArguments)
         {
-            arguments.Add(Snippet.From($"{named.Key} = {Constant(named.Value)}"));
+            arguments.Add(Snippet.From($"{named.Key} = {FormatConstant(named.Value)}"));
         }
 
         return new AttributeSpecification(
@@ -67,7 +67,7 @@ internal static partial class SymbolReader
     ///     Formats a constant as a C# expression: primitives as literals, enums by the member name that has the
     ///     value, <c>null</c> or <c>default</c> as the type demands. Types inside are holes.
     /// </summary>
-    public static Snippet Constant(object? value, ITypeSymbol type)
+    public static Snippet FormatConstant(object? value, ITypeSymbol type)
     {
         if (value is null)
         {
@@ -93,28 +93,28 @@ internal static partial class SymbolReader
 
         if (type.OriginalDefinition.SpecialType == SpecialType.System_Nullable_T && type is INamedTypeSymbol nullable)
         {
-            return Constant(value, nullable.TypeArguments[0]);
+            return FormatConstant(value, nullable.TypeArguments[0]);
         }
 
-        return Primitive(value);
+        return FormatPrimitive(value);
     }
 
     /// <summary>
     ///     Formats an attribute argument as a C# expression, arrays and <c>typeof</c> included.
     /// </summary>
-    public static Snippet Constant(TypedConstant constant)
+    public static Snippet FormatConstant(TypedConstant constant)
     {
         return constant.Kind switch
         {
             TypedConstantKind.Error => "default",
             TypedConstantKind.Array when constant.IsNull => "null",
-            TypedConstantKind.Array => ArrayConstant(constant),
+            TypedConstantKind.Array => FormatArray(constant),
             TypedConstantKind.Type => constant.Value is ITypeSymbol typeValue
                 ? Snippet.From($"typeof({ReadTypeReference(typeValue)})")
                 : "null",
             _ => constant.Type is { } type
-                ? Constant(constant.Value, type)
-                : constant.Value is { } value ? Primitive(value) : "default",
+                ? FormatConstant(constant.Value, type)
+                : constant.Value is { } value ? FormatPrimitive(value) : "default",
         };
     }
 
@@ -122,7 +122,7 @@ internal static partial class SymbolReader
     ///     A primitive as a C# literal. <c>float</c> and <c>decimal</c> take their suffix, since the bare spelling
     ///     is a <c>double</c> literal.
     /// </summary>
-    private static string Primitive(object value)
+    private static string FormatPrimitive(object value)
     {
         return value switch
         {
@@ -132,12 +132,12 @@ internal static partial class SymbolReader
         };
     }
 
-    private static Snippet ArrayConstant(TypedConstant constant)
+    private static Snippet FormatArray(TypedConstant constant)
     {
         var values = new Snippet[constant.Values.Length];
         for (int i = 0; i < values.Length; i++)
         {
-            values[i] = Constant(constant.Values[i]);
+            values[i] = FormatConstant(constant.Values[i]);
         }
 
         var items = Snippet.Join(", ", values);

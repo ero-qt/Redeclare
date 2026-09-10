@@ -93,22 +93,22 @@ internal static partial class SymbolReader
         var invoke = type.TypeKind == TypeKind.Delegate ? type.DelegateInvokeMethod : null;
 
         return new TypeDeclaration(
-            DocumentationComment: Documentation(type, options),
-            Attributes: Attributes(type, options),
+            DocumentationComment: ReadDocumentation(type, options),
+            Attributes: ReadAttributes(type, options),
             Accessibility: type.DeclaredAccessibility,
             Modifiers: modifiers,
             TypeKind: type.TypeKind,
             IsRecord: type.IsRecord,
             Name: type.Name,
-            ContainingType: type.ContainingType is { } outer ? Shape(outer) : null,
-            TypeParameters: TypeParameters(type.TypeParameters, options),
-            ParameterList: invoke is null ? default : Parameters(invoke.Parameters, isExtension: false, options),
+            ContainingType: type.ContainingType is { } outer ? ReadShape(outer) : null,
+            TypeParameters: ReadTypeParameters(type.TypeParameters, options),
+            ParameterList: invoke is null ? default : ReadParameters(invoke.Parameters, isExtension: false, options),
             BaseType: invoke is null ? baseType : null,
             Interfaces: invoke is null ? interfaces.ToEquatableArray() : default,
             EnumUnderlyingType: underlying,
             ReturnType: invoke is null ? null : ReadTypeReference(invoke.ReturnType),
             RefKind: invoke?.RefKind ?? RefKind.None,
-            Members: options.IncludeMembers && invoke is null ? Members(type, options) : default);
+            Members: options.IncludeMembers && invoke is null ? ReadMembers(type, options) : default);
     }
 
     /// <summary>
@@ -124,7 +124,7 @@ internal static partial class SymbolReader
     ///     The shape of a containing type: kind, name and the names of its type parameters, which is all a part of
     ///     it has to repeat.
     /// </summary>
-    private static TypeDeclaration Shape(INamedTypeSymbol type)
+    private static TypeDeclaration ReadShape(INamedTypeSymbol type)
     {
         var typeParameters = new TypeParameterDeclaration[type.TypeParameters.Length];
         for (int i = 0; i < typeParameters.Length; i++)
@@ -138,10 +138,10 @@ internal static partial class SymbolReader
             IsRecord: type.IsRecord,
             Modifiers: Modifiers.Partial,
             TypeParameters: typeParameters,
-            ContainingType: type.ContainingType is { } outer ? Shape(outer) : null);
+            ContainingType: type.ContainingType is { } outer ? ReadShape(outer) : null);
     }
 
-    private static EquatableArray<MemberDeclaration> Members(INamedTypeSymbol type, ReadOptions options)
+    private static EquatableArray<MemberDeclaration> ReadMembers(INamedTypeSymbol type, ReadOptions options)
     {
         List<MemberDeclaration> members = [];
         foreach (var member in type.GetMembers())
@@ -175,7 +175,7 @@ internal static partial class SymbolReader
                     members.Add(ReadMethod(method, options));
                     break;
                 }
-                case IMethodSymbol { MethodKind: MethodKind.UserDefinedOperator } @operator when OperatorToken(@operator.Name) is not null:
+                case IMethodSymbol { MethodKind: MethodKind.UserDefinedOperator } @operator when GetOperatorToken(@operator.Name) is not null:
                 {
                     members.Add(ReadMethod(@operator, options));
                     break;
@@ -214,7 +214,7 @@ internal static partial class SymbolReader
         return members.ToEquatableArray();
     }
 
-    private static EquatableArray<AttributeSpecification> Attributes(ISymbol symbol, ReadOptions options)
+    private static EquatableArray<AttributeSpecification> ReadAttributes(ISymbol symbol, ReadOptions options)
     {
         if (!options.IncludeAttributes)
         {
@@ -233,7 +233,7 @@ internal static partial class SymbolReader
         return attributes.ToEquatableArray();
     }
 
-    private static string? Documentation(ISymbol symbol, ReadOptions options)
+    private static string? ReadDocumentation(ISymbol symbol, ReadOptions options)
     {
         if (!options.IncludeDocumentationComments)
         {

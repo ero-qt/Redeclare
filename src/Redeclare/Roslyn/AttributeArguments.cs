@@ -97,7 +97,7 @@ internal readonly struct AttributeArguments
     /// </summary>
     public bool TryGetConstructorArgument<T>(string parameterName, out T value)
     {
-        if (TryFindConstructor(parameterName, out var raw, out var type) && Convert(raw, type, out value))
+        if (TryFindConstructor(parameterName, out var raw, out var type) && TryConvert(raw, type, out value))
         {
             return true;
         }
@@ -112,7 +112,7 @@ internal readonly struct AttributeArguments
     /// </summary>
     public bool TryGetNamedArgument<T>(string propertyName, out T value)
     {
-        if (TryFindNamed(propertyName, out var constant) && Convert(Raw(constant), constant.Type, out value))
+        if (TryFindNamed(propertyName, out var constant) && TryConvert(GetRawValue(constant), constant.Type, out value))
         {
             return true;
         }
@@ -142,7 +142,7 @@ internal readonly struct AttributeArguments
 
         var constant = arguments[position];
 
-        return Convert<T>(Raw(constant), constant.Type, out var value) ? value : fallback;
+        return TryConvert<T>(GetRawValue(constant), constant.Type, out var value) ? value : fallback;
     }
 
     /// <summary>
@@ -158,7 +158,7 @@ internal readonly struct AttributeArguments
     /// </summary>
     public EquatableArray<T> ConstructorArray<T>(string parameterName)
     {
-        return TryFindConstructorConstant(parameterName, out var constant) ? Elements<T>(constant) : default;
+        return TryFindConstructorConstant(parameterName, out var constant) ? ConvertElements<T>(constant) : default;
     }
 
     /// <summary>
@@ -166,7 +166,7 @@ internal readonly struct AttributeArguments
     /// </summary>
     public EquatableArray<T> NamedArray<T>(string propertyName)
     {
-        return TryFindNamed(propertyName, out var constant) ? Elements<T>(constant) : default;
+        return TryFindNamed(propertyName, out var constant) ? ConvertElements<T>(constant) : default;
     }
 
     /// <summary>
@@ -176,11 +176,11 @@ internal readonly struct AttributeArguments
     {
         if (TryFindConstructorConstant(parameterName, out var constant))
         {
-            return SymbolReader.Constant(constant);
+            return SymbolReader.FormatConstant(constant);
         }
 
         return TryFindConstructor(parameterName, out var raw, out var type) && type is not null
-            ? SymbolReader.Constant(raw, type)
+            ? SymbolReader.FormatConstant(raw, type)
             : null;
     }
 
@@ -189,15 +189,15 @@ internal readonly struct AttributeArguments
     /// </summary>
     public Snippet? NamedExpression(string propertyName)
     {
-        return TryFindNamed(propertyName, out var constant) ? SymbolReader.Constant(constant) : null;
+        return TryFindNamed(propertyName, out var constant) ? SymbolReader.FormatConstant(constant) : null;
     }
 
-    private static object? Raw(TypedConstant constant)
+    private static object? GetRawValue(TypedConstant constant)
     {
         return constant.Kind == TypedConstantKind.Array ? constant.Values : constant.Value;
     }
 
-    private static EquatableArray<T> Elements<T>(TypedConstant constant)
+    private static EquatableArray<T> ConvertElements<T>(TypedConstant constant)
     {
         if (constant.Kind != TypedConstantKind.Array || constant.IsNull)
         {
@@ -207,7 +207,7 @@ internal readonly struct AttributeArguments
         List<T> values = [];
         foreach (var element in constant.Values)
         {
-            if (Convert<T>(element.Value, element.Type, out var value))
+            if (TryConvert<T>(element.Value, element.Type, out var value))
             {
                 values.Add(value);
             }
@@ -216,7 +216,7 @@ internal readonly struct AttributeArguments
         return values.ToEquatableArray();
     }
 
-    private static bool Convert<T>(object? raw, ITypeSymbol? type, out T value)
+    private static bool TryConvert<T>(object? raw, ITypeSymbol? type, out T value)
     {
         switch (raw)
         {
@@ -244,7 +244,7 @@ internal readonly struct AttributeArguments
             {
                 try
                 {
-                    value = (T)System.Convert.ChangeType(convertible, typeof(T), CultureInfo.InvariantCulture);
+                    value = (T)Convert.ChangeType(convertible, typeof(T), CultureInfo.InvariantCulture);
                     return true;
                 }
                 catch (InvalidCastException)
@@ -297,7 +297,7 @@ internal readonly struct AttributeArguments
     {
         if (TryFindConstructorConstant(parameterName, out var constant))
         {
-            value = Raw(constant);
+            value = GetRawValue(constant);
             type = constant.Type;
             return true;
         }

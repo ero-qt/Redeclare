@@ -84,7 +84,7 @@ public sealed class ConstantTests
     [Test]
     public void Constant_ParameterDefaults_AreCSharpExpressions()
     {
-        var defaults = Method.Parameters.Select(p => SymbolReader.Constant(p.ExplicitDefaultValue, p.Type).ToString()).ToList();
+        var defaults = Method.Parameters.Select(p => SymbolReader.FormatConstant(p.ExplicitDefaultValue, p.Type).ToString()).ToList();
 
         Assert.That(
             defaults,

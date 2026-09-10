@@ -8,7 +8,7 @@ internal static partial class SymbolReader
     ///     The C# token for a user-defined operator's metadata name, or <see langword="null"/> for one with no
     ///     typed declaration: conversions and checked operators.
     /// </summary>
-    private static string? OperatorToken(string metadataName)
+    private static string? GetOperatorToken(string metadataName)
     {
         return metadataName switch
         {

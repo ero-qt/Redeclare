@@ -111,7 +111,7 @@ internal static class RoslynExtensions
     {
         var result = RenderOptions.Default;
 
-        if (Value(config, "indent_style") is { } indentStyle)
+        if (GetValue(config, "indent_style") is { } indentStyle)
         {
             if (indentStyle == "TAB")
             {
@@ -119,16 +119,16 @@ internal static class RoslynExtensions
             }
             else if (indentStyle == "SPACE")
             {
-                int size = Int(config, "indent_size") ?? Int(config, "tab_width") ?? 4;
+                int size = GetInt32(config, "indent_size") ?? GetInt32(config, "tab_width") ?? 4;
                 result = result with { Indent = new string(' ', size) };
             }
         }
-        else if (Int(config, "indent_size") is { } indentSize)
+        else if (GetInt32(config, "indent_size") is { } indentSize)
         {
             result = result with { Indent = new string(' ', indentSize) };
         }
 
-        result = Value(config, "end_of_line") switch
+        result = GetValue(config, "end_of_line") switch
         {
             "LF" => result with { NewLine = "\n" },
             "CRLF" => result with { NewLine = "\r\n" },
@@ -136,39 +136,39 @@ internal static class RoslynExtensions
             _ => result,
         };
 
-        result = Value(config, "csharp_style_namespace_declarations") switch
+        result = GetValue(config, "csharp_style_namespace_declarations") switch
         {
             "FILE_SCOPED" => result with { NamespaceDeclarations = NamespaceDeclarationPreference.FileScoped },
             "BLOCK_SCOPED" => result with { NamespaceDeclarations = NamespaceDeclarationPreference.BlockScoped },
             _ => result,
         };
 
-        if (Bool(config, "dotnet_style_predefined_type_for_locals_parameters_members") is { } keywords)
+        if (GetBoolean(config, "dotnet_style_predefined_type_for_locals_parameters_members") is { } keywords)
         {
             result = result with { PredefinedTypeKeywords = keywords };
         }
 
-        if (Preference(config, "csharp_style_expression_bodied_methods") is { } methods)
+        if (GetPreference(config, "csharp_style_expression_bodied_methods") is { } methods)
         {
             result = result with { Methods = methods };
         }
 
-        if (Preference(config, "csharp_style_expression_bodied_constructors") is { } constructors)
+        if (GetPreference(config, "csharp_style_expression_bodied_constructors") is { } constructors)
         {
             result = result with { Constructors = constructors };
         }
 
-        if (Preference(config, "csharp_style_expression_bodied_properties") is { } properties)
+        if (GetPreference(config, "csharp_style_expression_bodied_properties") is { } properties)
         {
             result = result with { Properties = properties };
         }
 
-        if (Preference(config, "csharp_style_expression_bodied_indexers") is { } indexers)
+        if (GetPreference(config, "csharp_style_expression_bodied_indexers") is { } indexers)
         {
             result = result with { Indexers = indexers };
         }
 
-        if (Preference(config, "csharp_style_expression_bodied_accessors") is { } accessors)
+        if (GetPreference(config, "csharp_style_expression_bodied_accessors") is { } accessors)
         {
             result = result with { Accessors = accessors };
         }
@@ -179,7 +179,7 @@ internal static class RoslynExtensions
     /// <summary>
     ///     The value before any <c>:severity</c> suffix, upper-cased, or <see langword="null"/>.
     /// </summary>
-    private static string? Value(AnalyzerConfigOptions config, string key)
+    private static string? GetValue(AnalyzerConfigOptions config, string key)
     {
         if (!config.TryGetValue(key, out var raw) || string.IsNullOrWhiteSpace(raw))
         {
@@ -192,16 +192,16 @@ internal static class RoslynExtensions
         return value.Trim().ToUpperInvariant();
     }
 
-    private static int? Int(AnalyzerConfigOptions config, string key)
+    private static int? GetInt32(AnalyzerConfigOptions config, string key)
     {
-        return int.TryParse(Value(config, key), NumberStyles.Integer, CultureInfo.InvariantCulture, out int value) && value > 0
+        return int.TryParse(GetValue(config, key), NumberStyles.Integer, CultureInfo.InvariantCulture, out int value) && value > 0
             ? value
             : null;
     }
 
-    private static bool? Bool(AnalyzerConfigOptions config, string key)
+    private static bool? GetBoolean(AnalyzerConfigOptions config, string key)
     {
-        return Value(config, key) switch
+        return GetValue(config, key) switch
         {
             "TRUE" => true,
             "FALSE" => false,
@@ -209,9 +209,9 @@ internal static class RoslynExtensions
         };
     }
 
-    private static ExpressionBodyPreference? Preference(AnalyzerConfigOptions config, string key)
+    private static ExpressionBodyPreference? GetPreference(AnalyzerConfigOptions config, string key)
     {
-        return Value(config, key) switch
+        return GetValue(config, key) switch
         {
             "TRUE" => ExpressionBodyPreference.WhenPossible,
             "FALSE" => ExpressionBodyPreference.Never,
