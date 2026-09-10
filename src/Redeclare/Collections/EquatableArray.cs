@@ -29,7 +29,7 @@ internal readonly struct EquatableArray<T> : IEquatable<EquatableArray<T>>, IRea
             EquatableArray<T> other => other._items,
             T[] array => array.Length == 0 ? null : (T[])array.Clone(),
             ICollection<T> { Count: 0 } => null,
-            _ => ToArray(items),
+            _ => ToArray(items) is { Length: > 0 } copied ? copied : null,
         };
     }
 
