@@ -1,0 +1,11 @@
+<Project>
+
+  <!-- Setting RedeclarePolyfills to false leaves the polyfills in Properties/Polyfills.cs out of the build, for a
+       consumer that already declares IsExternalInit and the attributes C# needs for collection expressions and
+       interpolated string handlers. This is a .targets rather than a .props because NuGet imports a package's props
+       before the consuming project sets its own properties, and its targets after. -->
+  <PropertyGroup Condition="'$(RedeclarePolyfills)' == 'false'">
+    <DefineConstants>$(DefineConstants);REDECLARE_EXCLUDE_POLYFILLS</DefineConstants>
+  </PropertyGroup>
+
+</Project>

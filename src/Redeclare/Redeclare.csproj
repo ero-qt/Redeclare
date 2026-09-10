@@ -22,6 +22,7 @@
 
   <ItemGroup Label="Package Contents">
     <Content Include="**/*.cs" Exclude="$(DefaultItemExcludes)" Pack="true" PackagePath="contentFiles/cs/$(TargetFramework)/$(MSBuildProjectName)" BuildAction="Compile" />
+    <None Update="build/$(MSBuildProjectName).targets" Pack="true" PackagePath="" />
   </ItemGroup>
 
 </Project>
