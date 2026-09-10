@@ -1,0 +1,23 @@
+<Project>
+
+  <PropertyGroup>
+    <Description>A source-only package for Roslyn source generators: symbols in, equatable declaration records out, rendered back to C# under explicit style and language-version options.</Description>
+    <PackageTags>roslyn;source-generator;incremental-generator;codegen;source-only</PackageTags>
+
+    <DevelopmentDependency>true</DevelopmentDependency>
+    <IncludeBuildOutput>false</IncludeBuildOutput>
+
+    <!-- NU5128: Add lib or ref assemblies for the netstandard2.0 target framework -->
+    <NoWarn>$(NoWarn);NU5128</NoWarn>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <Content Include="**/*.cs"
+             Exclude="$(DefaultItemExcludes)"
+             Pack="true"
+             PackagePath="contentFiles/cs/$(TargetFramework)/$(MSBuildProjectName)"
+             BuildAction="Compile" />
+    <None Update="build/$(MSBuildProjectName).targets" Pack="true" PackagePath="" />
+  </ItemGroup>
+
+</Project>
