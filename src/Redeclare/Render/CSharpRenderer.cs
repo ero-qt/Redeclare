@@ -10,7 +10,6 @@ internal static partial class CSharpRenderer
     /// </summary>
     public static string Render(CompilationUnit unit, RenderOptions options)
     {
-        options = options.Apply(unit.Overrides);
         SourceWriter writer = new(options);
 
         if (unit.Header is { } header)
@@ -56,7 +55,6 @@ internal static partial class CSharpRenderer
             return;
         }
 
-        options = options.Apply(type.Overrides);
         string what = $"Type '{type.Name}'";
 
         RenderDocumentation(writer, type.DocumentationComment);
@@ -168,7 +166,6 @@ internal static partial class CSharpRenderer
     /// </summary>
     public static void Render(SourceWriter writer, MemberDeclaration member, TypeDeclaration containing, RenderOptions options)
     {
-        options = options.Apply(member.Overrides);
 
         switch (member)
         {
@@ -243,12 +240,11 @@ internal static partial class CSharpRenderer
             }
 
             var member = members[i];
-            var memberOptions = options.Apply(member.Overrides);
             switch (member)
             {
                 case NamespaceDeclaration { Name.Length: 0 } global:
                 {
-                    RenderTopLevel(writer, global.Members, memberOptions, fileScoped: false);
+                    RenderTopLevel(writer, global.Members, options, fileScoped: false);
                     break;
                 }
                 case NamespaceDeclaration ns when fileScoped:
@@ -256,7 +252,7 @@ internal static partial class CSharpRenderer
                     writer.BeginLine().Append("namespace ").AppendQualifiedName(ns.Name).Append(';');
                     writer.EndLine();
                     writer.BlankLine();
-                    RenderTopLevel(writer, ns.Members, memberOptions, fileScoped: false);
+                    RenderTopLevel(writer, ns.Members, options, fileScoped: false);
                     break;
                 }
                 case NamespaceDeclaration ns:
@@ -265,14 +261,14 @@ internal static partial class CSharpRenderer
                     writer.EndLine();
                     using (writer.Block())
                     {
-                        RenderTopLevel(writer, ns.Members, memberOptions, fileScoped: false);
+                        RenderTopLevel(writer, ns.Members, options, fileScoped: false);
                     }
 
                     break;
                 }
                 case TypeDeclaration type:
                 {
-                    Render(writer, type, memberOptions);
+                    Render(writer, type, options);
                     break;
                 }
                 default:

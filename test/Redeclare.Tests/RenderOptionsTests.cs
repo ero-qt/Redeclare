@@ -111,39 +111,6 @@ public sealed class RenderOptionsTests
     }
 
     [Test]
-    public void Render_OverridesOnAType_ApplyToItAndItsMembersOnly()
-    {
-        var inner = new MethodDeclaration(ReturnType: Types.Int32, Name: "Get", Body: Snippet.Expression("1"));
-        var type = new TypeDeclaration(
-            Name: "C",
-            Overrides: new RenderOverrides(Methods: ExpressionBodyPreference.WhenPossible, Qualification: Qualification.Minimal),
-            Members: [inner, new FieldDeclaration(Type: Types.List.Construct(Types.Int32), Name: "_l")]);
-        var unit = new CompilationUnit(Members: [type, new TypeDeclaration(Name: "D", Members: [inner])], Header: Header);
-
-        var text = unit.Render();
-
-        using (Assert.EnterMultipleScope())
-        {
-            Assert.That(text, Does.Contain("class C\n{\n    int Get() => 1;\n\n    List<int> _l;\n}"));
-            Assert.That(text, Does.Contain("class D\n{\n    int Get()\n    {\n        return 1;\n    }\n}"));
-        }
-    }
-
-    [Test]
-    public void Equals_DifferentOverrides_IsFalse()
-    {
-        var a = new MethodDeclaration(Name: "M", ReturnType: Types.Void);
-        var b = a with { Overrides = new RenderOverrides(Methods: ExpressionBodyPreference.WhenPossible) };
-        var c = a with { Overrides = new RenderOverrides(Methods: ExpressionBodyPreference.WhenPossible) };
-
-        using (Assert.EnterMultipleScope())
-        {
-            Assert.That(a, Is.Not.EqualTo(b));
-            Assert.That(b, Is.EqualTo(c));
-        }
-    }
-
-    [Test]
     public void Render_AccessorArrowUnderCSharp6_BecomesABlock()
     {
         var unit = new CompilationUnit(

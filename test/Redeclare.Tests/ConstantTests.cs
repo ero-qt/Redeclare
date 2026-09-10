@@ -29,6 +29,9 @@ public sealed class ConstantTests
             [Serializable]
             public class Marked
             {
+                public void G<T>(T unconstrained = default) { }
+                public void H<T>(T reference = default) where T : class { }
+                public void I<T>(T? nullableValue = default) where T : struct { }
                 public void M(int a = 4, string? b = null, Level c = Level.High, Level d = (Level)9, ConsoleColor e = default, int? f = null, long g = 3, float h = 0.25f, decimal i = 1.5m, char j = 'x', bool k = true, int l = default) { }
             }
         }
@@ -103,5 +106,25 @@ public sealed class ConstantTests
                 "true",
                 "0",
             }));
+    }
+
+    [Test]
+    public void Constant_DefaultOnATypeParameter_IsDefaultUnlessItIsKnownToBeAReference()
+    {
+        var type = Compilation.Type("Fixture.Marked");
+
+        string Default(string method)
+        {
+            var parameter = type.GetMembers(method).OfType<IMethodSymbol>().Single().Parameters[0];
+
+            return SymbolReader.FormatConstant(parameter.ExplicitDefaultValue, parameter.Type).ToString();
+        }
+
+        using (Assert.EnterMultipleScope())
+        {
+            Assert.That(Default("G"), Is.EqualTo("default"), "an unconstrained T is neither a value nor a reference");
+            Assert.That(Default("H"), Is.EqualTo("null"));
+            Assert.That(Default("I"), Is.EqualTo("null"));
+        }
     }
 }

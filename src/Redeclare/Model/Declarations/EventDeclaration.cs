@@ -17,7 +17,6 @@ namespace Redeclare;
 /// <param name="Modifiers">The modifiers other than accessibility.</param>
 /// <param name="DocumentationComment">The documentation comment.</param>
 /// <param name="Attributes">The attributes.</param>
-/// <param name="Overrides">Render options for this declaration and everything under it.</param>
 internal sealed record EventDeclaration(
     TypeReference Type,
     string Name,
@@ -26,6 +25,5 @@ internal sealed record EventDeclaration(
     Accessibility Accessibility = Accessibility.NotApplicable,
     Modifiers Modifiers = Modifiers.None,
     string? DocumentationComment = null,
-    EquatableArray<AttributeSpecification> Attributes = default,
-    RenderOverrides? Overrides = null)
-    : MemberDeclaration(DocumentationComment, Attributes, Accessibility, Modifiers, Overrides);
+    EquatableArray<AttributeSpecification> Attributes = default)
+    : MemberDeclaration(DocumentationComment, Attributes, Accessibility, Modifiers);

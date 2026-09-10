@@ -1,6 +1,5 @@
 using Microsoft.CodeAnalysis;
 using NUnit.Framework;
-using System;
 using System.Reflection.Metadata;
 
 namespace Redeclare.Tests;

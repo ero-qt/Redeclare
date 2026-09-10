@@ -1,0 +1,4 @@
+# The generator reads these through RenderOptions.From, so the generated helpers come out expression-bodied
+# here while the repository default is block bodies.
+[*.cs]
+csharp_style_expression_bodied_methods = true:silent

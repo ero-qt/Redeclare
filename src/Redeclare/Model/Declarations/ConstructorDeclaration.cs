@@ -17,7 +17,6 @@ namespace Redeclare;
 /// <param name="Modifiers">The modifiers other than accessibility. <see cref="Modifiers.Static"/> for a static constructor.</param>
 /// <param name="DocumentationComment">The documentation comment.</param>
 /// <param name="Attributes">The attributes.</param>
-/// <param name="Overrides">Render options for this declaration and everything under it.</param>
 internal sealed record ConstructorDeclaration(
     Snippet? Body,
     EquatableArray<ParameterDeclaration> Parameters = default,
@@ -25,6 +24,5 @@ internal sealed record ConstructorDeclaration(
     Accessibility Accessibility = Accessibility.NotApplicable,
     Modifiers Modifiers = Modifiers.None,
     string? DocumentationComment = null,
-    EquatableArray<AttributeSpecification> Attributes = default,
-    RenderOverrides? Overrides = null)
-    : MemberDeclaration(DocumentationComment, Attributes, Accessibility, Modifiers, Overrides);
+    EquatableArray<AttributeSpecification> Attributes = default)
+    : MemberDeclaration(DocumentationComment, Attributes, Accessibility, Modifiers);

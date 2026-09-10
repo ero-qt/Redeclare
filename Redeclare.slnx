@@ -11,8 +11,15 @@
     <Project Path="src/Redeclare/Redeclare.csproj" />
   </Folder>
 
+  <Folder Name="/samples/">
+    <File Path="samples/Generator.props" />
+    <Project Path="samples/EnumHelpers.Consumer/EnumHelpers.Consumer.csproj" />
+    <Project Path="samples/EnumHelpers.Generator/EnumHelpers.Generator.csproj" />
+  </Folder>
+
   <Folder Name="/test/">
     <File Path="test/.editorconfig" />
+    <Project Path="test/Redeclare.Samples.Tests/Redeclare.Samples.Tests.csproj" />
     <Project Path="test/Redeclare.Tests/Redeclare.Tests.csproj" />
   </Folder>
 

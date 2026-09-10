@@ -1,6 +1,5 @@
 using Microsoft.CodeAnalysis;
 using System;
-using System.Collections.Generic;
 using System.Collections.Immutable;
 using System.Globalization;
 
@@ -14,6 +13,12 @@ internal static partial class SymbolReader
     public static MethodDeclaration ReadMethod(IMethodSymbol method, ReadOptions? options = null)
     {
         options ??= ReadOptions.Default;
+
+        if (method.MethodKind == MethodKind.UserDefinedOperator && GetOperatorToken(method.Name) is null)
+        {
+            throw new NotSupportedException(
+                $"'{method.Name}' is a conversion or a checked operator, which has no typed declaration. Use RawMemberDeclaration.");
+        }
 
         string name = method.MethodKind switch
         {
@@ -140,6 +145,11 @@ internal static partial class SymbolReader
         if (field.IsRequired)
         {
             modifiers |= Modifiers.Required;
+        }
+
+        if (MentionsPointer(field))
+        {
+            modifiers |= Modifiers.Unsafe;
         }
 
         return new FieldDeclaration(
@@ -270,6 +280,61 @@ internal static partial class SymbolReader
         return isExplicit ? Accessibility.NotApplicable : member.DeclaredAccessibility;
     }
 
+    /// <summary>
+    ///     Whether the member's signature names a pointer, which is what <c>unsafe</c> is required for. A symbol
+    ///     does not report the keyword, so it is read back from the types the member mentions.
+    /// </summary>
+    private static bool MentionsPointer(ISymbol member)
+    {
+        switch (member)
+        {
+            case IFieldSymbol field:
+            {
+                return MentionsPointer(field.Type);
+            }
+            case IEventSymbol @event:
+            {
+                return MentionsPointer(@event.Type);
+            }
+            case IPropertySymbol property:
+            {
+                return MentionsPointer(property.Type) || MentionsPointer(property.Parameters);
+            }
+            case IMethodSymbol method:
+            {
+                return MentionsPointer(method.ReturnType) || MentionsPointer(method.Parameters);
+            }
+            default:
+            {
+                return false;
+            }
+        }
+    }
+
+    private static bool MentionsPointer(ImmutableArray<IParameterSymbol> parameters)
+    {
+        foreach (var parameter in parameters)
+        {
+            if (MentionsPointer(parameter.Type))
+            {
+                return true;
+            }
+        }
+
+        return false;
+    }
+
+    private static bool MentionsPointer(ITypeSymbol type)
+    {
+        return type switch
+        {
+            IPointerTypeSymbol => true,
+            IFunctionPointerTypeSymbol => true,
+            IArrayTypeSymbol array => MentionsPointer(array.ElementType),
+            _ => false,
+        };
+    }
+
     private static Accessibility ReadAccessorAccessibility(IMethodSymbol accessor, Accessibility propertyAccessibility)
     {
         var accessibility = accessor.DeclaredAccessibility;
@@ -312,6 +377,11 @@ internal static partial class SymbolReader
         if (member.IsExtern)
         {
             modifiers |= Modifiers.Extern;
+        }
+
+        if (MentionsPointer(member))
+        {
+            modifiers |= Modifiers.Unsafe;
         }
 
         if (member is IMethodSymbol method)

@@ -74,7 +74,7 @@ internal static partial class SymbolReader
             bool isNullable = type.NullableAnnotation == NullableAnnotation.Annotated
                 || type.OriginalDefinition.SpecialType == SpecialType.System_Nullable_T;
 
-            return type.IsValueType && !isNullable ? "default" : "null";
+            return type.IsReferenceType || isNullable ? "null" : "default";
         }
 
         if (type.TypeKind == TypeKind.Enum && type is INamedTypeSymbol enumType)

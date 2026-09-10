@@ -214,34 +214,6 @@ internal sealed partial record RenderOptions(
     public static RenderOptions Default { get; } = new();
 
     /// <summary>
-    ///     Returns these options with every set field of <paramref name="overrides"/> applied.
-    /// </summary>
-    public RenderOptions Apply(RenderOverrides? overrides)
-    {
-        if (overrides is null)
-        {
-            return this;
-        }
-
-        return this with
-        {
-            Version = overrides.Version ?? Version,
-            Indent = overrides.Indent ?? Indent,
-            NewLine = overrides.NewLine ?? NewLine,
-            Qualification = overrides.Qualification ?? Qualification,
-            PredefinedTypeKeywords = overrides.PredefinedTypeKeywords ?? PredefinedTypeKeywords,
-            NullableAnnotations = overrides.NullableAnnotations ?? NullableAnnotations,
-            NamespaceDeclarations = overrides.NamespaceDeclarations ?? NamespaceDeclarations,
-            Methods = overrides.Methods ?? Methods,
-            Constructors = overrides.Constructors ?? Constructors,
-            Properties = overrides.Properties ?? Properties,
-            Indexers = overrides.Indexers ?? Indexers,
-            Accessors = overrides.Accessors ?? Accessors,
-            BlankLineBetweenMembers = overrides.BlankLineBetweenMembers ?? BlankLineBetweenMembers,
-        };
-    }
-
-    /// <summary>
     ///     Gets a value indicating whether the version allows a feature introduced in <paramref name="since"/>.
     /// </summary>
     public bool Allows(CSharpVersion since)
@@ -249,35 +221,3 @@ internal sealed partial record RenderOptions(
         return Version >= since;
     }
 }
-
-/// <summary>
-///     <see cref="RenderOptions"/> with every field optional, to change how one part of the output renders.
-///     The renderer applies it over the inherited options.
-/// </summary>
-/// <param name="Version">The language version, when it differs from the inherited options.</param>
-/// <param name="Indent">One level of indentation, when it differs.</param>
-/// <param name="NewLine">The line ending, when it differs.</param>
-/// <param name="Qualification">How type references are qualified, when it differs.</param>
-/// <param name="PredefinedTypeKeywords">Whether predefined types render as keywords, when it differs.</param>
-/// <param name="NullableAnnotations">Whether reference types keep their <c>?</c>, when it differs.</param>
-/// <param name="NamespaceDeclarations">The namespace declaration style, when it differs.</param>
-/// <param name="Methods">The expression body preference for methods, when it differs.</param>
-/// <param name="Constructors">The expression body preference for constructors, when it differs.</param>
-/// <param name="Properties">The expression body preference for properties, when it differs.</param>
-/// <param name="Indexers">The expression body preference for indexers, when it differs.</param>
-/// <param name="Accessors">The expression body preference for accessors, when it differs.</param>
-/// <param name="BlankLineBetweenMembers">Whether a blank line separates members, when it differs.</param>
-internal sealed record RenderOverrides(
-    CSharpVersion? Version = null,
-    string? Indent = null,
-    string? NewLine = null,
-    Qualification? Qualification = null,
-    bool? PredefinedTypeKeywords = null,
-    bool? NullableAnnotations = null,
-    NamespaceDeclarationPreference? NamespaceDeclarations = null,
-    ExpressionBodyPreference? Methods = null,
-    ExpressionBodyPreference? Constructors = null,
-    ExpressionBodyPreference? Properties = null,
-    ExpressionBodyPreference? Indexers = null,
-    ExpressionBodyPreference? Accessors = null,
-    bool? BlankLineBetweenMembers = null);

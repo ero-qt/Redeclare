@@ -40,7 +40,6 @@ namespace Redeclare;
 /// <param name="Members">The members, in render order. An enum holds only <see cref="EnumMemberDeclaration"/>.</param>
 /// <param name="DocumentationComment">The documentation comment.</param>
 /// <param name="Attributes">The attributes.</param>
-/// <param name="Overrides">Render options for this declaration and everything under it.</param>
 internal sealed record TypeDeclaration(
     string Name,
     TypeKind TypeKind = TypeKind.Class,
@@ -57,9 +56,8 @@ internal sealed record TypeDeclaration(
     TypeDeclaration? ContainingType = null,
     EquatableArray<MemberDeclaration> Members = default,
     string? DocumentationComment = null,
-    EquatableArray<AttributeSpecification> Attributes = default,
-    RenderOverrides? Overrides = null)
-    : MemberDeclaration(DocumentationComment, Attributes, Accessibility, Modifiers, Overrides)
+    EquatableArray<AttributeSpecification> Attributes = default)
+    : MemberDeclaration(DocumentationComment, Attributes, Accessibility, Modifiers)
 {
     /// <summary>
     ///     Returns this type with members appended.

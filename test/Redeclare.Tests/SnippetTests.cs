@@ -6,6 +6,8 @@ namespace Redeclare.Tests;
 [TestFixture]
 public sealed class SnippetTests
 {
+    private const string NewLine = "\n";
+
     private static readonly NamedTypeReference _listOfInt = Types.List.Construct(Types.Int32);
 
     private static readonly RenderOptions _minimal = RenderOptions.Default with { Qualification = Qualification.Minimal };
@@ -218,6 +220,47 @@ public sealed class SnippetTests
         var snippet = Snippet.Concat(["a", "b"], name => Snippet.From($"{Types.Int32} {name:I};"));
 
         Assert.That(snippet.Render(_minimal), Is.EqualTo("int a;\nint b;"));
+    }
+
+    [Test]
+    public void From_MultiLineSnippetSplicedIntoAnIndentedLine_RepeatsThatIndentation()
+    {
+        var arms = Snippet.Concat(["Red", "Green"], name => Snippet.From($"{name} => true,"));
+
+        var snippet = Snippet.From($$"""
+            value switch
+            {
+                {{arms}}
+                _ => false,
+            }
+            """);
+
+        Assert.That(
+            snippet.Render(RenderOptions.Default),
+            Is.EqualTo(
+                "value switch" + NewLine
+                + "{" + NewLine
+                + "    Red => true," + NewLine
+                + "    Green => true," + NewLine
+                + "    _ => false," + NewLine
+                + "}"));
+    }
+
+    [Test]
+    public void From_MultiLineSnippetSplicedAfterText_IndentsFurtherLinesToTheLineStart()
+    {
+        var items = Snippet.Concat(["1", "2"], value => Snippet.From($"{value},"));
+
+        var snippet = Snippet.From($$"""
+            new[]
+            {
+                // {{items}}
+            }
+            """);
+
+        Assert.That(
+            snippet.Render(RenderOptions.Default),
+            Is.EqualTo("new[]" + NewLine + "{" + NewLine + "    // 1," + NewLine + "    2," + NewLine + "}"));
     }
 
     [Test]

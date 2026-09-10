@@ -112,4 +112,17 @@ public sealed class EquatableArrayTests
             Assert.That(a, Is.Not.EqualTo(c));
         }
     }
+
+    [Test]
+    public void ToEquatableArray_LazySequenceYieldingNothing_IsEmptyLikeDefault()
+    {
+        var none = new[] { 1 }.Where(x => x > 5).ToEquatableArray();
+
+        using (Assert.EnterMultipleScope())
+        {
+            Assert.That(none.IsEmpty, Is.True);
+            Assert.That(none, Is.EqualTo(default(EquatableArray<int>)), "a generator's cache compares these");
+            Assert.That(none.GetHashCode(), Is.EqualTo(default(EquatableArray<int>).GetHashCode()));
+        }
+    }
 }

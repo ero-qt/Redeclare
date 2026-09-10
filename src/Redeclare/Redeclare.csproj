@@ -4,25 +4,10 @@
     <TargetFramework>netstandard2.0</TargetFramework>
   </PropertyGroup>
 
-  <PropertyGroup Label="Package">
-    <Description>A source-only package for Roslyn source generators: symbols in, equatable declaration records out, rendered back to C# under explicit style and language-version options.</Description>
-    <PackageTags>roslyn;source-generator;incremental-generator;codegen;source-only</PackageTags>
-
-    <DevelopmentDependency>true</DevelopmentDependency>
-    <IncludeBuildOutput>false</IncludeBuildOutput>
-
-    <!-- NU5128 asks for a lib or ref assembly for every framework in the dependency groups. A source-only
-         package ships none on purpose: the consumer compiles the files. -->
-    <NoWarn>$(NoWarn);NU5128</NoWarn>
-  </PropertyGroup>
+  <Import Project="Package.props" />
 
   <ItemGroup>
     <PackageReference Include="Microsoft.CodeAnalysis.CSharp" PrivateAssets="all" />
-  </ItemGroup>
-
-  <ItemGroup Label="Package Contents">
-    <Content Include="**/*.cs" Exclude="$(DefaultItemExcludes)" Pack="true" PackagePath="contentFiles/cs/$(TargetFramework)/$(MSBuildProjectName)" BuildAction="Compile" />
-    <None Update="build/$(MSBuildProjectName).targets" Pack="true" PackagePath="" />
   </ItemGroup>
 
 </Project>
