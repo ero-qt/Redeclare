@@ -63,21 +63,27 @@ internal readonly ref struct SnippetHandler
     }
 
     /// <summary>
-    ///     Splices another snippet in, holes and all.
+    ///     Splices another snippet in, holes and all. A snippet of several lines repeats the indentation of the line
+    ///     it lands on, so arms or members composed into an indented position line up with the text around them.
     /// </summary>
     public void AppendFormatted(Snippet snippet)
     {
+        var lines = snippet.Lines;
         int offset = _holes.Count;
-        bool first = true;
-        foreach (var line in snippet.Lines)
+        var indent = lines.Length > 1 ? CurrentIndent() : "";
+
+        for (int i = 0; i < lines.Length; i++)
         {
-            if (!first)
+            if (i > 0)
             {
                 _text.Append('\n');
+                if (lines[i].Length > 0)
+                {
+                    _text.Append(indent);
+                }
             }
 
-            first = false;
-            _text.Append(offset == 0 ? line : Snippet.Renumber(line, offset));
+            _text.Append(offset == 0 ? lines[i] : Snippet.Renumber(lines[i], offset));
         }
 
         _holes.AddRange(snippet.Holes);
@@ -167,5 +173,25 @@ internal readonly ref struct SnippetHandler
     internal Snippet ToSnippet()
     {
         return Snippet.Build(_text.ToString(), _holes);
+    }
+
+    /// <summary>
+    ///     The whitespace the line being written starts with, which the further lines of a spliced snippet repeat.
+    /// </summary>
+    private string CurrentIndent()
+    {
+        int start = _text.Length;
+        while (start > 0 && _text[start - 1] != '\n')
+        {
+            start--;
+        }
+
+        int end = start;
+        while (end < _text.Length && (_text[end] == ' ' || _text[end] == '\t'))
+        {
+            end++;
+        }
+
+        return end == start ? "" : _text.ToString(start, end - start);
     }
 }
