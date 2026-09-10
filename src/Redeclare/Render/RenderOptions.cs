@@ -193,7 +193,7 @@ internal enum NamespaceDeclarationPreference
 /// <param name="Indexers">The expression body preference for getter-only indexers.</param>
 /// <param name="Accessors">The expression body preference for accessors.</param>
 /// <param name="BlankLineBetweenMembers">Whether a blank line separates members.</param>
-internal sealed record RenderOptions(
+internal sealed partial record RenderOptions(
     CSharpVersion Version = CSharpVersion.Latest,
     string Indent = "    ",
     string NewLine = "\n",

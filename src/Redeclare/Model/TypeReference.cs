@@ -199,14 +199,19 @@ internal sealed record TupleElement(
 ///     qualification.
 /// </summary>
 /// <param name="Name">The name.</param>
+/// <param name="HasValueTypeConstraint">
+///     Whether the parameter is constrained to value types, which makes <c>T?</c> a <c>Nullable&lt;T&gt;</c>
+///     rather than an annotation.
+/// </param>
 /// <param name="NullableAnnotation">The nullable annotation.</param>
 internal sealed record TypeParameterReference(
     string Name,
+    bool HasValueTypeConstraint = false,
     NullableAnnotation NullableAnnotation = NullableAnnotation.None)
     : TypeReference(NullableAnnotation)
 {
     /// <inheritdoc/>
-    public override bool IsValueType => false;
+    public override bool IsValueType => HasValueTypeConstraint;
 }
 
 /// <summary>
