@@ -55,8 +55,12 @@ internal static partial class CSharpRenderer
         Collect(type.TypeParameters, namespaces);
         Collect(type.EnumUnderlyingType, namespaces);
         Collect(type.ReturnType, namespaces);
+        Collect(type.Members, namespaces);
+    }
 
-        foreach (var member in type.Members)
+    private static void Collect(EquatableArray<MemberDeclaration> members, SortedSet<string> namespaces)
+    {
+        foreach (var member in members)
         {
             Collect(member.Attributes, namespaces);
             switch (member)
@@ -64,6 +68,13 @@ internal static partial class CSharpRenderer
                 case TypeDeclaration nested:
                 {
                     Collect(nested, namespaces);
+                    break;
+                }
+                case ExtensionDeclaration extension:
+                {
+                    Collect([extension.Receiver], namespaces);
+                    Collect(extension.TypeParameters, namespaces);
+                    Collect(extension.Members, namespaces);
                     break;
                 }
                 case MethodDeclaration method:

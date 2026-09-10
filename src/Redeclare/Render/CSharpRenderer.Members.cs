@@ -18,6 +18,63 @@ internal static partial class CSharpRenderer
         }
     }
 
+    /// <summary>
+    ///     Renders an extension block: <c>extension&lt;T&gt;(Receiver receiver) where ... { members }</c>. Only a
+    ///     non-generic static class may hold one, and it holds only methods and properties.
+    /// </summary>
+    private static void RenderExtension(SourceWriter writer, ExtensionDeclaration extension, TypeDeclaration containing, RenderOptions options)
+    {
+        string what = $"Extension block for '{RenderType(extension.Receiver.Type, options)}' in '{containing.Name}'";
+        Require(options, CSharpVersion.CSharp14, "an extension block", what);
+
+        if (containing.TypeKind != TypeKind.Class || (containing.Modifiers & Modifiers.Static) == 0 || !containing.TypeParameters.IsEmpty)
+        {
+            throw new RenderException($"{what}. An extension block may only appear in a non-generic static class.");
+        }
+
+        foreach (var member in extension.Members)
+        {
+            if (member is not (MethodDeclaration or PropertyDeclaration or RawMemberDeclaration))
+            {
+                throw new RenderException($"{what} holds a {member.GetType().Name}. An extension block holds methods and properties only.");
+            }
+        }
+
+        var receiver = extension.Receiver;
+        var head = writer.BeginLine().Append("extension").AppendTypeParameters(extension.TypeParameters, options).Append('(');
+        foreach (var attribute in receiver.Attributes)
+        {
+            head.Append('[').AppendAttribute(attribute, options).Append("] ");
+        }
+
+        if (receiver.IsScoped)
+        {
+            head.Append("scoped ");
+        }
+
+        head.Append(ParameterRefText(receiver.RefKind, options, what)).AppendType(receiver.Type, options);
+        if (receiver.Name.Length > 0)
+        {
+            head.Append(' ').AppendIdentifier(receiver.Name);
+        }
+
+        head.Append(')').AppendConstraints(extension.TypeParameters, options, what);
+        writer.EndLine();
+
+        using (writer.Block())
+        {
+            for (int i = 0; i < extension.Members.Length; i++)
+            {
+                if (i > 0 && options.BlankLineBetweenMembers)
+                {
+                    writer.BlankLine();
+                }
+
+                Render(writer, extension.Members[i], containing, options);
+            }
+        }
+    }
+
     private static void RenderEnumMembers(SourceWriter writer, TypeDeclaration type, RenderOptions options)
     {
         foreach (var member in type.Members)

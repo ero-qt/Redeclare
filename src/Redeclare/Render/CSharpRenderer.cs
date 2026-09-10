@@ -181,6 +181,11 @@ internal static partial class CSharpRenderer
             {
                 throw new RenderException($"Namespace '{ns.Name}' inside '{containing.Name}'. A namespace may only appear in a file or a namespace.");
             }
+            case ExtensionDeclaration extension:
+            {
+                RenderExtension(writer, extension, containing, options);
+                break;
+            }
             case MethodDeclaration method:
             {
                 RenderMethod(writer, method, containing, options);
