@@ -14,6 +14,12 @@ internal static partial class SymbolReader
     {
         options ??= ReadOptions.Default;
 
+        if (method.MethodKind == MethodKind.UserDefinedOperator && GetOperatorToken(method.Name) is null)
+        {
+            throw new NotSupportedException(
+                $"'{method.Name}' is a conversion or a checked operator, which has no typed declaration. Use RawMemberDeclaration.");
+        }
+
         string name = method.MethodKind switch
         {
             MethodKind.UserDefinedOperator => "operator " + GetOperatorToken(method.Name),
