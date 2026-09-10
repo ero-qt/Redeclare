@@ -32,7 +32,7 @@ public sealed class ConstantTests
                 public void G<T>(T unconstrained = default) { }
                 public void H<T>(T reference = default) where T : class { }
                 public void I<T>(T? nullableValue = default) where T : struct { }
-                public void M(int a = 4, string? b = null, Level c = Level.High, Level d = (Level)9, ConsoleColor e = default, int? f = null, long g = 3, float h = 0.25f, decimal i = 1.5m, char j = 'x', bool k = true, int l = default) { }
+                public void M(int a = 4, string? b = null, Level c = Level.High, Level d = (Level)9, ConsoleColor e = default, int? f = null, long g = 3, float h = 0.25f, decimal i = 1.5m, char j = 'x', bool k = true, int l = default, double m = double.NaN, float n = float.PositiveInfinity, double o = double.NegativeInfinity) { }
             }
         }
         """;
@@ -105,6 +105,9 @@ public sealed class ConstantTests
                 "'x'",
                 "true",
                 "0",
+                "double.NaN",
+                "float.PositiveInfinity",
+                "double.NegativeInfinity",
             }));
     }
 
@@ -126,5 +129,15 @@ public sealed class ConstantTests
             Assert.That(Default("H"), Is.EqualTo("null"));
             Assert.That(Default("I"), Is.EqualTo("null"));
         }
+    }
+
+    [Test]
+    public void Constant_NaN_SpellsTheTypeTheWayTheOptionsSay()
+    {
+        var parameter = Method.Parameters.Single(p => p.Name == "m");
+
+        var snippet = SymbolReader.FormatConstant(parameter.ExplicitDefaultValue, parameter.Type);
+
+        Assert.That(snippet.Render(RenderOptions.Default with { PredefinedTypeKeywords = false }), Is.EqualTo("global::System.Double.NaN"));
     }
 }

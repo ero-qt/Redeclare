@@ -96,7 +96,28 @@ internal static partial class SymbolReader
             return FormatConstant(value, nullable.TypeArguments[0]);
         }
 
+        // NaN and the infinities have no literal. The field on the type is the only way to write them, and the type is
+        // a hole so it is spelled the way the options say, as an enum member's type is.
+        if (NonFiniteMember(value) is { } nonFinite)
+        {
+            return Snippet.From($"{ReadTypeReference(type) with { NullableAnnotation = NullableAnnotation.None }}.{nonFinite}");
+        }
+
         return FormatPrimitive(value);
+    }
+
+    private static string? NonFiniteMember(object value)
+    {
+        return value switch
+        {
+            double d when double.IsNaN(d) => "NaN",
+            double d when double.IsPositiveInfinity(d) => "PositiveInfinity",
+            double d when double.IsNegativeInfinity(d) => "NegativeInfinity",
+            float f when float.IsNaN(f) => "NaN",
+            float f when float.IsPositiveInfinity(f) => "PositiveInfinity",
+            float f when float.IsNegativeInfinity(f) => "NegativeInfinity",
+            _ => null,
+        };
     }
 
     /// <summary>
