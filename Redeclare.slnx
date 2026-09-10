@@ -15,6 +15,8 @@
     <File Path="samples/Generator.props" />
     <Project Path="samples/EnumHelpers.Consumer/EnumHelpers.Consumer.csproj" />
     <Project Path="samples/EnumHelpers.Generator/EnumHelpers.Generator.csproj" />
+    <Project Path="samples/Implement.Consumer/Implement.Consumer.csproj" />
+    <Project Path="samples/Implement.Generator/Implement.Generator.csproj" />
     <Project Path="samples/Notify.Consumer/Notify.Consumer.csproj" />
     <Project Path="samples/Notify.Generator/Notify.Generator.csproj" />
   </Folder>
