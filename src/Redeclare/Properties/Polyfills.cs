@@ -13,9 +13,7 @@ namespace System.Runtime.CompilerServices;
 ///     Marks an <c>init</c> accessor. The compiler requires the type to exist and uses none of its members.
 /// </summary>
 [ExcludeFromCodeCoverage]
-internal static class IsExternalInit
-{
-}
+internal static class IsExternalInit { }
 #endif
 
 #if !NET6_0_OR_GREATER
@@ -24,9 +22,7 @@ internal static class IsExternalInit
 /// </summary>
 [AttributeUsage(AttributeTargets.Struct | AttributeTargets.Class, AllowMultiple = false, Inherited = false)]
 [ExcludeFromCodeCoverage]
-internal sealed class InterpolatedStringHandlerAttribute : Attribute
-{
-}
+internal sealed class InterpolatedStringHandlerAttribute : Attribute { }
 #endif
 
 #if !NET8_0_OR_GREATER
