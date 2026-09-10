@@ -712,4 +712,21 @@ public sealed class SymbolReaderTests
             Assert.That(text.ToString(), Does.Contain("\tLow = 0,"));
         }
     }
+
+    [Test]
+    public void ToDeclaration_PointerMembers_CarryUnsafe()
+    {
+        var pointer = Repository.Members.OfType<PropertyDeclaration>().Single(p => p.Name == "Pointer");
+        var callback = Compilation.Type("Fixture.Slot`1").ToDeclaration().Members.OfType<FieldDeclaration>()
+            .Single(f => f.Name == "Callback");
+
+        using (Assert.EnterMultipleScope())
+        {
+            Assert.That(pointer.Modifiers, Is.EqualTo(Modifiers.Unsafe), "a symbol does not report the keyword, the pointer does");
+            Assert.That(callback.Modifiers, Is.EqualTo(Modifiers.Unsafe));
+            Assert.That(
+                new CompilationUnit(Members: [new TypeDeclaration(Name: "C", Members: [pointer])], Header: Header).Render(),
+                Does.Contain("public unsafe int* Pointer"));
+        }
+    }
 }
