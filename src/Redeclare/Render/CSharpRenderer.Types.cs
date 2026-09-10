@@ -71,15 +71,23 @@ internal static partial class CSharpRenderer
             switch (options.Qualification)
             {
                 case Qualification.Global:
+                {
                     text.Append("global::").AppendQualifiedName(ns).Append('.');
                     break;
+                }
                 case Qualification.Full:
+                {
                     text.AppendQualifiedName(ns).Append('.');
                     break;
+                }
                 case Qualification.Minimal:
+                {
                     break;
+                }
                 default:
+                {
                     throw new RenderException($"Unknown qualification {options.Qualification}.");
+                }
             }
         }
 
