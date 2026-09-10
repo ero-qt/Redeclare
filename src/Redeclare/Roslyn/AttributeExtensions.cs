@@ -10,6 +10,14 @@ namespace Redeclare;
 internal static class AttributeExtensions
 {
     /// <summary>
+    ///     A typed view over the attribute's arguments.
+    /// </summary>
+    public static AttributeArguments GetArguments(this AttributeData attribute)
+    {
+        return new(attribute);
+    }
+
+    /// <summary>
     ///     Gets a value indicating whether the attribute is of <paramref name="attributeClass"/>. A constructed
     ///     generic attribute matches its definition.
     /// </summary>
