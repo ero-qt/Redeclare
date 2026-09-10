@@ -4,9 +4,6 @@ using System.Text;
 
 namespace Redeclare;
 
-/// <summary>
-///     Rendering a <see cref="TypeReference"/>: qualification, arrays, pointers, tuples, function pointers.
-/// </summary>
 internal static partial class CSharpRenderer
 {
     /// <summary>

@@ -5,7 +5,7 @@ using System.Text;
 namespace Redeclare;
 
 /// <summary>
-///     The pieces every rendering shares: identifiers, ref kinds, joins, and the version gate.
+///     Provides methods that render the model to C# text under <see cref="RenderOptions"/>.
 /// </summary>
 internal static partial class CSharpRenderer
 {
