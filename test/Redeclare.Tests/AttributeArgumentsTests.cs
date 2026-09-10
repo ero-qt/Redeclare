@@ -34,8 +34,8 @@ public sealed class AttributeArgumentsTests
     {
         using (Assert.EnterMultipleScope())
         {
-            Assert.That(Repository.HasAttribute(MarkAttribute), Is.True);
-            Assert.That(Repository.HasAttribute(TagAttribute), Is.False);
+            Assert.That(Repository.GetAttribute(MarkAttribute), Is.Not.Null);
+            Assert.That(Repository.GetAttribute(TagAttribute), Is.Null);
             Assert.That(Repository.GetAttribute(Compilation.Type("System.SerializableAttribute")), Is.Null);
             Assert.That(Extensions.GetAttributes(MarkAttribute).Count(), Is.EqualTo(2));
             Assert.That(Repository.GetAttribute(MarkAttribute)!.IsOfClass(MarkAttribute), Is.True);
@@ -43,9 +43,9 @@ public sealed class AttributeArgumentsTests
     }
 
     [Test]
-    public void HasAttribute_ConstructedGeneric_MatchesItsDefinition()
+    public void GetAttribute_ConstructedGeneric_MatchesItsDefinition()
     {
-        Assert.That(Extensions.HasAttribute(TagAttribute), Is.True);
+        Assert.That(Extensions.GetAttribute(TagAttribute), Is.Not.Null);
     }
 
     [Test]
@@ -58,7 +58,7 @@ public sealed class AttributeArgumentsTests
             Assert.That(Mark.ConstructorArgument<int>("level"), Is.EqualTo(5), "an enum reads as its underlying value too");
             Assert.That(Mark.ConstructorArray<int>("codes"), Is.EqualTo((EquatableArray<int>)[1, 2]));
             Assert.That(Mark.ConstructorArgument("missing", 9), Is.EqualTo(9));
-            Assert.That(Mark.HasConstructorArgument("Name"), Is.False, "names match exactly, as C# does");
+            Assert.That(Mark.TryGetConstructorArgument<string>("Name", out _), Is.False, "names match exactly, as C# does");
         }
     }
 
@@ -81,8 +81,8 @@ public sealed class AttributeArgumentsTests
             Assert.That(Mark.NamedArgument<TypeReference>("Kind"), Is.EqualTo(Types.List.Construct(Types.Int32)));
             Assert.That(Mark.NamedArgument<ITypeSymbol>("Kind")!.Name, Is.EqualTo("List"));
             Assert.That(Mark.NamedArgument<ITypeSymbol>("kind"), Is.Null, "names match exactly, as C# does");
-            Assert.That(Mark.HasNamedArgument("Kind"), Is.True);
-            Assert.That(Mark.HasNamedArgument("name"), Is.False, "a constructor parameter is not a named argument");
+            Assert.That(Mark.TryGetNamedArgument<TypeReference>("Kind", out _), Is.True);
+            Assert.That(Mark.TryGetNamedArgument<string>("name", out _), Is.False, "a constructor parameter is not a named argument");
             Assert.That(Mark.NamedArgument("Missing", 42), Is.EqualTo(42));
         }
     }
@@ -108,9 +108,9 @@ public sealed class AttributeArgumentsTests
         using (Assert.EnterMultipleScope())
         {
             Assert.That(positional.ConstructorArgument<LevelMirror>("level"), Is.EqualTo(LevelMirror.Low));
-            Assert.That(positional.HasConstructorArgument("level"), Is.True, "a default counts as present");
+            Assert.That(positional.TryGetConstructorArgument<LevelMirror>("level", out _), Is.True, "a default counts as present");
             Assert.That(positional.ConstructorArray<int>("codes"), Is.EqualTo((EquatableArray<int>)[7]));
-            Assert.That(positional.HasNamedArgument("Kind"), Is.False, "a property never set has no default to fall back to");
+            Assert.That(positional.TryGetNamedArgument<TypeReference>("Kind", out _), Is.False, "a property never set has no default to fall back to");
             Assert.That(positional.NamedArgument<TypeReference>("Kind"), Is.Null);
             Assert.That(named.ConstructorArgument<LevelMirror>("level"), Is.EqualTo(LevelMirror.High), "named constructor arguments resolve by parameter");
             Assert.That(named.ConstructorArray<int>("codes").IsEmpty, Is.True);

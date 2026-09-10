@@ -74,23 +74,6 @@ internal readonly struct AttributeArguments
     }
 
     /// <summary>
-    ///     Gets a value indicating whether the constructor has a parameter of this name that was passed or has a
-    ///     default.
-    /// </summary>
-    public bool HasConstructorArgument(string parameterName)
-    {
-        return TryFindConstructor(parameterName, out _, out _);
-    }
-
-    /// <summary>
-    ///     Gets a value indicating whether a property or field of this name was set.
-    /// </summary>
-    public bool HasNamedArgument(string propertyName)
-    {
-        return TryFindNamed(propertyName, out _);
-    }
-
-    /// <summary>
     ///     The constructor argument for <paramref name="parameterName"/> as <typeparamref name="T"/>: a
     ///     primitive, a <see cref="string"/>, an enum (converted from the constant's underlying value), a
     ///     <see cref="TypeReference"/> from <c>typeof</c>, or the raw <c>ITypeSymbol</c>.
