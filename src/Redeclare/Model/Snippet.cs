@@ -40,10 +40,11 @@ internal sealed record Snippet
     /// </summary>
     internal const char HoleEnd = '\u0002';
 
-    private Snippet(EquatableArray<string> lines, EquatableArray<SnippetHole> holes)
+    private Snippet(EquatableArray<string> lines, EquatableArray<SnippetHole> holes, bool isExpression = false)
     {
         Lines = lines;
         Holes = holes;
+        IsExpression = isExpression;
     }
 
     /// <summary>
@@ -72,6 +73,13 @@ internal sealed record Snippet
     public bool IsSingleLine => Lines.Length <= 1;
 
     /// <summary>
+    ///     Gets a value indicating whether the text is one expression rather than statements. A member's body
+    ///     says so through the snippet, which is what lets the renderer write <c>=&gt; text</c> where the options
+    ///     ask for an expression body and <c>{ return text; }</c> where they ask for a block.
+    /// </summary>
+    public bool IsExpression { get; }
+
+    /// <summary>
     ///     Creates a snippet from text with no holes, dedented.
     /// </summary>
     public static Snippet From(string text)
@@ -94,6 +102,30 @@ internal sealed record Snippet
     public static Snippet From(TypeReference type, HoleFormat format = HoleFormat.Inherit)
     {
         return new([HoleText(0)], [new SnippetHole(Type: type, Format: format)]);
+    }
+
+    /// <summary>
+    ///     Creates a snippet that is one expression rather than statements, for a member body that may render as
+    ///     <c>=&gt; text</c>: <c>Body: Snippet.Expression("value + 1")</c>. Where the options ask for a block
+    ///     instead, the renderer wraps it, <c>return</c> included.
+    /// </summary>
+    /// <remarks>
+    ///     The text is taken at its word. A snippet is text, not a parsed tree, so statements passed here render
+    ///     as <c>=&gt; a(); b();;</c> and the consumer's compiler reports them. An expression body with no
+    ///     expression is a <see cref="RenderException"/>.
+    /// </remarks>
+    public static Snippet Expression(string text)
+    {
+        return From(text).AsExpression();
+    }
+
+    /// <summary>
+    ///     Creates a snippet that is one expression from an interpolated string whose <see cref="TypeReference"/>
+    ///     values become holes.
+    /// </summary>
+    public static Snippet Expression(SnippetHandler handler)
+    {
+        return From(handler).AsExpression();
     }
 
     /// <summary>
@@ -132,7 +164,7 @@ internal sealed record Snippet
     }
 
     /// <summary>
-    ///     Concatenates snippets line-wise, renumbering holes.
+    ///     Concatenates snippets line-wise, renumbering holes. The result is statements.
     /// </summary>
     public static Snippet Concat(IEnumerable<Snippet> parts)
     {
@@ -163,11 +195,19 @@ internal sealed record Snippet
     }
 
     /// <summary>
-    ///     Returns this snippet with another appended on new lines.
+    ///     Returns this snippet with another appended on new lines. The result is statements.
     /// </summary>
     public Snippet Append(Snippet other)
     {
         return Concat([this, other]);
+    }
+
+    /// <summary>
+    ///     Returns this snippet marked as one expression. See <see cref="IsExpression"/>.
+    /// </summary>
+    public Snippet AsExpression()
+    {
+        return IsExpression ? this : new(Lines, Holes, isExpression: true);
     }
 
     /// <summary>
