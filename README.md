@@ -125,18 +125,36 @@ The transform is the last place a symbol appears, so an edit elsewhere in the co
 
 ## Extensions
 
-`Redeclare.Extensions` holds the predefined type references and the pipeline steps that read a consumer's style, so a generator reaches for `TypeReference.Int32` and meets each item with the options for its own file. Reference both packages, since a source-only package's files reach only the project that references it directly.
+`Redeclare.Extensions` is a second source-only package for the parts a generator would otherwise write itself. Reference both, since a source-only package's files reach only the project that references it directly.
 
 ```sh
 dotnet add package Redeclare.Extensions
 ```
 
+It holds the types C# has a keyword for, so `TypeReference.Int32` replaces constructing one. `ToPart()` reads a type as a new partial part of itself, and `WithCollectedUsings()` fills a file's usings for minimal qualification.
+
+It also meets each item with the style of the file it came from. Roslyn's `Combine` takes one provider and returns `(Left, Right)`, so this is the editorconfig and the language version reached by hand:
+
+```csharp
+var style = context.AnalyzerConfigOptionsProvider.Combine(context.ParseOptionsProvider);
+
+var enums = context.SyntaxProvider
+    .ForAttributeWithMetadataName(name, predicate, static (ctx, _) => (Info: Read(ctx), Tree: ctx.TargetNode.SyntaxTree))
+    .Combine(style)
+    .Select(static (pair, _) => pair.Left.Info with
+    {
+        Options = RenderOptions.From(pair.Right.Left.GetOptions(pair.Left.Tree)) with
+        {
+            Version = ((CSharpParseOptions)pair.Right.Right).LanguageVersion.ToCSharpVersion(),
+        },
+    });
+```
+
+and this is the same thing:
+
 ```csharp
 var enums = context.SyntaxProvider
-    .ForAttributeWithMetadataName(
-        AttributeMetadataName,
-        static (node, _) => node is EnumDeclarationSyntax,
-        static (ctx, _) => (Read(ctx), ctx.TargetNode.SyntaxTree))
+    .ForAttributeWithMetadataName(name, predicate, static (ctx, _) => (Read(ctx), ctx.TargetNode.SyntaxTree))
     .WithRenderOptions(context, static (info, options) => info with { Options = options });
 ```
 
