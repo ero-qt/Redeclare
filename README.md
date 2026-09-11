@@ -123,6 +123,23 @@ public sealed class TouchGenerator : IIncrementalGenerator
 
 The transform is the last place a symbol appears, so an edit elsewhere in the consumer's project compares equal and the output stage does not run.
 
+## Extensions
+
+`Redeclare.Extensions` holds the predefined type references and the pipeline steps that read a consumer's style, so a generator reaches for `TypeReference.Int32` and meets each item with the options for its own file. Reference both packages, since a source-only package's files reach only the project that references it directly.
+
+```sh
+dotnet add package Redeclare.Extensions
+```
+
+```csharp
+var enums = context.SyntaxProvider
+    .ForAttributeWithMetadataName(
+        AttributeMetadataName,
+        static (node, _) => node is EnumDeclarationSyntax,
+        static (ctx, _) => (Read(ctx), ctx.TargetNode.SyntaxTree))
+    .WithRenderOptions(context, static (info, options) => info with { Options = options });
+```
+
 ## Samples
 
 You can find three sample generators under `samples/`, each with a consumer project that only compiles when the generator ran:
