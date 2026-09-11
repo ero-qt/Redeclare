@@ -187,8 +187,6 @@ internal static partial class CSharpRenderer
     /// </summary>
     private static StringBuilder AppendFunctionPointer(this StringBuilder text, FunctionPointerTypeReference type, RenderOptions options)
     {
-        Require(options, CSharpVersion.CSharp9, "a function pointer type", "A type reference");
-
         text.Append("delegate*");
         if (type.CallingConvention != SignatureCallingConvention.Default)
         {

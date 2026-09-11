@@ -1,5 +1,7 @@
 using Microsoft.CodeAnalysis;
+using Microsoft.CodeAnalysis.CSharp;
 using NUnit.Framework;
+using System.Linq;
 
 namespace Redeclare.Tests;
 
@@ -104,13 +106,20 @@ public sealed class ExtensionTests
     }
 
     [Test]
-    public void Render_ExtensionBlockBelowCSharp14_Throws()
+    public void Render_ExtensionBlockBelowCSharp14_RendersAndLeavesTheErrorToTheCompiler()
     {
         var block = new ExtensionDeclaration(Receiver: new ParameterDeclaration(Type: Types.String, Name: "s"));
 
-        Assert.That(
-            () => Holding(block).Render(RenderOptions.Default with { Version = CSharpVersion.CSharp13 }),
-            Throws.TypeOf<RenderException>().With.Message.Contains("C# 14"));
+        var text = Holding(block).Render(RenderOptions.Default with { Version = CSharpVersion.CSharp13 });
+
+        using (Assert.EnterMultipleScope())
+        {
+            Assert.That(text, Does.Contain("extension(string s)"));
+            Assert.That(
+                Compiling.Compile(text, LanguageVersion.CSharp13).GetDiagnostics().Select(d => d.Id),
+                Does.Contain("CS9260"),
+                "CS9260 names the feature and the version it needs, which is the error a consumer should see");
+        }
     }
 
     [Test]

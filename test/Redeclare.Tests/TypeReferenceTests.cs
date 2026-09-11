@@ -124,19 +124,13 @@ public sealed class TypeReferenceTests
     }
 
     [Test]
-    public void RenderType_FunctionPointer_WritesTheCallingConventionAndNeedsCSharp9()
+    public void RenderType_FunctionPointer_WritesTheCallingConvention()
     {
         var pointer = new FunctionPointerTypeReference(
             ReturnType: Types.Void,
             Parameters: [new FunctionPointerParameter(Type: Types.Int32), new FunctionPointerParameter(Type: Types.Int32, RefKind: RefKind.Ref)],
             CallingConvention: SignatureCallingConvention.CDecl);
 
-        using (Assert.EnterMultipleScope())
-        {
-            Assert.That(pointer.ToString(), Is.EqualTo("delegate* unmanaged[Cdecl]<int, ref int, void>"));
-            Assert.That(
-                () => CSharpRenderer.RenderType(pointer, RenderOptions.Default with { Version = CSharpVersion.CSharp7_2 }),
-                Throws.TypeOf<RenderException>().With.Message.Contains("C# 9").And.Message.Contains("C# 7.2"));
-        }
+        Assert.That(pointer.ToString(), Is.EqualTo("delegate* unmanaged[Cdecl]<int, ref int, void>"));
     }
 }

@@ -66,38 +66,31 @@ internal static partial class CSharpRenderer
             text.Append(AccessibilityText(accessibility)).Append(' ');
         }
 
-        Append(Modifiers.File, "file", CSharpVersion.CSharp11);
-        Append(Modifiers.Const, "const", null);
-        Append(Modifiers.Static, "static", null);
-        Append(Modifiers.Extern, "extern", null);
-        Append(Modifiers.New, "new", null);
-        Append(Modifiers.Virtual, "virtual", null);
-        Append(Modifiers.Abstract, "abstract", null);
-        Append(Modifiers.Sealed, "sealed", null);
-        Append(Modifiers.Override, "override", null);
-        Append(Modifiers.ReadOnly, "readonly", null);
-        Append(Modifiers.Unsafe, "unsafe", null);
-        Append(Modifiers.Required, "required", CSharpVersion.CSharp11);
-        Append(Modifiers.Volatile, "volatile", null);
-        Append(Modifiers.Async, "async", null);
-        Append(Modifiers.Ref, "ref", CSharpVersion.CSharp7_2);
-        Append(Modifiers.Partial, "partial", null);
+        Append(Modifiers.File, "file");
+        Append(Modifiers.Const, "const");
+        Append(Modifiers.Static, "static");
+        Append(Modifiers.Extern, "extern");
+        Append(Modifiers.New, "new");
+        Append(Modifiers.Virtual, "virtual");
+        Append(Modifiers.Abstract, "abstract");
+        Append(Modifiers.Sealed, "sealed");
+        Append(Modifiers.Override, "override");
+        Append(Modifiers.ReadOnly, "readonly");
+        Append(Modifiers.Unsafe, "unsafe");
+        Append(Modifiers.Required, "required");
+        Append(Modifiers.Volatile, "volatile");
+        Append(Modifiers.Async, "async");
+        Append(Modifiers.Ref, "ref");
+        Append(Modifiers.Partial, "partial");
 
         return text;
 
-        void Append(Modifiers flag, string keyword, CSharpVersion? since)
+        void Append(Modifiers flag, string keyword)
         {
-            if ((modifiers & flag) == 0)
+            if ((modifiers & flag) != 0)
             {
-                return;
+                text.Append(keyword).Append(' ');
             }
-
-            if (since is { } version)
-            {
-                Require(options, version, $"the '{keyword}' modifier", what);
-            }
-
-            text.Append(keyword).Append(' ');
         }
     }
 
@@ -131,12 +124,10 @@ internal static partial class CSharpRenderer
             }
             case RefKind.Ref:
             {
-                Require(options, CSharpVersion.CSharp7, "a ref return", what);
                 return "ref ";
             }
             case RefKind.RefReadOnly:
             {
-                Require(options, CSharpVersion.CSharp7_2, "a ref readonly return", what);
                 return "ref readonly ";
             }
             default:
@@ -167,12 +158,10 @@ internal static partial class CSharpRenderer
             }
             case RefKind.In:
             {
-                Require(options, CSharpVersion.CSharp7_2, "an in parameter", what);
                 return "in ";
             }
             case RefKind.RefReadOnlyParameter:
             {
-                Require(options, CSharpVersion.CSharp12, "a ref readonly parameter", what);
                 return "ref readonly ";
             }
             default:
@@ -230,7 +219,6 @@ internal static partial class CSharpRenderer
 
             if (parameter.IsScoped)
             {
-                Require(options, CSharpVersion.CSharp11, "a scoped parameter", what);
                 text.Append("scoped ");
             }
 
@@ -332,7 +320,6 @@ internal static partial class CSharpRenderer
 
             if (parameter.HasUnmanagedTypeConstraint)
             {
-                Require(options, CSharpVersion.CSharp7_3, "an unmanaged constraint", what);
                 Separate().Append("unmanaged");
             }
             else if (parameter.HasValueTypeConstraint)
@@ -342,7 +329,6 @@ internal static partial class CSharpRenderer
 
             if (parameter.HasNotNullConstraint)
             {
-                Require(options, CSharpVersion.CSharp8, "a notnull constraint", what);
                 Separate().Append("notnull");
             }
 
@@ -358,7 +344,6 @@ internal static partial class CSharpRenderer
 
             if (parameter.AllowsRefLikeType)
             {
-                Require(options, CSharpVersion.CSharp13, "an 'allows ref struct' anti-constraint", what);
                 Separate().Append("allows ref struct");
             }
 
@@ -411,13 +396,5 @@ internal static partial class CSharpRenderer
         }
 
         return text;
-    }
-
-    private static void Require(RenderOptions options, CSharpVersion since, string feature, string what)
-    {
-        if (!options.Allows(since))
-        {
-            throw RenderException.Needs(feature, what, since, options.Version);
-        }
     }
 }
