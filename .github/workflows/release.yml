@@ -1,0 +1,48 @@
+name: release
+
+on:
+  push:
+    tags: ["*.*.*"]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  release:
+    runs-on: ubuntu-latest
+
+    permissions:
+      contents: write # attaches the package to the release
+      id-token: write # trusted publishing needs no stored key
+
+    steps:
+      - uses: actions/checkout@v7
+        with:
+          fetch-depth: 0 # MinVer reads the tags
+
+      - uses: actions/setup-dotnet@v6
+        with:
+          global-json-file: global.json
+
+      - name: Test
+        run: dotnet test Redeclare.slnx
+
+      - name: Pack
+        run: dotnet pack src/Redeclare/Redeclare.csproj --output artifacts/package
+
+      - name: Log in to NuGet
+        uses: NuGet/login@8d196754b4036150537f80ac539e15c2f1028841 # v1.2.0
+        id: login
+        with:
+          user: ${{ secrets.NUGET_USER }}
+
+      - name: Push
+        run: dotnet nuget push "artifacts/package/*.nupkg" --skip-duplicate --source https://api.nuget.org/v3/index.json --api-key "$NUGET_API_KEY"
+        env:
+          NUGET_API_KEY: ${{ steps.login.outputs.NUGET_API_KEY }}
+
+      - name: Release
+        run: gh release create "$GITHUB_REF_NAME" --title "v$GITHUB_REF_NAME" --generate-notes artifacts/package/*.nupkg
+        env:
+          GH_TOKEN: ${{ github.token }}
