@@ -101,10 +101,9 @@ public sealed class ImplementGenerator : IIncrementalGenerator
             foreach (var group in GroupByFile(properties, methods))
             {
                 var part = group.Key.Part with { Members = [.. group.Value] };
-                var unit = new CompilationUnit(Members: [group.Key.Namespace with { Members = [part] }], Header: FileHeader);
+                var unit = new CompilationUnit(Members: [group.Key.Namespace with { Members = [part] }], Header: FileHeader)
+                    .WithCollectedUsings();
 
-                // Minimal qualification needs the usings the file's types would resolve through.
-                unit = unit with { Usings = [.. CSharpRenderer.CollectNamespaces(unit)] };
                 spc.AddSource(unit.HintName, unit.ToSourceText(options));
             }
         });
@@ -117,17 +116,6 @@ public sealed class ImplementGenerator : IIncrementalGenerator
         TypeDeclaration Part,
         NamespaceDeclaration Namespace,
         MemberDeclaration Member);
-
-    /// <summary>
-    ///     The type as a new partial part of itself: its shape, nothing a second part may not repeat, and what it is
-    ///     declared in, which the reader filled in.
-    /// </summary>
-    private static TypeDeclaration PartOf(INamedTypeSymbol type)
-    {
-        var shape = type.ToDeclaration(ReadOptions.Shape);
-
-        return shape with { Modifiers = shape.Modifiers | Modifiers.Partial };
-    }
 
     private static Implementation ReadFromEnvironment(GeneratorAttributeSyntaxContext ctx, CancellationToken ct)
     {
@@ -147,7 +135,7 @@ public sealed class ImplementGenerator : IIncrementalGenerator
                 : null,
         };
 
-        return new(PartOf(symbol.ContainingType), symbol.ContainingNamespace.ToDeclaration(), implementation);
+        return new(symbol.ContainingType.ToPart(), symbol.ContainingNamespace.ToDeclaration(), implementation);
     }
 
     private static Implementation ReadEcho(GeneratorAttributeSyntaxContext ctx, CancellationToken ct)
@@ -168,7 +156,7 @@ public sealed class ImplementGenerator : IIncrementalGenerator
             body = body.Append("return default;");
         }
 
-        return new(PartOf(symbol.ContainingType), symbol.ContainingNamespace.ToDeclaration(), definition with { Body = body });
+        return new(symbol.ContainingType.ToPart(), symbol.ContainingNamespace.ToDeclaration(), definition with { Body = body });
     }
 
     private static Dictionary<(TypeDeclaration Part, NamespaceDeclaration Namespace), List<MemberDeclaration>> GroupByFile(
