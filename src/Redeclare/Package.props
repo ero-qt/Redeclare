@@ -3,6 +3,7 @@
   <PropertyGroup>
     <Description>A source-only package for Roslyn source generators: symbols in, equatable declaration records out, rendered back to C# under explicit style and language-version options.</Description>
     <PackageTags>roslyn;source-generator;incremental-generator;codegen;source-only</PackageTags>
+    <PackageReadmeFile>README.md</PackageReadmeFile>
 
     <DevelopmentDependency>true</DevelopmentDependency>
     <IncludeBuildOutput>false</IncludeBuildOutput>
@@ -18,6 +19,7 @@
              PackagePath="contentFiles/cs/$(TargetFramework)/$(MSBuildProjectName)"
              BuildAction="Compile" />
     <None Update="build/$(MSBuildProjectName).targets" Pack="true" PackagePath="" />
+    <None Include="$(RootPath)/README.md" Pack="true" PackagePath="" Visible="false" />
   </ItemGroup>
 
 </Project>
