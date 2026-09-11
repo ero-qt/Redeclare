@@ -347,7 +347,10 @@ internal static partial class SymbolReader
     {
         var accessibility = accessor.DeclaredAccessibility;
 
-        return accessibility == propertyAccessibility || accessor.ContainingType is { TypeKind: TypeKind.Interface }
+        // Checks that the accessor narrows the property. An explicit implementation's accessors cannot carry modifiers.
+        return accessibility == propertyAccessibility
+            || propertyAccessibility == Accessibility.NotApplicable
+            || accessor.ContainingType is { TypeKind: TypeKind.Interface }
             ? Accessibility.NotApplicable
             : accessibility;
     }
