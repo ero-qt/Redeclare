@@ -18,6 +18,7 @@
 
   <ItemGroup>
     <Compile Include="$(SrcPath)/Redeclare/**/*.cs" Exclude="$(DefaultItemExcludes)" LinkBase="Redeclare" />
+    <Compile Include="$(SrcPath)/Redeclare.Extensions/*.cs" Exclude="$(DefaultItemExcludes)" LinkBase="Redeclare.Extensions" />
   </ItemGroup>
 
 </Project>
