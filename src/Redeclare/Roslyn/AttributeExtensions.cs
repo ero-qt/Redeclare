@@ -27,14 +27,6 @@ internal static class AttributeExtensions
     }
 
     /// <summary>
-    ///     Gets a value indicating whether the symbol carries an attribute of this class.
-    /// </summary>
-    public static bool HasAttribute(this ISymbol symbol, INamedTypeSymbol attributeClass)
-    {
-        return symbol.GetAttribute(attributeClass) is not null;
-    }
-
-    /// <summary>
     ///     The first attribute of this class on the symbol, or <see langword="null"/>.
     /// </summary>
     public static AttributeData? GetAttribute(this ISymbol symbol, INamedTypeSymbol attributeClass)

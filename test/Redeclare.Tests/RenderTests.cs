@@ -524,4 +524,39 @@ public sealed class RenderTests
 
         Assert.That(() => unit.Render(), Throws.TypeOf<RenderException>().With.Message.Contains("enum members"));
     }
+
+    [Test]
+    public void Render_MultiLineConstructorInitializer_IndentsItsLaterLines()
+    {
+        var constructor = new ConstructorDeclaration(Body: Snippet.Empty, Initializer: Snippet.From("base(\n    1)"));
+        var unit = new CompilationUnit(Members: [new TypeDeclaration(Name: "C", Members: [constructor])]);
+
+        Assert.That(unit.Render(), Does.Contain("    C() : base(\n        1)\n    {"));
+    }
+
+    [Test]
+    public void Render_BlankLineInsideAnExpressionBody_StaysEmpty()
+    {
+        var method = new MethodDeclaration(ReturnType: Types.Int32, Name: "Get", Body: Snippet.Expression("a\n\n+ b"));
+        var unit = new CompilationUnit(Members: [new TypeDeclaration(Name: "C", Members: [method])]);
+
+        using (Assert.EnterMultipleScope())
+        {
+            Assert.That(
+                unit.Render(RenderOptions.Default with { Methods = ExpressionBodyPreference.Never }),
+                Does.Contain("        return a\n\n        + b;"));
+            Assert.That(
+                unit.Render(RenderOptions.Default with { Methods = ExpressionBodyPreference.WhenPossible }),
+                Does.Contain("    int Get() =>\n        a\n\n        + b;"));
+        }
+    }
+
+    [Test]
+    public void Render_ExplicitEventWithoutAccessors_Throws()
+    {
+        var @event = new EventDeclaration(Type: Types.EventHandler, Name: "Changed", ExplicitInterfaceSpecifier: Types.IDisposable);
+        var unit = new CompilationUnit(Members: [new TypeDeclaration(Name: "C", Members: [@event])]);
+
+        Assert.That(() => unit.Render(), Throws.InstanceOf<RenderException>());
+    }
 }

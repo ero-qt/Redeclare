@@ -180,11 +180,16 @@ internal static partial class SymbolReader
     }
 
     /// <summary>
-    ///     Reads a field-like event.
+    ///     Reads an event. One with its own accessors comes back with both as shape and no bodies, and an explicit
+    ///     interface implementation carries the interface and the bare name.
     /// </summary>
     public static EventDeclaration ReadEvent(IEventSymbol @event, ReadOptions? options = null)
     {
         options ??= ReadOptions.Default;
+
+        // A field-like event's accessors are the compiler's. Anything else is the event's own.
+        bool hasAccessors = @event.AddMethod is { IsImplicitlyDeclared: false } || @event.RemoveMethod is { IsImplicitlyDeclared: false };
+        var explicitInterface = @event.ExplicitInterfaceImplementations.Length > 0 ? @event.ExplicitInterfaceImplementations[0] : null;
 
         return new EventDeclaration(
             DocumentationComment: ReadDocumentation(@event, options),
@@ -192,7 +197,10 @@ internal static partial class SymbolReader
             Accessibility: ReadMemberAccessibility(@event),
             Modifiers: ReadMemberModifiers(@event),
             Type: ReadTypeReference(@event.Type),
-            Name: @event.Name);
+            Name: explicitInterface?.Name ?? @event.Name,
+            Adder: hasAccessors ? new AccessorDeclaration() : null,
+            Remover: hasAccessors ? new AccessorDeclaration() : null,
+            ExplicitInterfaceSpecifier: explicitInterface is null ? null : ReadTypeReference(explicitInterface.ContainingType));
     }
 
     /// <summary>

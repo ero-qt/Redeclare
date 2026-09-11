@@ -57,7 +57,8 @@ internal static partial class CSharpRenderer
             return text.Append("void");
         }
 
-        if (options.PredefinedTypeKeywords && Keyword(type) is { } keyword)
+        // nint and nuint are C# 9. Below that, we need to use IntPtr and UIntPtr explicitly.
+        if (options.PredefinedTypeKeywords && Keyword(type) is { } keyword && (!type.IsNativeIntegerType || options.Allows(CSharpVersion.CSharp9)))
         {
             return text.Append(keyword).AppendNullableSuffix(type, options);
         }

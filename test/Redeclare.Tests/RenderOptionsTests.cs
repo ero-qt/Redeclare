@@ -148,4 +148,22 @@ public sealed class RenderOptionsTests
             () => unit.Render(RenderOptions.Default with { Version = CSharpVersion.CSharp7_2 }),
             Throws.TypeOf<RenderException>().With.Message.Contains("C# 10").And.Message.Contains("C# 7.2"));
     }
+
+    [Test]
+    public void Render_NativeIntegerUnderCSharp8_WritesTheTypeByName()
+    {
+        var native = new NamedTypeReference(
+            Name: "IntPtr",
+            ContainingNamespace: "System",
+            TypeKind: TypeKind.Struct,
+            SpecialType: SpecialType.System_IntPtr,
+            IsNativeIntegerType: true);
+        var unit = new CompilationUnit(Members: [new TypeDeclaration(Name: "C", Members: [new FieldDeclaration(Type: native, Name: "_n")])], Header: Header);
+
+        using (Assert.EnterMultipleScope())
+        {
+            Assert.That(unit.Render(RenderOptions.Default with { Version = CSharpVersion.CSharp8 }), Does.Contain("global::System.IntPtr _n;"));
+            Assert.That(unit.Render(RenderOptions.Default with { Version = CSharpVersion.CSharp9 }), Does.Contain("nint _n;"));
+        }
+    }
 }

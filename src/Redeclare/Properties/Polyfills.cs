@@ -1,7 +1,7 @@
 // netstandard2.0 has none of these compiler markers: records and `init` need IsExternalInit, a collection
 // expression into EquatableArray<T> cannot find its builder without CollectionBuilderAttribute, and the
 // compiler only routes `Snippet.From($"...")` to its handler when InterpolatedStringHandlerAttribute marks it.
-// All three are markers with no behaviour, so shipping them costs a consumer nothing.
+// All three are markers with no behavior, so shipping them costs a consumer nothing.
 #if !REDECLARE_EXCLUDE_POLYFILLS
 
 using System.Diagnostics.CodeAnalysis;
