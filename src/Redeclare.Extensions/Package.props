@@ -1,0 +1,22 @@
+<Project>
+
+  <PropertyGroup>
+    <Description>Extensions over Redeclare: render options from a generator's providers, a partial part of a type, and the usings a file needs.</Description>
+    <PackageTags>roslyn;source-generator;incremental-generator;codegen;source-only</PackageTags>
+
+    <DevelopmentDependency>true</DevelopmentDependency>
+    <IncludeBuildOutput>false</IncludeBuildOutput>
+
+    <!-- NU5128: Add lib or ref assemblies for the netstandard2.0 target framework -->
+    <NoWarn>$(NoWarn);NU5128</NoWarn>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <Content Include="*.cs"
+             Exclude="$(DefaultItemExcludes)"
+             Pack="true"
+             PackagePath="contentFiles/cs/$(TargetFramework)/$(MSBuildProjectName)"
+             BuildAction="Compile" />
+  </ItemGroup>
+
+</Project>

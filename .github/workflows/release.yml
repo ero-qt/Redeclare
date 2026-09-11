@@ -29,7 +29,9 @@ jobs:
         run: dotnet test Redeclare.slnx
 
       - name: Pack
-        run: dotnet pack src/Redeclare/Redeclare.csproj --output artifacts/package
+        run: |
+          dotnet pack src/Redeclare/Redeclare.csproj --output artifacts/package
+          dotnet pack src/Redeclare.Extensions/Redeclare.Extensions.csproj --output artifacts/package
 
       - name: Build a consumer against the package
         run: dotnet build test/Redeclare.Consumer/Redeclare.Consumer.csproj

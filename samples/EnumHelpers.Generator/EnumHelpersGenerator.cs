@@ -1,5 +1,4 @@
 using Microsoft.CodeAnalysis;
-using Microsoft.CodeAnalysis.CSharp;
 using Microsoft.CodeAnalysis.CSharp.Syntax;
 using Microsoft.CodeAnalysis.Text;
 using Redeclare;
@@ -68,25 +67,15 @@ public sealed class EnumHelpersGenerator : IIncrementalGenerator
         context.RegisterPostInitializationOutput(
             static ctx => ctx.AddSource("EnumHelpersAttribute.g.cs", SourceText.From(Attribute, Encoding.UTF8)));
 
-        // Everything about the consumer's style in one provider. Editorconfig values are per file, so this meets
-        // each enum with the tree it was read from. Neither side is a Compilation, so neither changes on a keystroke.
-        var style = context.AnalyzerConfigOptionsProvider.Combine(context.ParseOptionsProvider);
-
-        // Symbols stop in the transform. The tree rides along only as far as the next step, where it becomes an
-        // equatable RenderOptions and is dropped.
+        // Symbols stop in the transform. The tree rides along only as far as WithRenderOptions, which reads the
+        // editorconfig for that file and the project's language version, then drops it. Neither is a Compilation,
+        // so neither changes on a keystroke.
         var enums = context.SyntaxProvider
             .ForAttributeWithMetadataName(
                 AttributeMetadataName,
                 static (node, _) => node is EnumDeclarationSyntax,
-                static (ctx, _) => (Info: Read(ctx), Tree: ctx.TargetNode.SyntaxTree))
-            .Combine(style)
-            .Select(static (pair, _) => pair.Left.Info with
-            {
-                Options = RenderOptions.From(pair.Right.Left.GetOptions(pair.Left.Tree)) with
-                {
-                    Version = ((CSharpParseOptions)pair.Right.Right).LanguageVersion.ToCSharpVersion(),
-                },
-            })
+                static (ctx, _) => (Read(ctx), ctx.TargetNode.SyntaxTree))
+            .WithRenderOptions(context, static (info, options) => info with { Options = options })
             .WithTrackingName(EnumsStep);
 
         context.RegisterSourceOutput(enums, static (spc, info) =>

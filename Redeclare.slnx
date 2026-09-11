@@ -8,6 +8,7 @@
   </Folder>
 
   <Folder Name="/src/">
+    <Project Path="src/Redeclare.Extensions/Redeclare.Extensions.csproj" />
     <Project Path="src/Redeclare/Redeclare.csproj" />
   </Folder>
 
@@ -23,6 +24,7 @@
 
   <Folder Name="/test/">
     <File Path="test/.editorconfig" />
+    <Project Path="test/Redeclare.Extensions.Tests/Redeclare.Extensions.Tests.csproj" />
     <Project Path="test/Redeclare.Samples.Tests/Redeclare.Samples.Tests.csproj" />
     <Project Path="test/Redeclare.Tests/Redeclare.Tests.csproj" />
   </Folder>
