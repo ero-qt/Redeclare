@@ -1,0 +1,8 @@
+<Project>
+
+  <!-- Shadows the repository's central versions, so the package reference can float to whatever was just packed. -->
+  <PropertyGroup>
+    <ManagePackageVersionsCentrally>false</ManagePackageVersionsCentrally>
+  </PropertyGroup>
+
+</Project>

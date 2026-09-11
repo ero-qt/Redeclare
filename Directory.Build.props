@@ -12,6 +12,8 @@
 
   <PropertyGroup Label="Identity">
     <Authors>ero</Authors>
+
+    <MinVerMinimumMajorMinor>0.1</MinVerMinimumMajorMinor>
     <RepositoryUrl>https://github.com/ero-qt/Redeclare</RepositoryUrl>
 
     <PackageLicenseExpression>MIT</PackageLicenseExpression>

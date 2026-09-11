@@ -1,0 +1,16 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <!-- Builds against the packed package rather than the sources, so the contentFiles a consumer compiles and the
+       targets a consumer imports are exercised the way NuGet delivers them. Out of the solution because it cannot
+       restore before a pack. Built by the workflows after packing. -->
+  <PropertyGroup>
+    <TargetFramework>netstandard2.0</TargetFramework>
+    <IsPackable>false</IsPackable>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <PackageReference Include="Redeclare" Version="*-*" />
+    <PackageReference Include="Microsoft.CodeAnalysis.CSharp" Version="5.9.0" PrivateAssets="all" />
+  </ItemGroup>
+
+</Project>
