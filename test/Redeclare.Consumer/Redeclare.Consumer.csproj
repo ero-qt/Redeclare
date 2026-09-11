@@ -10,6 +10,7 @@
 
   <ItemGroup>
     <PackageReference Include="Redeclare" Version="*-*" />
+    <PackageReference Include="Redeclare.Extensions" Version="*-*" />
     <PackageReference Include="Microsoft.CodeAnalysis.CSharp" Version="5.9.0" PrivateAssets="all" />
   </ItemGroup>
 
