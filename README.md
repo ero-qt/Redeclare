@@ -6,8 +6,12 @@ The records compare by value, so the incremental pipeline caches on them.
 
 ## Install
 
-```xml
-<PackageReference Include="Redeclare" Version="1.0.0" />
+```sh
+dotnet add package Redeclare
+```
+
+```powershell
+Install-Package Redeclare
 ```
 
 The package ships sources, not an assembly. They compile into your generator as `internal` types.
