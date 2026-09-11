@@ -23,7 +23,7 @@ namespace Redeclare;
 /// <param name="NullableAnnotation">
 ///     The nullable annotation. <see cref="NullableAnnotation.Annotated"/> renders a trailing <c>?</c>.
 /// </param>
-internal abstract record TypeReference(
+internal abstract partial record TypeReference(
     NullableAnnotation NullableAnnotation = NullableAnnotation.None)
 {
     /// <summary>

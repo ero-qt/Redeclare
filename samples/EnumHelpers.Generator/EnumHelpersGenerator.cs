@@ -53,14 +53,6 @@ public sealed class EnumHelpersGenerator : IIncrementalGenerator
         }
         """;
 
-    // The two framework types the helpers mention. A generator can equally read them from the compilation with
-    // GetSpecialType().ToTypeReference(); naming them here keeps the render stage free of symbols.
-    private static readonly NamedTypeReference _string =
-        new(Name: "String", ContainingNamespace: "System", SpecialType: SpecialType.System_String);
-
-    private static readonly NamedTypeReference _boolean =
-        new(Name: "Boolean", ContainingNamespace: "System", TypeKind: TypeKind.Struct, SpecialType: SpecialType.System_Boolean);
-
     /// <inheritdoc/>
     public void Initialize(IncrementalGeneratorInitializationContext context)
     {
@@ -117,7 +109,7 @@ public sealed class EnumHelpersGenerator : IIncrementalGenerator
             DocumentationComment: "<summary>The member's name without reflection, or <c>ToString()</c> for a value outside the enum.</summary>",
             Accessibility: Accessibility.Public,
             Modifiers: Modifiers.Static,
-            ReturnType: _string,
+            ReturnType: TypeReference.String,
             Name: "ToStringFast",
             Parameters: [new ParameterDeclaration(IsThis: true, Type: e, Name: "value")],
             Body: Snippet.Expression($$"""
@@ -132,7 +124,7 @@ public sealed class EnumHelpersGenerator : IIncrementalGenerator
             DocumentationComment: "<summary>Whether the value is one of the enum's members.</summary>",
             Accessibility: Accessibility.Public,
             Modifiers: Modifiers.Static,
-            ReturnType: _boolean,
+            ReturnType: TypeReference.Boolean,
             Name: "IsDefined",
             Parameters: [new ParameterDeclaration(IsThis: true, Type: e, Name: "value")],
             Body: Snippet.Expression($$"""
@@ -147,10 +139,10 @@ public sealed class EnumHelpersGenerator : IIncrementalGenerator
             DocumentationComment: "<summary>Parses a member name, case-sensitively, without reflection.</summary>",
             Accessibility: Accessibility.Public,
             Modifiers: Modifiers.Static,
-            ReturnType: _boolean,
+            ReturnType: TypeReference.Boolean,
             Name: "TryParse",
             Parameters: [
-                new ParameterDeclaration(Type: _string with { NullableAnnotation = NullableAnnotation.Annotated }, Name: "name"),
+                new ParameterDeclaration(Type: TypeReference.String with { NullableAnnotation = NullableAnnotation.Annotated }, Name: "name"),
                 new ParameterDeclaration(RefKind: RefKind.Out, Type: e, Name: "value"),
             ],
             Body: Snippet.From($$"""

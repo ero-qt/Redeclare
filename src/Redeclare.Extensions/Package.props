@@ -3,6 +3,7 @@
   <PropertyGroup>
     <Description>Extensions over Redeclare: render options from a generator's providers, a partial part of a type, and the usings a file needs.</Description>
     <PackageTags>roslyn;source-generator;incremental-generator;codegen;source-only</PackageTags>
+    <PackageReadmeFile>README.md</PackageReadmeFile>
 
     <DevelopmentDependency>true</DevelopmentDependency>
     <IncludeBuildOutput>false</IncludeBuildOutput>
@@ -12,6 +13,7 @@
   </PropertyGroup>
 
   <ItemGroup>
+    <None Include="$(RootPath)/README.md" Pack="true" PackagePath="" Visible="false" />
     <Content Include="*.cs"
              Exclude="$(DefaultItemExcludes)"
              Pack="true"
