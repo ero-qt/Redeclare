@@ -82,7 +82,6 @@ internal static partial class CSharpRenderer
             }
             case (TypeKind.Class, true):
             {
-                Require(options, CSharpVersion.CSharp9, "a record", what);
                 head.Append("record ");
                 break;
             }
@@ -93,7 +92,6 @@ internal static partial class CSharpRenderer
             }
             case (TypeKind.Struct, true):
             {
-                Require(options, CSharpVersion.CSharp10, "a record struct", what);
                 head.Append("record struct ");
                 break;
             }
@@ -117,11 +115,6 @@ internal static partial class CSharpRenderer
 
         if (!type.ParameterList.IsEmpty)
         {
-            if (!type.IsRecord)
-            {
-                Require(options, CSharpVersion.CSharp12, "a primary constructor", what);
-            }
-
             head.Append('(').AppendParameters(type.ParameterList, options, what).Append(')');
         }
 

@@ -78,7 +78,7 @@ var options = RenderOptions.From(configOptions.GetOptions(tree)) with
 };
 ```
 
-Below the version a feature needs, the renderer degrades where C# has an older spelling: a file-scoped namespace becomes a block. Where it does not, a `record struct` under C# 9 say, it throws `RenderException`.
+Below the version a feature needs, the renderer degrades where C# has an older spelling: a file-scoped namespace becomes a block, `nint` becomes `IntPtr`. Where it has none, a `record struct` under C# 9 say, the renderer writes it anyway and the consumer's compiler reports it, which it does better than a generator can.
 
 Under `Qualification.Minimal`, `CSharpRenderer.CollectNamespaces(unit)` returns the usings the file needs for `CompilationUnit.Usings`.
 

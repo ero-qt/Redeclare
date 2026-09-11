@@ -25,8 +25,6 @@ internal static partial class CSharpRenderer
     private static void RenderExtension(SourceWriter writer, ExtensionDeclaration extension, TypeDeclaration containing, RenderOptions options)
     {
         string what = $"Extension block for '{RenderType(extension.Receiver.Type, options)}' in '{containing.Name}'";
-        Require(options, CSharpVersion.CSharp14, "an extension block", what);
-
         if (containing.TypeKind != TypeKind.Class || (containing.Modifiers & Modifiers.Static) == 0 || !containing.TypeParameters.IsEmpty)
         {
             throw new RenderException($"{what}. An extension block may only appear in a non-generic static class.");
@@ -111,11 +109,6 @@ internal static partial class CSharpRenderer
         RenderDocumentation(writer, method.DocumentationComment);
         RenderAttributes(writer, method.Attributes, options);
 
-        if (method.Name == "operator >>>")
-        {
-            Require(options, CSharpVersion.CSharp11, "the unsigned right shift operator", what);
-        }
-
         var head = writer.BeginLine()
             .AppendModifiers(method.Accessibility, method.Modifiers, options, what)
             .Append(RefText(method.RefKind, options, what))
@@ -167,11 +160,6 @@ internal static partial class CSharpRenderer
         if (getter is null && setter is null)
         {
             throw new RenderException($"{what} has neither a getter nor a setter.");
-        }
-
-        if (setter is { IsInitOnly: true })
-        {
-            Require(options, CSharpVersion.CSharp9, "an init accessor", what);
         }
 
         if (property.RefKind != RefKind.None && setter is not null)
@@ -261,11 +249,6 @@ internal static partial class CSharpRenderer
     private static void RenderField(SourceWriter writer, FieldDeclaration field, TypeDeclaration containing, RenderOptions options)
     {
         string what = $"Field '{containing.Name}.{field.Name}'";
-
-        if (field.RefKind != RefKind.None)
-        {
-            Require(options, CSharpVersion.CSharp11, "a ref field", what);
-        }
 
         RenderDocumentation(writer, field.DocumentationComment);
         RenderAttributes(writer, field.Attributes, options);

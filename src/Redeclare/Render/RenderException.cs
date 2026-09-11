@@ -3,8 +3,10 @@ using System;
 namespace Redeclare;
 
 /// <summary>
-///     Thrown when a model asks for something the render options cannot express without changing its
-///     meaning, such as a <c>record struct</c> under C# 9.
+///     Thrown when a declaration is not one C# can write: an event with one accessor, a namespace inside a type, an
+///     expression body with no expression. These are mistakes in the code that built the model. A feature the
+///     target language version lacks is not one, since the consumer's compiler reports that better than a
+///     generator can, so the renderer writes it and lets the compiler say so.
 /// </summary>
 internal sealed class RenderException : Exception
 {
@@ -24,32 +26,4 @@ internal sealed class RenderException : Exception
     /// </summary>
     public RenderException(string message, Exception innerException)
         : base(message, innerException) { }
-
-    /// <summary>
-    ///     A failure naming the feature, what needed it, and the version it needs.
-    /// </summary>
-    internal static RenderException Needs(string feature, string where, CSharpVersion since, CSharpVersion actual)
-    {
-        return new(
-            $"{where} uses {feature}, which needs {Describe(since)}; the render options say {Describe(actual)}. "
-            + "Raise the language version or change the model.");
-    }
-
-    private static string Describe(CSharpVersion version)
-    {
-        if (version == CSharpVersion.Latest)
-        {
-            return "the latest C#";
-        }
-
-        int value = (int)version;
-        if (value < 100)
-        {
-            return $"C# {value}";
-        }
-
-        int major = value / 100;
-        int minor = value % 100;
-        return minor == 0 ? $"C# {major}" : $"C# {major}.{minor}";
-    }
 }

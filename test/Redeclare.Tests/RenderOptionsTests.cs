@@ -49,68 +49,6 @@ public sealed class RenderOptionsTests
     }
 
     [Test]
-    public void Render_FeatureBelowItsVersion_Throws()
-    {
-        var recordStruct = new CompilationUnit(Members: [new TypeDeclaration(TypeKind: TypeKind.Struct, IsRecord: true, Name: "P")], Header: Header);
-        var required = new CompilationUnit(
-            Members: [new TypeDeclaration(Name: "C", Members: [new FieldDeclaration(Modifiers: Modifiers.Required, Type: Types.Int32, Name: "X")])],
-            Header: Header);
-        var init = new CompilationUnit(
-            Members: [
-                new TypeDeclaration(
-                    Name: "C",
-                    Members: [
-                        new PropertyDeclaration(
-                            Type: Types.Int32,
-                            Name: "X",
-                            Getter: new AccessorDeclaration(),
-                            Setter: new AccessorDeclaration(IsInitOnly: true)),
-                    ]),
-            ],
-            Header: Header);
-        var allows = new CompilationUnit(
-            Members: [new TypeDeclaration(Name: "C", TypeParameters: [new TypeParameterDeclaration(Name: "T", AllowsRefLikeType: true)])],
-            Header: Header);
-        var c = new NamedTypeReference(Name: "C");
-        var shift = new CompilationUnit(
-            Members: [
-                new TypeDeclaration(
-                    Name: "C",
-                    Members: [
-                        new MethodDeclaration(
-                            Modifiers: Modifiers.Static,
-                            ReturnType: c,
-                            Name: "operator >>>",
-                            Parameters: [new ParameterDeclaration(Type: c, Name: "a"), new ParameterDeclaration(Type: Types.Int32, Name: "b")],
-                            Body: Snippet.Expression("a")),
-                    ]),
-            ],
-            Header: Header);
-
-        using (Assert.EnterMultipleScope())
-        {
-            Assert.That(
-                () => recordStruct.Render(RenderOptions.Default with { Version = CSharpVersion.CSharp9 }),
-                Throws.TypeOf<RenderException>().With.Message.Contains("record struct").And.Message.Contains("C# 10"));
-            Assert.That(
-                () => required.Render(RenderOptions.Default with { Version = CSharpVersion.CSharp10 }),
-                Throws.TypeOf<RenderException>().With.Message.Contains("'required'"));
-            Assert.That(
-                () => init.Render(RenderOptions.Default with { Version = CSharpVersion.CSharp8 }),
-                Throws.TypeOf<RenderException>().With.Message.Contains("init"));
-            Assert.That(
-                () => allows.Render(RenderOptions.Default with { Version = CSharpVersion.CSharp12 }),
-                Throws.TypeOf<RenderException>().With.Message.Contains("allows ref struct"));
-            Assert.That(allows.Render(), Does.Contain("class C<T> where T : allows ref struct"));
-            Assert.That(
-                () => shift.Render(RenderOptions.Default with { Version = CSharpVersion.CSharp10 }),
-                Throws.TypeOf<RenderException>().With.Message.Contains("unsigned right shift"));
-            Assert.That(shift.Render(), Does.Contain("static C operator >>>(C a, int b)"));
-            Assert.That(() => recordStruct.Render(), Throws.Nothing);
-        }
-    }
-
-    [Test]
     public void Render_AccessorArrowUnderCSharp6_BecomesABlock()
     {
         var unit = new CompilationUnit(
@@ -137,16 +75,6 @@ public sealed class RenderOptionsTests
         }
 
         Compiling.AssertCompiles(six, LanguageVersion.CSharp6);
-    }
-
-    [Test]
-    public void Render_VersionWithoutMinor_IsNamedWithoutOne()
-    {
-        var unit = new CompilationUnit(Members: [new TypeDeclaration(TypeKind: TypeKind.Struct, IsRecord: true, Name: "P")]);
-
-        Assert.That(
-            () => unit.Render(RenderOptions.Default with { Version = CSharpVersion.CSharp7_2 }),
-            Throws.TypeOf<RenderException>().With.Message.Contains("C# 10").And.Message.Contains("C# 7.2"));
     }
 
     [Test]
