@@ -1,0 +1,9 @@
+<Project>
+
+  <!-- Stops here rather than inheriting the repository's settings, so this project is what a stranger's is. -->
+  <PropertyGroup>
+    <LangVersion>latest</LangVersion>
+    <Nullable>enable</Nullable>
+  </PropertyGroup>
+
+</Project>
