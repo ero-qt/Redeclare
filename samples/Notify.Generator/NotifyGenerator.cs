@@ -71,12 +71,6 @@ public sealed class NotifyGenerator : IIncrementalGenerator
     private static readonly NamedTypeReference _equalityComparer =
         new(Name: "EqualityComparer", ContainingNamespace: "System.Collections.Generic", Arity: 1);
 
-    private static readonly NamedTypeReference _string =
-        new(Name: "String", ContainingNamespace: "System", SpecialType: SpecialType.System_String);
-
-    private static readonly NamedTypeReference _void =
-        new(Name: "Void", ContainingNamespace: "System", TypeKind: TypeKind.Struct, SpecialType: SpecialType.System_Void);
-
     /// <inheritdoc/>
     public void Initialize(IncrementalGeneratorInitializationContext context)
     {
@@ -192,9 +186,9 @@ public sealed class NotifyGenerator : IIncrementalGenerator
                 DocumentationComment: "<summary>Raises <see cref=\"PropertyChanged\"/> for <paramref name=\"propertyName\"/>.</summary>",
                 Accessibility: isSealed ? Accessibility.Private : Accessibility.Protected,
                 Modifiers: isSealed ? Modifiers.None : Modifiers.Virtual,
-                ReturnType: _void,
+                ReturnType: TypeReference.Void,
                 Name: "OnPropertyChanged",
-                Parameters: [new ParameterDeclaration(Type: _string, Name: "propertyName")],
+                Parameters: [new ParameterDeclaration(Type: TypeReference.String, Name: "propertyName")],
                 Body: Snippet.Expression($"PropertyChanged?.Invoke(this, new {_eventArgs}(propertyName))")));
         }
 
