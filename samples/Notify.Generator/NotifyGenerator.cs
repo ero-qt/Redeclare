@@ -121,13 +121,12 @@ public sealed class NotifyGenerator : IIncrementalGenerator
             return null;
         }
 
-        var shape = type.ToDeclaration(ReadOptions.Shape);
         var notifyPropertyChanged = context.SemanticModel.Compilation.GetTypeByMetadataName(InterfaceMetadataName);
         var declaration = field.ToDeclaration(new ReadOptions(IncludeAttributes: false));
 
         return new NotifyField(
             Type: new NotifyType(
-                Part: shape with { Modifiers = shape.Modifiers | Modifiers.Partial },
+                Part: type.ToPart(),
                 Namespace: type.ContainingNamespace.ToDeclaration(),
                 ImplementsInterface: notifyPropertyChanged is not null && type.Implements(notifyPropertyChanged),
                 HasEvent: type.GetMembers("PropertyChanged").Length > 0,
