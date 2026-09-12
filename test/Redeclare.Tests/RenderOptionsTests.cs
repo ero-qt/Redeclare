@@ -26,6 +26,24 @@ public sealed class RenderOptionsTests
     }
 
     [Test]
+    public void Render_AsyncTaskMethodAsABlock_ReturnsNothing()
+    {
+        var task = new NamedTypeReference(Name: "Task", ContainingNamespace: "System.Threading.Tasks");
+        var method = new MethodDeclaration(
+            Accessibility: Accessibility.Public,
+            Modifiers: Modifiers.Async,
+            ReturnType: task,
+            Name: "RunAsync",
+            Body: Snippet.Expression($"await {task}.Yield()"));
+        var unit = new CompilationUnit(Members: [new TypeDeclaration(Name: "C", Members: [method])], Header: Header);
+
+        var text = unit.Render(RenderOptions.Default with { Methods = ExpressionBodyPreference.Never });
+
+        Assert.That(text, Does.Contain("{\n        await global::System.Threading.Tasks.Task.Yield();\n    }"));
+        Compiling.AssertCompiles(text);
+    }
+
+    [Test]
     public void Render_UnderCSharp5_DegradesFileScopedNamespaceAndArrowsToBlocks()
     {
         var property = new PropertyDeclaration(

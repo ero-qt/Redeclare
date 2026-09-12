@@ -126,8 +126,11 @@ internal static partial class CSharpRenderer
             .Append(')')
             .AppendConstraints(method.TypeParameters, options, what);
 
-        bool isVoid = method.ReturnType is NamedTypeReference { SpecialType: SpecialType.System_Void };
-        RenderBody(writer, method.Body, options.Methods, CSharpVersion.CSharp6, options, returnsValue: !isVoid, what);
+        // Checks whether the body hands a value back. An `async` method returning `Task`, or any task-like type without
+        // a type argument, does not.
+        bool returnsValue = method.ReturnType is not NamedTypeReference { SpecialType: SpecialType.System_Void }
+            && !((method.Modifiers & Modifiers.Async) != 0 && method.ReturnType is NamedTypeReference { Arity: 0 });
+        RenderBody(writer, method.Body, options.Methods, CSharpVersion.CSharp6, options, returnsValue, what);
     }
 
     private static void RenderConstructor(SourceWriter writer, ConstructorDeclaration constructor, TypeDeclaration containing, RenderOptions options)
