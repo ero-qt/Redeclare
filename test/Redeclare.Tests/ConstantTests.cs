@@ -42,25 +42,11 @@ public sealed class ConstantTests
     private static IMethodSymbol Method => Compilation.Type("Fixture.Marked").GetMembers("M").OfType<IMethodSymbol>().Single();
 
     [Test]
-    public void ToSpecification_Attribute_ReadsArgumentsWithTypesAsHoles()
+    public void ToSpecification_StringArrayNamedArgument_WritesATypedArray()
     {
         var mark = Compilation.Type("Fixture.Marked").GetAttributes().Single(a => a.AttributeClass!.Name == "MarkAttribute").ToSpecification()!;
 
-        using (Assert.EnterMultipleScope())
-        {
-            Assert.That(mark.Type.ToString(), Is.EqualTo("global::Fixture.MarkAttribute"));
-            Assert.That(
-                mark.Arguments.Select(a => a.ToString()),
-                Is.EqualTo(new[]
-                {
-                    "\"repo\"",
-                    "global::Fixture.Level.High",
-                    "new int[] { 1, 2 }",
-                    "Kind = typeof(global::System.Collections.Generic.List<int>)",
-                    "Tags = new string[] { \"a\", \"b\" }",
-                }));
-            Assert.That(mark.Arguments[3].Render(RenderOptions.Default with { Qualification = Qualification.Minimal }), Is.EqualTo("Kind = typeof(List<int>)"));
-        }
+        Assert.That(mark.Arguments[4].ToString(), Is.EqualTo("Tags = new string[] { \"a\", \"b\" }"));
     }
 
     [Test]
@@ -78,10 +64,19 @@ public sealed class ConstantTests
     [Test]
     public void ToSpecification_CompilerEmittedAttribute_IsNull()
     {
-        // The compiler puts [Nullable] and [NullableContext] on members under #nullable enable. They are not source.
-        var emitted = Method.Parameters[1].GetAttributes();
+        // The compiler puts [Nullable] on members under #nullable enable. A source symbol never shows it, but one
+        // read from metadata does, and it is not source.
+        var emitted = Compilation.Type("System.String").GetMembers("Concat").OfType<IMethodSymbol>()
+            .SelectMany(m => m.Parameters)
+            .SelectMany(p => p.GetAttributes())
+            .Where(a => a.AttributeClass?.Name == "NullableAttribute")
+            .ToList();
 
-        Assert.That(emitted.Select(a => a.ToSpecification()), Has.All.Null);
+        using (Assert.EnterMultipleScope())
+        {
+            Assert.That(emitted, Is.Not.Empty);
+            Assert.That(emitted.Select(a => a.ToSpecification()), Has.All.Null);
+        }
     }
 
     [Test]

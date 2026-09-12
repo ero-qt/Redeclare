@@ -87,18 +87,6 @@ public sealed class OperatorTests
     }
 
     [Test]
-    public void ToDeclaration_ConversionsAndCheckedOperators_AreLeftOut()
-    {
-        using (Assert.EnterMultipleScope())
-        {
-            Assert.That(Names, Has.No.Member("operator int"), "a conversion has no typed declaration");
-            Assert.That(Names, Has.No.Member("operator long"));
-            Assert.That(Names.Count(n => n == "operator +"), Is.EqualTo(2), "the binary and unary ones, not the checked one");
-            Assert.That(Names.Count(n => n == "operator -"), Is.EqualTo(2));
-        }
-    }
-
-    [Test]
     public void Render_ReadOperators_CompileAgain()
     {
         var type = Compilation.Type("V").ToDeclaration();

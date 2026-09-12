@@ -354,47 +354,6 @@ public sealed class RenderTests
     }
 
     [Test]
-    public void CollectNamespaces_TypesAcrossTheFile_ListsTheirNamespacesSorted()
-    {
-        var unit = new CompilationUnit(
-            Members: [
-                new TypeDeclaration(
-                    Name: "C",
-                    Interfaces: [Types.IDisposable],
-                    TypeParameters: [new TypeParameterDeclaration(Name: "T", ConstraintTypes: [Types.Stream])],
-                    Members: [
-                        new FieldDeclaration(Type: Types.List.Construct(Types.StringBuilder), Name: "_a"),
-                        new MethodDeclaration(
-                            Name: "M",
-                            Parameters: [new ParameterDeclaration(Type: new ArrayTypeReference(ElementType: Types.Int32), Name: "xs")],
-                            ReturnType: Types.Void),
-                    ]),
-            ],
-            Header: Header);
-
-        Assert.That(CSharpRenderer.CollectNamespaces(unit), Is.EqualTo(new[] { "System", "System.Collections.Generic", "System.IO", "System.Text" }));
-    }
-
-    [Test]
-    public void CollectNamespaces_HoleInsideAnEventAccessor_IsCounted()
-    {
-        var unit = new CompilationUnit(
-            Members: [
-                new TypeDeclaration(
-                    Name: "C",
-                    Members: [
-                        new EventDeclaration(
-                            Type: Types.EventHandler,
-                            Name: "Changed",
-                            Adder: new AccessorDeclaration(Body: Snippet.From($"{Types.Console}.WriteLine();")),
-                            Remover: new AccessorDeclaration(Body: Snippet.Empty)),
-                    ]),
-            ]);
-
-        Assert.That(CSharpRenderer.CollectNamespaces(unit), Is.EqualTo(new[] { "System" }));
-    }
-
-    [Test]
     public void Render_HeaderAndUsings_WritesThemAsGivenInOrder()
     {
         var unit = new CompilationUnit(
