@@ -20,11 +20,12 @@ internal static partial class SymbolReader
             throw new ArgumentException($"'{method.Name}' is not the metadata name of an operator.", nameof(method));
         }
 
+        // An explicit implementation takes its name from the interface member, an operator's included.
         string name = method.MethodKind switch
         {
             MethodKind.UserDefinedOperator or MethodKind.Conversion => GetOperatorName(method.Name)!,
             MethodKind.ExplicitInterfaceImplementation when method.ExplicitInterfaceImplementations.Length > 0
-                => method.ExplicitInterfaceImplementations[0].Name,
+                => GetOperatorName(method.ExplicitInterfaceImplementations[0].Name) ?? method.ExplicitInterfaceImplementations[0].Name,
             _ => method.Name,
         };
 

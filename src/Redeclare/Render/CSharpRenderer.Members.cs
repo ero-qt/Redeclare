@@ -113,10 +113,18 @@ internal static partial class CSharpRenderer
             .AppendModifiers(method.Accessibility, method.Modifiers, options, what)
             .Append(RefText(method.RefKind, options, what));
 
-        // Writes a conversion as `implicit operator Target(`. The target type takes the name's place.
+        // Writes a conversion as `implicit operator Target(`. The target type takes the name's place, and an
+        // explicit implementation puts its interface between the keyword and `operator`.
         if (method.Name is "implicit operator" or "explicit operator" or "explicit operator checked")
         {
-            head.Append(method.Name).Append(' ').AppendType(method.ReturnType, options);
+            int keyword = method.Name.IndexOf(' ');
+            head.Append(method.Name, 0, keyword + 1);
+            if (method.ExplicitInterfaceSpecifier is { } explicitInterface)
+            {
+                head.AppendType(explicitInterface, options).Append('.');
+            }
+
+            head.Append(method.Name, keyword + 1, method.Name.Length - keyword - 1).Append(' ').AppendType(method.ReturnType, options);
         }
         else
         {
