@@ -110,7 +110,7 @@ internal static partial class CSharpRenderer
         RenderAttributes(writer, method.Attributes, options);
 
         var head = writer.BeginLine()
-            .AppendModifiers(method.Accessibility, method.Modifiers, options, what)
+            .AppendModifiers(method.Accessibility, method.Modifiers)
             .Append(RefText(method.RefKind, options, what));
 
         // Writes a conversion as `implicit operator Target(`. The target type takes the name's place, and an
@@ -158,7 +158,7 @@ internal static partial class CSharpRenderer
         RenderAttributes(writer, constructor.Attributes, options);
 
         var head = writer.BeginLine()
-            .AppendModifiers(constructor.Accessibility, constructor.Modifiers, options, what)
+            .AppendModifiers(constructor.Accessibility, constructor.Modifiers)
             .AppendIdentifier(containing.Name)
             .Append('(')
             .AppendParameters(constructor.Parameters, options, what)
@@ -198,7 +198,7 @@ internal static partial class CSharpRenderer
         RenderAttributes(writer, property.Attributes, options);
 
         var head = writer.BeginLine()
-            .AppendModifiers(property.Accessibility, property.Modifiers, options, what)
+            .AppendModifiers(property.Accessibility, property.Modifiers)
             .Append(RefText(property.RefKind, options, what))
             .AppendType(property.Type, options)
             .Append(' ');
@@ -274,7 +274,7 @@ internal static partial class CSharpRenderer
         RenderAttributes(writer, field.Attributes, options);
 
         writer.BeginLine()
-            .AppendModifiers(field.Accessibility, field.Modifiers, options, what)
+            .AppendModifiers(field.Accessibility, field.Modifiers)
             .Append(RefText(field.RefKind, options, what))
             .AppendType(field.Type, options)
             .Append(' ')
@@ -308,7 +308,7 @@ internal static partial class CSharpRenderer
         RenderAttributes(writer, @event.Attributes, options);
 
         var head = writer.BeginLine()
-            .AppendModifiers(@event.Accessibility, @event.Modifiers, options, what)
+            .AppendModifiers(@event.Accessibility, @event.Modifiers)
             .Append("event ")
             .AppendType(@event.Type, options)
             .Append(' ');
