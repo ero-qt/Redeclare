@@ -28,7 +28,7 @@ public sealed class WithCollectedUsingsTests
     public void WithCollectedUsings_File_TakesTheNamespacesItsTypesNeed()
     {
         Assert.That(
-            Unit.WithCollectedUsings().Usings.ToArray(),
+            Unit.WithCollectedUsings(RenderOptions.Default).Usings.ToArray(),
             Is.EqualTo(new[] { "System.IO", "System.Text" }),
             "the types contribute, and the namespace the file declares is not one of them");
     }
@@ -36,13 +36,13 @@ public sealed class WithCollectedUsingsTests
     [Test]
     public void WithCollectedUsings_TypesWithAKeyword_AreLeftOut()
     {
-        Assert.That(Unit.WithCollectedUsings().Usings, Has.No.Member("System"), "int needs no using");
+        Assert.That(Unit.WithCollectedUsings(RenderOptions.Default).Usings, Has.No.Member("System"), "int needs no using");
     }
 
     [Test]
     public void WithCollectedUsings_MinimalQualification_RendersShortNamesThatResolve()
     {
-        var text = Unit.WithCollectedUsings().Render(RenderOptions.Default with { Qualification = Qualification.Minimal });
+        var text = Unit.WithCollectedUsings(RenderOptions.Default).Render(RenderOptions.Default with { Qualification = Qualification.Minimal });
 
         using (Assert.EnterMultipleScope())
         {
@@ -57,6 +57,6 @@ public sealed class WithCollectedUsingsTests
     {
         var carried = Unit with { Usings = ["System.Linq"] };
 
-        Assert.That(carried.WithCollectedUsings().Usings, Has.No.Member("System.Linq"));
+        Assert.That(carried.WithCollectedUsings(RenderOptions.Default).Usings, Has.No.Member("System.Linq"));
     }
 }

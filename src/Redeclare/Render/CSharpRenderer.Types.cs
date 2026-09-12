@@ -57,10 +57,9 @@ internal static partial class CSharpRenderer
             return text.Append("void");
         }
 
-        // nint and nuint are C# 9. Below that, we need to use IntPtr and UIntPtr explicitly.
-        if (options.PredefinedTypeKeywords && Keyword(type) is { } keyword && (!type.IsNativeIntegerType || options.Allows(CSharpVersion.CSharp9)))
+        if (WritesKeyword(type, options))
         {
-            return text.Append(keyword).AppendNullableSuffix(type, options);
+            return text.Append(Keyword(type)).AppendNullableSuffix(type, options);
         }
 
         if (type.ContainingType is { } containing)
@@ -103,6 +102,17 @@ internal static partial class CSharpRenderer
         }
 
         return text.AppendNullableSuffix(type, options);
+    }
+
+    /// <summary>
+    ///     Whether the type is written as its keyword. <c>nint</c> and <c>nuint</c> are C# 9. Below that, we need
+    ///     to use <c>IntPtr</c> and <c>UIntPtr</c> explicitly.
+    /// </summary>
+    private static bool WritesKeyword(NamedTypeReference type, RenderOptions options)
+    {
+        return options.PredefinedTypeKeywords
+            && Keyword(type) is not null
+            && (!type.IsNativeIntegerType || options.Allows(CSharpVersion.CSharp9));
     }
 
     private static string? Keyword(NamedTypeReference type)

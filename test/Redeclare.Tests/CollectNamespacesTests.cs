@@ -19,7 +19,7 @@ public sealed class CollectNamespacesTests
 
     private static string[] Collect(params MemberDeclaration[] members)
     {
-        return [.. CSharpRenderer.CollectNamespaces(new CompilationUnit(Members: members))];
+        return [.. CSharpRenderer.CollectNamespaces(new CompilationUnit(Members: members), RenderOptions.Default)];
     }
 
     [Test]
@@ -188,6 +188,18 @@ public sealed class CollectNamespacesTests
             ]));
 
         Assert.That(namespaces, Is.Empty);
+    }
+
+    [Test]
+    public void CollectNamespaces_KeywordsTurnedOff_CountsSystem()
+    {
+        var unit = new CompilationUnit(Members: [new TypeDeclaration(Name: "C", Members: [new FieldDeclaration(Type: Types.String, Name: "_s")])]);
+        var spelledOut = RenderOptions.Default with { PredefinedTypeKeywords = false };
+
+        Assert.That(
+            CSharpRenderer.CollectNamespaces(unit, spelledOut),
+            Is.EqualTo(new[] { "System" }),
+            "String is written without its keyword, so it needs its namespace");
     }
 
     [Test]
