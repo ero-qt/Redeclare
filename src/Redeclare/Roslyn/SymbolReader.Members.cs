@@ -78,7 +78,7 @@ internal static partial class SymbolReader
             modifiers |= Modifiers.Required;
         }
 
-        // A struct member's own readonly lives on its accessors. Inside a readonly struct it is implied.
+        // Reads `readonly` off the accessors, where a struct member keeps it. Inside a `readonly` struct it is implied.
         bool accessorsReadOnly = property.GetMethod is null or { IsReadOnly: true }
             && property.SetMethod is null or { IsReadOnly: true };
         if (accessorsReadOnly && !property.IsStatic && property.ContainingType is { TypeKind: TypeKind.Struct, IsReadOnly: false })

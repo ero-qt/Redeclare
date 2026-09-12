@@ -14,8 +14,8 @@ internal static partial class SymbolReader
     /// </summary>
     public static TypeReference ReadTypeReference(ITypeSymbol type)
     {
-        // Under a nullable context every type is NotAnnotated rather than None. The two render the same, and a model built
-        // by hand says None, so reading says None too and the two compare equal.
+        // Reads `NotAnnotated` as `None`. Under a nullable context every type is `NotAnnotated`, the two render the
+        // same, and a model built by hand says `None`, so this way the two compare equal.
         var annotation = type.NullableAnnotation == NullableAnnotation.Annotated ? NullableAnnotation.Annotated : NullableAnnotation.None;
 
         return type switch

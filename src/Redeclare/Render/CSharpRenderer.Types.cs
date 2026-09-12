@@ -51,7 +51,7 @@ internal static partial class CSharpRenderer
 
     private static StringBuilder AppendNamedType(this StringBuilder text, NamedTypeReference type, RenderOptions options)
     {
-        // `void` has no other spelling. The rest follow the preference.
+        // Writes `void` as is. It has no other spelling. The rest follow the preference.
         if (type.SpecialType == SpecialType.System_Void && type.ContainingType is null)
         {
             return text.Append("void");
@@ -143,10 +143,10 @@ internal static partial class CSharpRenderer
 
     private static StringBuilder AppendArray(this StringBuilder text, ArrayTypeReference type, RenderOptions options)
     {
-        // An array of arrays is written outermost first: an int[,] whose elements are int[] is int[,][], not
-        // int[][,]. The annotations shift by one against that order, so an array of int[]? is int[]?[] and a
-        // nullable array of int[] is int[,][]?. Walk to the innermost element type, write it, then write each
-        // rank with the annotation of the layer inside it, the outermost annotation last.
+        // Writes an array of arrays outermost first. An `int[,]` whose elements are `int[]` is `int[,][]`, not
+        // `int[][,]`. The `?` marks shift by one against that order, so an array of `int[]?` is `int[]?[]` and a
+        // nullable array of `int[]` is `int[,][]?`. Walk to the innermost element type, write it, then write each
+        // rank with the `?` of the layer inside it, the outermost `?` last.
         TypeReference innermost = type;
         while (innermost is ArrayTypeReference layer)
         {
@@ -202,8 +202,8 @@ internal static partial class CSharpRenderer
         {
             text.Append(" unmanaged");
 
-            // A signature read from metadata names its convention through the enum. One read from source names it
-            // through the types inside the brackets, which is what the compiler keeps for the named conventions.
+            // Writes the calling convention. A signature read from metadata names it through the enum. One read from
+            // source names it through the types inside the brackets, which is all the compiler keeps for named conventions.
             var names = type.UnmanagedCallingConventionTypes;
             if (!names.IsEmpty)
             {

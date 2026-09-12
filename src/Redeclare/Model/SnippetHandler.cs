@@ -48,7 +48,7 @@ internal readonly ref struct SnippetHandler
     /// </summary>
     public void AppendFormatted(TypeReference type, string? format)
     {
-        // An unknown specifier is ignored, as it is in any other interpolated string.
+        // Ignores a format specifier it does not know, like any other interpolated string does.
         var holeFormat = format switch
         {
             "g" => HoleFormat.Global,
@@ -142,8 +142,8 @@ internal readonly ref struct SnippetHandler
                 _text.Append("null");
                 break;
             }
-            // A derived reference, NamedTypeReference say, matches this overload exactly and the TypeReference one
-            // only by conversion, so the compiler binds here. It is a hole all the same.
+            // Catches derived references. A `NamedTypeReference` matches this overload exactly and the `TypeReference`
+            // one only by conversion, so the compiler picks this one. It is a hole all the same.
             case TypeReference type:
             {
                 AppendFormatted(type, null);

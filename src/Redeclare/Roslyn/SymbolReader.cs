@@ -88,8 +88,8 @@ internal static partial class SymbolReader
             ? ReadTypeReference(enumType)
             : null;
 
-        // A delegate keeps its signature on the invoke method, where the symbol API puts it. The declaration holds
-        // it the way the syntax does, as a return type and a parameter list, and has no members.
+        // Reads a delegate's signature from its `Invoke` method, where the symbol API keeps it. The declaration
+        // holds it the way the syntax does, as a return type and a parameter list, and has no members.
         var invoke = type.TypeKind == TypeKind.Delegate ? type.DelegateInvokeMethod : null;
         if (invoke is not null && MentionsPointer(invoke))
         {
@@ -250,7 +250,7 @@ internal static partial class SymbolReader
             return null;
         }
 
-        // The compiler wraps the comment in <member name="...">, which is not part of what was written.
+        // Strips the `<member name="...">` wrapper the compiler adds. It is not part of what was written.
         List<string> kept = [];
         foreach (var line in Snippet.Dedent(xml!))
         {
