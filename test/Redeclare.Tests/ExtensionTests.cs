@@ -189,7 +189,7 @@ public sealed class ExtensionTests
 
         using (Assert.EnterMultipleScope())
         {
-            Assert.That(() => block.ToDeclaration(), Throws.ArgumentException.With.Message.Contains("ReadExtension"));
+            Assert.That(() => block.ToDeclaration(), Throws.ArgumentException.With.Message.Contains("ToExtensionDeclaration"));
             Assert.That(block.ToExtensionDeclaration().Receiver.Type, Is.EqualTo(Types.Int32));
             Assert.That(() => compilation.Type("E").ToExtensionDeclaration(), Throws.ArgumentException);
         }

@@ -15,6 +15,11 @@ internal static partial class SymbolReader
     {
         options ??= ReadOptions.Default;
 
+        if (method.MethodKind is MethodKind.Constructor or MethodKind.StaticConstructor)
+        {
+            throw new ArgumentException($"'{method.Name}' is a constructor. Use ToConstructorDeclaration.", nameof(method));
+        }
+
         if (method.MethodKind is MethodKind.UserDefinedOperator or MethodKind.Conversion && GetOperatorName(method.Name) is null)
         {
             throw new ArgumentException($"'{method.Name}' is not the metadata name of an operator.", nameof(method));
@@ -123,6 +128,11 @@ internal static partial class SymbolReader
     public static FieldDeclaration ReadField(IFieldSymbol field, ReadOptions? options = null)
     {
         options ??= ReadOptions.Default;
+
+        if (field.ContainingType is { TypeKind: TypeKind.Enum })
+        {
+            throw new ArgumentException($"'{field.Name}' is an enum member. Use ToEnumMemberDeclaration.", nameof(field));
+        }
 
         var modifiers = Modifiers.None;
         if (field.IsConst)

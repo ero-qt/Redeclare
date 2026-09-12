@@ -32,7 +32,7 @@ internal static partial class SymbolReader
 
         if (type.IsExtension)
         {
-            throw new ArgumentException($"'{type.Name}' is an extension block. Use ReadExtension.", nameof(type));
+            throw new ArgumentException($"'{type.Name}' is an extension block. Use ToExtensionDeclaration.", nameof(type));
         }
 
         if (type.TypeKind is not (TypeKind.Class or TypeKind.Struct or TypeKind.Interface or TypeKind.Enum or TypeKind.Delegate))
