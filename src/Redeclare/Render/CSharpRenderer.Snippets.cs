@@ -83,7 +83,7 @@ internal static partial class CSharpRenderer
     }
 
     /// <summary>
-    ///     Writes a snippet that continues the current line, an initializer say. Its further lines start at the
+    ///     Writes a snippet that continues the current line, such as an initializer. Its further lines start at the
     ///     writer's depth, so a multi-line value stays aligned under its member.
     /// </summary>
     private static void WriteInline(this SourceWriter writer, Snippet snippet, RenderOptions options)
