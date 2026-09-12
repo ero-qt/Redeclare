@@ -140,4 +140,58 @@ public sealed class ExtensionTests
 
         Assert.That(() => Holding(block).Render(), Throws.TypeOf<RenderException>().With.Message.Contains("methods and properties"));
     }
+
+    [Test]
+    public void ToDeclaration_StaticClassWithExtensionBlocks_ReadsThemAndRendersThemBack()
+    {
+        var compilation = Compiling.AssertCompiles("""
+            namespace Sample;
+
+            public static class Extensions
+            {
+                extension<T>(System.Collections.Generic.IEnumerable<T> source) where T : class
+                {
+                    public int Count2 => 0;
+                    public T? FirstOrNull() => null;
+                }
+
+                extension(string)
+                {
+                    public static string Greeting => "hi";
+                }
+
+                public static int Plain(this int x) => x;
+            }
+            """);
+        var extensions = compilation.Type("Sample.Extensions").ToDeclaration();
+        var blocks = extensions.Members.OfType<ExtensionDeclaration>().ToList();
+        var text = compilation.Type("Sample.Extensions").ToFile().Render();
+
+        using (Assert.EnterMultipleScope())
+        {
+            Assert.That(blocks, Has.Count.EqualTo(2));
+            Assert.That(blocks[0].Receiver.Name, Is.EqualTo("source"));
+            Assert.That(blocks[0].TypeParameters.Single().HasReferenceTypeConstraint, Is.True);
+            Assert.That(blocks[0].Members.Select(m => m.GetType()), Is.EqualTo(new[] { typeof(PropertyDeclaration), typeof(MethodDeclaration) }));
+            Assert.That(blocks[1].Receiver.Name, Is.Empty);
+            Assert.That(extensions.Members.OfType<MethodDeclaration>().Single().Name, Is.EqualTo("Plain"), "the implementation methods are the compiler's");
+            Assert.That(text, Does.Contain("extension<T>(global::System.Collections.Generic.IEnumerable<T> source) where T : class"));
+            Assert.That(text, Does.Contain("extension(string)"));
+            Assert.That(text, Does.Contain("public static string Greeting { get; }"));
+        }
+    }
+
+    [Test]
+    public void ToDeclaration_ExtensionBlockItself_Throws()
+    {
+        var compilation = Compiling.AssertCompiles("public static class E { extension(int x) { public int Twice => x * 2; } }");
+        var block = compilation.Type("E").GetTypeMembers().Single();
+
+        using (Assert.EnterMultipleScope())
+        {
+            Assert.That(() => block.ToDeclaration(), Throws.ArgumentException.With.Message.Contains("ReadExtension"));
+            Assert.That(block.ToExtensionDeclaration().Receiver.Type, Is.EqualTo(Types.Int32));
+            Assert.That(() => compilation.Type("E").ToExtensionDeclaration(), Throws.ArgumentException);
+        }
+    }
 }

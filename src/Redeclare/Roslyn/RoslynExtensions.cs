@@ -20,6 +20,14 @@ internal static class RoslynExtensions
     }
 
     /// <summary>
+    ///     Reads an extension block symbol into a declaration. See <see cref="SymbolReader.ReadExtension"/>.
+    /// </summary>
+    public static ExtensionDeclaration ToExtensionDeclaration(this INamedTypeSymbol extension, ReadOptions? options = null)
+    {
+        return SymbolReader.ReadExtension(extension, options);
+    }
+
+    /// <summary>
     ///     Reads a namespace symbol as a declaration with nothing in it, to put a type back where it lives:
     ///     <c>type.ContainingNamespace.ToDeclaration() with { Members = [declaration] }</c>. The global namespace
     ///     reads as one with no name, which writes no <c>namespace</c> line, so that line needs no check.

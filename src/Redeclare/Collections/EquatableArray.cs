@@ -75,7 +75,7 @@ internal readonly struct EquatableArray<T> : IEquatable<EquatableArray<T>>, IRea
     /// </summary>
     internal static EquatableArray<T> Own(T[]? items)
     {
-        // A collection expression would copy.
+        // Wraps the array as is. A collection expression would copy it.
 #pragma warning disable IDE0028
         return new(items);
 #pragma warning restore IDE0028
@@ -168,7 +168,7 @@ internal readonly struct EquatableArray<T> : IEquatable<EquatableArray<T>>, IRea
 
         var comparer = EqualityComparer<T>.Default;
 
-        // FNV-style mixing; System.HashCode is not in netstandard2.0.
+        // Mixes the hashes FNV-style. netstandard2.0 has no `System.HashCode`.
         unchecked
         {
             int hash = (int)2166136261;
@@ -260,7 +260,7 @@ internal static class EquatableArray
     /// </summary>
     public static EquatableArray<T> ToEquatableArray<T>(this IEnumerable<T> items)
     {
-        // The constructor copies a collection once with CopyTo; a collection expression would copy twice.
+        // Copies the items once, through `CopyTo`. A collection expression would copy them twice.
 #pragma warning disable IDE0028, IDE0306
         return new(items);
 #pragma warning restore IDE0028, IDE0306

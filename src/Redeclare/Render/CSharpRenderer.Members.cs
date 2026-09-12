@@ -111,16 +111,25 @@ internal static partial class CSharpRenderer
 
         var head = writer.BeginLine()
             .AppendModifiers(method.Accessibility, method.Modifiers, options, what)
-            .Append(RefText(method.RefKind, options, what))
-            .AppendType(method.ReturnType, options)
-            .Append(' ');
-        if (method.ExplicitInterfaceSpecifier is { } explicitInterface)
+            .Append(RefText(method.RefKind, options, what));
+
+        // Writes a conversion as `implicit operator Target(`. The target type takes the name's place.
+        if (method.Name is "implicit operator" or "explicit operator" or "explicit operator checked")
         {
-            head.AppendType(explicitInterface, options).Append('.');
+            head.Append(method.Name).Append(' ').AppendType(method.ReturnType, options);
+        }
+        else
+        {
+            head.AppendType(method.ReturnType, options).Append(' ');
+            if (method.ExplicitInterfaceSpecifier is { } explicitInterface)
+            {
+                head.AppendType(explicitInterface, options).Append('.');
+            }
+
+            head.AppendIdentifier(method.Name);
         }
 
-        head.AppendIdentifier(method.Name)
-            .AppendTypeParameters(method.TypeParameters, options)
+        head.AppendTypeParameters(method.TypeParameters, options)
             .Append('(')
             .AppendParameters(method.Parameters, options, what)
             .Append(')')
@@ -199,7 +208,7 @@ internal static partial class CSharpRenderer
             head.AppendIdentifier(property.Name);
         }
 
-        // A getter-only property whose getter is an expression collapses to an arrow when preferred.
+        // Writes a getter-only property with an expression getter as `=> expression` when the options prefer that.
         var preference = property.IsIndexer ? options.Indexers : options.Properties;
         if (setter is null && getter is { Body: { IsExpression: true } expression } && Arrow(expression, preference, CSharpVersion.CSharp6, options))
         {
@@ -345,8 +354,8 @@ internal static partial class CSharpRenderer
     {
         if (body is { IsExpression: true } expression)
         {
-            // Whether the text is really one expression is the compiler's to say, but an expression body with no
-            // expression can only render as a dangling arrow, so it is caught here.
+            // Catches an expression body with nothing in it, which could only render as a dangling `=>`. Whether the
+            // text is really one expression is for the compiler to say.
             if (expression.IsEmpty)
             {
                 throw new RenderException($"{what} has an expression body with no expression. Use Snippet.Empty as a block body for an empty one.");
@@ -358,14 +367,14 @@ internal static partial class CSharpRenderer
                 return;
             }
 
-            // The options want a block, so the expression becomes one: a return where there is a value.
+            // Writes the expression as a block, since the options want one. A `return` goes in front when there is a value.
             writer.EndLine();
             using (writer.Block())
             {
                 var lines = expression.Lines;
                 for (int i = 0; i < lines.Length; i++)
                 {
-                    // Dedent trims blank edges, so only an interior line is empty, and it stays empty.
+                    // Keeps an empty line empty. Dedent trims the blank edges, so only a line in the middle can be empty here.
                     if (lines[i].Length == 0)
                     {
                         writer.EndLine();

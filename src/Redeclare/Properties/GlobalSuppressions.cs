@@ -1,7 +1,7 @@
 using System.Diagnostics.CodeAnalysis;
 
-// These sources compile into the consuming generator under the consumer's analyzer settings, so a rule that
-// fires by construction is suppressed here, where every consumer inherits it.
+// Suppresses the rules these sources break on purpose. They compile inside the consumer's generator under the
+// consumer's analyzer settings, and every consumer inherits what is written here.
 [assembly: SuppressMessage(
     "Design",
     "CA1064:Exceptions should be public",

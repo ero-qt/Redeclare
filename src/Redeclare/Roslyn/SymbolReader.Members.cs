@@ -8,21 +8,21 @@ namespace Redeclare;
 internal static partial class SymbolReader
 {
     /// <summary>
-    ///     Reads an ordinary method, an explicit implementation, or a user-defined operator. The body is left null.
+    ///     Reads an ordinary method, an explicit implementation, a user-defined operator or a conversion. The body is
+    ///     left null.
     /// </summary>
     public static MethodDeclaration ReadMethod(IMethodSymbol method, ReadOptions? options = null)
     {
         options ??= ReadOptions.Default;
 
-        if (method.MethodKind == MethodKind.UserDefinedOperator && GetOperatorToken(method.Name) is null)
+        if (method.MethodKind is MethodKind.UserDefinedOperator or MethodKind.Conversion && GetOperatorName(method.Name) is null)
         {
-            throw new NotSupportedException(
-                $"'{method.Name}' is a conversion or a checked operator, which has no typed declaration. Use RawMemberDeclaration.");
+            throw new ArgumentException($"'{method.Name}' is not the metadata name of an operator.", nameof(method));
         }
 
         string name = method.MethodKind switch
         {
-            MethodKind.UserDefinedOperator => "operator " + GetOperatorToken(method.Name),
+            MethodKind.UserDefinedOperator or MethodKind.Conversion => GetOperatorName(method.Name)!,
             MethodKind.ExplicitInterfaceImplementation when method.ExplicitInterfaceImplementations.Length > 0
                 => method.ExplicitInterfaceImplementations[0].Name,
             _ => method.Name,
@@ -44,7 +44,8 @@ internal static partial class SymbolReader
     }
 
     /// <summary>
-    ///     Reads a constructor. The body is an empty block.
+    ///     Reads a constructor. The body is an empty block, or none for a <c>partial</c> definition or an <c>extern</c>
+    ///     constructor.
     /// </summary>
     public static ConstructorDeclaration ReadConstructor(IMethodSymbol constructor, ReadOptions? options = null)
     {
@@ -59,9 +60,9 @@ internal static partial class SymbolReader
             DocumentationComment: ReadDocumentation(constructor, options),
             Attributes: ReadAttributes(constructor, options),
             Accessibility: constructor.IsStatic ? Accessibility.NotApplicable : constructor.DeclaredAccessibility,
-            Modifiers: constructor.IsStatic ? Modifiers.Static : Modifiers.None,
+            Modifiers: (constructor.IsStatic ? Modifiers.Static : Modifiers.None) | (constructor.IsPartialDefinition ? Modifiers.Partial : Modifiers.None),
             Parameters: ReadParameters(constructor.Parameters, isExtension: false, options),
-            Body: Snippet.Empty);
+            Body: constructor.IsPartialDefinition || constructor.IsExtern ? null : Snippet.Empty);
     }
 
     /// <summary>
@@ -78,7 +79,7 @@ internal static partial class SymbolReader
             modifiers |= Modifiers.Required;
         }
 
-        // A struct member's own readonly lives on its accessors. Inside a readonly struct it is implied.
+        // Reads `readonly` off the accessors, where a struct member keeps it. Inside a `readonly` struct it is implied.
         bool accessorsReadOnly = property.GetMethod is null or { IsReadOnly: true }
             && property.SetMethod is null or { IsReadOnly: true };
         if (accessorsReadOnly && !property.IsStatic && property.ContainingType is { TypeKind: TypeKind.Struct, IsReadOnly: false })
@@ -252,7 +253,6 @@ internal static partial class SymbolReader
                 constraintTypes[j] = ReadTypeReference(parameter.ConstraintTypes[j]);
             }
 
-            // ITypeParameterSymbol.AllowsRefLikeType is a Roslyn 4.10 API, above the 4.8 these sources compile against.
             result[i] = new TypeParameterDeclaration(
                 Name: parameter.Name,
                 Variance: parameter.Variance,
@@ -262,6 +262,7 @@ internal static partial class SymbolReader
                 HasUnmanagedTypeConstraint: parameter.HasUnmanagedTypeConstraint,
                 HasNotNullConstraint: parameter.HasNotNullConstraint,
                 HasConstructorConstraint: parameter.HasConstructorConstraint,
+                AllowsRefLikeType: parameter.AllowsRefLikeType,
                 ConstraintTypes: constraintTypes,
                 Attributes: ReadAttributes(parameter, options));
         }
@@ -358,6 +359,17 @@ internal static partial class SymbolReader
             : accessibility;
     }
 
+    private static bool IsPartialDefinition(ISymbol member)
+    {
+        return member switch
+        {
+            IMethodSymbol method => method.IsPartialDefinition,
+            IPropertySymbol property => property.IsPartialDefinition,
+            IEventSymbol @event => @event.IsPartialDefinition,
+            _ => false,
+        };
+    }
+
     private static Modifiers ReadMemberModifiers(ISymbol member)
     {
         var modifiers = Modifiers.None;
@@ -398,6 +410,11 @@ internal static partial class SymbolReader
             modifiers |= Modifiers.Unsafe;
         }
 
+        if (IsPartialDefinition(member))
+        {
+            modifiers |= Modifiers.Partial;
+        }
+
         if (member is IMethodSymbol method)
         {
             if (method.IsAsync)
@@ -408,11 +425,6 @@ internal static partial class SymbolReader
             if (method.IsReadOnly && !method.IsStatic && method.ContainingType is { TypeKind: TypeKind.Struct, IsReadOnly: false })
             {
                 modifiers |= Modifiers.ReadOnly;
-            }
-
-            if (method.IsPartialDefinition)
-            {
-                modifiers |= Modifiers.Partial;
             }
         }
 

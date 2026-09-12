@@ -21,7 +21,7 @@ internal static partial class CSharpRenderer
             {
                 text.Append(options.NewLine);
 
-                // A later line continues the line the snippet started on, so it repeats that line's indentation.
+                // Repeats the indentation of the line the snippet started on. Every later line continues that line.
                 if (lines[i].Length > 0)
                 {
                     for (int j = indentStart; j < indentEnd; j++)

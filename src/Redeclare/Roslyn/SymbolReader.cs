@@ -30,6 +30,11 @@ internal static partial class SymbolReader
     {
         options ??= ReadOptions.Default;
 
+        if (type.IsExtension)
+        {
+            throw new ArgumentException($"'{type.Name}' is an extension block. Use ReadExtension.", nameof(type));
+        }
+
         if (type.TypeKind is not (TypeKind.Class or TypeKind.Struct or TypeKind.Interface or TypeKind.Enum or TypeKind.Delegate))
         {
             throw new NotSupportedException(
@@ -88,8 +93,8 @@ internal static partial class SymbolReader
             ? ReadTypeReference(enumType)
             : null;
 
-        // A delegate keeps its signature on the invoke method, where the symbol API puts it. The declaration holds
-        // it the way the syntax does, as a return type and a parameter list, and has no members.
+        // Reads a delegate's signature from its `Invoke` method, where the symbol API keeps it. The declaration
+        // holds it the way the syntax does, as a return type and a parameter list, and has no members.
         var invoke = type.TypeKind == TypeKind.Delegate ? type.DelegateInvokeMethod : null;
         if (invoke is not null && MentionsPointer(invoke))
         {
@@ -113,6 +118,24 @@ internal static partial class SymbolReader
             ReturnType: invoke is null ? null : ReadTypeReference(invoke.ReturnType),
             RefKind: invoke?.RefKind ?? RefKind.None,
             Members: options.IncludeMembers && invoke is null ? ReadMembers(type, options) : default);
+    }
+
+    /// <summary>
+    ///     Reads an extension block: its receiver, its type parameters and its members.
+    /// </summary>
+    public static ExtensionDeclaration ReadExtension(INamedTypeSymbol extension, ReadOptions? options = null)
+    {
+        options ??= ReadOptions.Default;
+
+        if (!extension.IsExtension || extension.ExtensionParameter is not { } receiver)
+        {
+            throw new ArgumentException($"'{extension.Name}' is not an extension block.", nameof(extension));
+        }
+
+        return new ExtensionDeclaration(
+            Receiver: ReadParameter(receiver, isThis: false, options),
+            TypeParameters: ReadTypeParameters(extension.TypeParameters, options),
+            Members: options.IncludeMembers ? ReadMembers(extension, options) : default);
     }
 
     /// <summary>
@@ -157,6 +180,11 @@ internal static partial class SymbolReader
 
             switch (member)
             {
+                case INamedTypeSymbol { IsExtension: true } extension:
+                {
+                    members.Add(ReadExtension(extension, options));
+                    break;
+                }
                 case INamedTypeSymbol
                 {
                     TypeKind: TypeKind.Class or TypeKind.Struct or TypeKind.Interface or TypeKind.Enum or TypeKind.Delegate,
@@ -179,7 +207,7 @@ internal static partial class SymbolReader
                     members.Add(ReadMethod(method, options));
                     break;
                 }
-                case IMethodSymbol { MethodKind: MethodKind.UserDefinedOperator } @operator when GetOperatorToken(@operator.Name) is not null:
+                case IMethodSymbol { MethodKind: MethodKind.UserDefinedOperator or MethodKind.Conversion } @operator:
                 {
                     members.Add(ReadMethod(@operator, options));
                     break;
@@ -250,7 +278,7 @@ internal static partial class SymbolReader
             return null;
         }
 
-        // The compiler wraps the comment in <member name="...">, which is not part of what was written.
+        // Strips the `<member name="...">` wrapper the compiler adds. It is not part of what was written.
         List<string> kept = [];
         foreach (var line in Snippet.Dedent(xml!))
         {

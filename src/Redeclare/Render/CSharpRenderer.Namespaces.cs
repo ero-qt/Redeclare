@@ -57,8 +57,8 @@ internal static partial class CSharpRenderer
         Collect(type.ReturnType, namespaces, options);
         Collect(type.Members, namespaces, options);
 
-        // The renderer writes the containing chain as partial parts, and a part repeats its type parameters,
-        // so their constraints and attributes are in the file even though nothing else of the outer type is.
+        // Walks the type parameters of each containing type. The renderer writes the containing types as `partial`
+        // parts that repeat their type parameters, so their constraints and attributes end up in the file too.
         for (var outer = type.ContainingType; outer is not null; outer = outer.ContainingType)
         {
             Collect(outer.TypeParameters, namespaces, options);

@@ -145,6 +145,20 @@ public sealed class SymbolReaderTests
 
             public unsafe delegate void Poke(int* target);
 
+            public static class Holder<T> where T : allows ref struct { }
+
+            public partial class Parts
+            {
+                public partial Parts();
+                public partial Parts() { }
+                public partial int Size { get; set; }
+                public partial int Size { get => 0; set { } }
+                public partial event EventHandler Tick;
+                public partial event EventHandler Tick { add { } remove { } }
+                public partial void Run();
+                public partial void Run() { }
+            }
+
             public partial class Marked<[Mark("param")] T> { }
 
             public sealed class ClashAttribute : Attribute
@@ -367,7 +381,7 @@ public sealed class SymbolReaderTests
             Assert.That(methods.Count(m => m.Name == "OnLoaded"), Is.EqualTo(1), "a partial pair is one symbol");
             Assert.That(methods.Single(m => m.Name == "OnLoaded").Modifiers, Is.EqualTo(Modifiers.Partial));
             Assert.That(methods.Single(m => m.Name == "operator +").Modifiers, Is.EqualTo(Modifiers.Static));
-            Assert.That(methods.Any(m => m.Name.Contains("implicit", System.StringComparison.Ordinal)), Is.False, "conversions have no typed declaration");
+            Assert.That(methods.Single(m => m.Name == "implicit operator").ReturnType, Is.EqualTo(Types.Int32));
         }
     }
 
@@ -805,6 +819,34 @@ public sealed class SymbolReaderTests
         {
             Assert.That(poke.ToDeclaration().Modifiers, Is.EqualTo(Modifiers.Unsafe));
             Assert.That(poke.ToFile().Render(), Does.Contain("public unsafe delegate void Poke(int* target);"));
+        }
+    }
+
+    [Test]
+    public void ToDeclaration_AllowsRefStruct_IsRead()
+    {
+        var holder = Compilation.Type("Fixture.Holder`1");
+
+        using (Assert.EnterMultipleScope())
+        {
+            Assert.That(holder.ToDeclaration().TypeParameters.Single().AllowsRefLikeType, Is.True);
+            Assert.That(holder.ToFile().Render(), Does.Contain("where T : allows ref struct"));
+        }
+    }
+
+    [Test]
+    public void ToDeclaration_PartialMembers_ReadPartialAndRenderTheDefinitions()
+    {
+        var parts = Compilation.Type("Fixture.Parts");
+        var text = parts.ToFile().Render();
+
+        using (Assert.EnterMultipleScope())
+        {
+            Assert.That(parts.ToDeclaration().Members.Select(m => m.Modifiers), Has.All.EqualTo(Modifiers.Partial));
+            Assert.That(text, Does.Contain("public partial Parts();"));
+            Assert.That(text, Does.Contain("public partial int Size { get; set; }"));
+            Assert.That(text, Does.Contain("public partial event global::System.EventHandler Tick;"));
+            Assert.That(text, Does.Contain("public partial void Run();"));
         }
     }
 

@@ -8,7 +8,7 @@ namespace Redeclare;
 /// <remarks>
 ///     <paramref name="Body"/> is required because a constructor almost always has one. Pass
 ///     <see cref="Snippet.Empty"/> for an empty block. <see langword="null"/> renders <c>;</c>, which only an
-///     <c>extern</c> constructor may have.
+///     <c>extern</c> constructor or a <c>partial</c> definition may have.
 /// </remarks>
 /// <param name="Body">The body, statements or one expression, or <see langword="null"/> for none.</param>
 /// <param name="Parameters">The parameters.</param>

@@ -4,7 +4,7 @@ namespace Redeclare;
 
 /// <summary>
 ///     Represents verbatim member text, dedented and re-indented like a body, with holes filled. The escape
-///     hatch for conversion operators, finalizers, and anything else without a typed declaration.
+///     hatch for finalizers and anything else without a typed declaration.
 /// </summary>
 /// <param name="Text">The text.</param>
 /// <param name="DocumentationComment">The documentation comment.</param>
