@@ -143,6 +143,8 @@ public sealed class SymbolReaderTests
                 int IWatched.Size { get; set; }
             }
 
+            public unsafe delegate void Poke(int* target);
+
             public partial class Marked<[Mark("param")] T> { }
 
             public sealed class ClashAttribute : Attribute
@@ -792,6 +794,18 @@ public sealed class SymbolReaderTests
         var tryParse = Repository.Members.OfType<MethodDeclaration>().Single(m => m.Name == "TryParse");
 
         Assert.That(tryParse.Parameters[1].IsScoped, Is.False, "the symbol reports the effective scope, which every out parameter has");
+    }
+
+    [Test]
+    public void ToDeclaration_DelegateWithAPointer_IsUnsafe()
+    {
+        var poke = Compilation.Type("Fixture.Poke");
+
+        using (Assert.EnterMultipleScope())
+        {
+            Assert.That(poke.ToDeclaration().Modifiers, Is.EqualTo(Modifiers.Unsafe));
+            Assert.That(poke.ToFile().Render(), Does.Contain("public unsafe delegate void Poke(int* target);"));
+        }
     }
 
     [Test]
