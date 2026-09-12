@@ -46,12 +46,9 @@ internal readonly struct AttributeArguments
     {
         get
         {
-            // The collection-builder form of [] needs a newer System.Collections.Immutable than Roslyn 4.8 brings.
-#pragma warning disable IDE0301
             return Data.AttributeClass is { IsGenericType: true } attributeClass
                 ? attributeClass.TypeArguments
-                : ImmutableArray<ITypeSymbol>.Empty;
-#pragma warning restore IDE0301
+                : [];
         }
     }
 
