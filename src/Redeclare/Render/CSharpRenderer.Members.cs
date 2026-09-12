@@ -20,7 +20,7 @@ internal static partial class CSharpRenderer
 
     /// <summary>
     ///     Renders an extension block: <c>extension&lt;T&gt;(Receiver receiver) where ... { members }</c>. Only a
-    ///     non-generic static class may hold one, and it holds only methods and properties.
+    ///     non-generic static class may hold one, and it holds methods, operators, properties and raw text.
     /// </summary>
     private static void RenderExtension(SourceWriter writer, ExtensionDeclaration extension, TypeDeclaration containing, RenderOptions options)
     {
@@ -34,7 +34,7 @@ internal static partial class CSharpRenderer
         {
             if (member is not (MethodDeclaration or PropertyDeclaration or RawMemberDeclaration))
             {
-                throw new RenderException($"{what} holds a {member.GetType().Name}. An extension block holds methods and properties only.");
+                throw new RenderException($"{what} holds a {member.GetType().Name}. An extension block holds methods, operators and properties only.");
             }
         }
 
@@ -110,13 +110,21 @@ internal static partial class CSharpRenderer
         RenderAttributes(writer, method.Attributes, options);
 
         var head = writer.BeginLine()
-            .AppendModifiers(method.Accessibility, method.Modifiers, options, what)
+            .AppendModifiers(method.Accessibility, method.Modifiers)
             .Append(RefText(method.RefKind, options, what));
 
-        // Writes a conversion as `implicit operator Target(`. The target type takes the name's place.
+        // Writes a conversion as `implicit operator Target(`. The target type takes the name's place, and an
+        // explicit implementation puts its interface between the keyword and `operator`.
         if (method.Name is "implicit operator" or "explicit operator" or "explicit operator checked")
         {
-            head.Append(method.Name).Append(' ').AppendType(method.ReturnType, options);
+            int keyword = method.Name.IndexOf(' ');
+            head.Append(method.Name, 0, keyword + 1);
+            if (method.ExplicitInterfaceSpecifier is { } explicitInterface)
+            {
+                head.AppendType(explicitInterface, options).Append('.');
+            }
+
+            head.Append(method.Name, keyword + 1, method.Name.Length - keyword - 1).Append(' ').AppendType(method.ReturnType, options);
         }
         else
         {
@@ -150,7 +158,7 @@ internal static partial class CSharpRenderer
         RenderAttributes(writer, constructor.Attributes, options);
 
         var head = writer.BeginLine()
-            .AppendModifiers(constructor.Accessibility, constructor.Modifiers, options, what)
+            .AppendModifiers(constructor.Accessibility, constructor.Modifiers)
             .AppendIdentifier(containing.Name)
             .Append('(')
             .AppendParameters(constructor.Parameters, options, what)
@@ -190,7 +198,7 @@ internal static partial class CSharpRenderer
         RenderAttributes(writer, property.Attributes, options);
 
         var head = writer.BeginLine()
-            .AppendModifiers(property.Accessibility, property.Modifiers, options, what)
+            .AppendModifiers(property.Accessibility, property.Modifiers)
             .Append(RefText(property.RefKind, options, what))
             .AppendType(property.Type, options)
             .Append(' ');
@@ -266,7 +274,7 @@ internal static partial class CSharpRenderer
         RenderAttributes(writer, field.Attributes, options);
 
         writer.BeginLine()
-            .AppendModifiers(field.Accessibility, field.Modifiers, options, what)
+            .AppendModifiers(field.Accessibility, field.Modifiers)
             .Append(RefText(field.RefKind, options, what))
             .AppendType(field.Type, options)
             .Append(' ')
@@ -300,7 +308,7 @@ internal static partial class CSharpRenderer
         RenderAttributes(writer, @event.Attributes, options);
 
         var head = writer.BeginLine()
-            .AppendModifiers(@event.Accessibility, @event.Modifiers, options, what)
+            .AppendModifiers(@event.Accessibility, @event.Modifiers)
             .Append("event ")
             .AppendType(@event.Type, options)
             .Append(' ');

@@ -38,11 +38,20 @@ internal static class RoslynExtensions
     }
 
     /// <summary>
-    ///     Reads a method symbol into a declaration with no body. See <see cref="SymbolReader.ReadMethod"/>.
+    ///     Reads a method symbol into a declaration with no body. See <see cref="SymbolReader.ReadMethod"/>. A
+    ///     constructor reads through <see cref="ToConstructorDeclaration"/>.
     /// </summary>
     public static MethodDeclaration ToDeclaration(this IMethodSymbol method, ReadOptions? options = null)
     {
         return SymbolReader.ReadMethod(method, options);
+    }
+
+    /// <summary>
+    ///     Reads a constructor symbol into a declaration. See <see cref="SymbolReader.ReadConstructor"/>.
+    /// </summary>
+    public static ConstructorDeclaration ToConstructorDeclaration(this IMethodSymbol constructor, ReadOptions? options = null)
+    {
+        return SymbolReader.ReadConstructor(constructor, options);
     }
 
     /// <summary>
@@ -54,11 +63,28 @@ internal static class RoslynExtensions
     }
 
     /// <summary>
-    ///     Reads a field symbol into a declaration.
+    ///     Reads a field symbol into a declaration. An enum member reads through
+    ///     <see cref="ToEnumMemberDeclaration"/>.
     /// </summary>
     public static FieldDeclaration ToDeclaration(this IFieldSymbol field, ReadOptions? options = null)
     {
         return SymbolReader.ReadField(field, options);
+    }
+
+    /// <summary>
+    ///     Reads an enum member symbol into a declaration with its value. See <see cref="SymbolReader.ReadEnumMember"/>.
+    /// </summary>
+    public static EnumMemberDeclaration ToEnumMemberDeclaration(this IFieldSymbol field, ReadOptions? options = null)
+    {
+        return SymbolReader.ReadEnumMember(field, options);
+    }
+
+    /// <summary>
+    ///     Reads a parameter symbol into a declaration. See <see cref="SymbolReader.ReadParameter"/>.
+    /// </summary>
+    public static ParameterDeclaration ToDeclaration(this IParameterSymbol parameter, ReadOptions? options = null)
+    {
+        return SymbolReader.ReadParameter(parameter, isThis: false, options);
     }
 
     /// <summary>

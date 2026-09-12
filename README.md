@@ -31,7 +31,7 @@ Declarations are positional records under `Model/Declarations`. `null` means abs
 | `TypeDeclaration` | Classes, structs, interfaces, enums, records and delegates. `ContainingType` gives a nested type its enclosing parts. |
 | `ExtensionDeclaration` | A C# 14 extension block. |
 | `MethodDeclaration`, `ConstructorDeclaration`, `PropertyDeclaration`, `FieldDeclaration`, `EventDeclaration`, `EnumMemberDeclaration` | Members. Bodies and initializers are `Snippet`s. |
-| `RawMemberDeclaration` | Text the model does not express, a conversion operator say. |
+| `RawMemberDeclaration` | Verbatim text for what the model does not express, such as a finalizer. |
 | `AttributeSpecification`, `ParameterDeclaration`, `TypeParameterDeclaration`, `AccessorDeclaration` | Parts of the above. |
 
 Type references mirror `ITypeSymbol`: `NamedTypeReference`, `ArrayTypeReference`, `PointerTypeReference`, `FunctionPointerTypeReference`, `TupleTypeReference`, `TypeParameterReference`, `DynamicTypeReference` and `ErrorTypeReference`, each with a `NullableAnnotation`. `ToTypeReference()` reads one from a symbol.
@@ -57,13 +57,13 @@ Format specifiers pin a hole's qualification: `{type:g}` writes `global::`, `{ty
 
 ## Reading
 
-`ToDeclaration()` reads a type, method, property, field, event or namespace symbol into the shape the symbol knows: methods without bodies, properties with auto accessors, no `partial`, no `public` on interface members. An enum default reads as the member that has the value, and `typeof(List<int>)` in an attribute reads with a hole for the type.
+`ToDeclaration()` reads a type, method, property, field, event, parameter or namespace symbol into the shape the symbol knows: methods without bodies, properties with auto accessors, `partial` only on a partial definition, no `public` on interface members. Operators and conversions read as methods named `operator +` and `implicit operator`. `ToExtensionDeclaration()` reads a C# 14 extension block, `ToConstructorDeclaration()` a constructor and `ToEnumMemberDeclaration()` an enum member. An enum default reads as the member that has the value, and `typeof(List<int>)` in an attribute reads with a hole for the type.
 
 `ReadOptions` decides whether members, attributes, documentation comments and implicitly declared members come along. `ReadOptions.Shape` reads the type alone, which is what a new partial part may repeat.
 
 Attributes are found by class symbol. Resolve the class once with `GetTypeByMetadataName`, then call `GetAttribute` or `GetAttributes`. `GetArguments()` reads constructor and named arguments by name, falling back to a parameter's default when the argument was omitted. `ConstructorExpression` gives an argument back as C#.
 
-`Checks` answers what a generator asks before it acts: `IsPartial`, `IsPartialThroughout`, `Is`, `InheritsFrom`, `Implements`, and whether an attribute may sit on a symbol.
+`Checks` answers what a generator asks before it acts: `IsPartial`, `IsPartialThroughout`, `Is`, `InheritsFrom`, `Implements`, `FullMetadataName`, and `IsValidOn` for whether an attribute may sit on a symbol.
 
 ## Rendering
 
@@ -78,7 +78,7 @@ var options = RenderOptions.From(configOptions.GetOptions(tree)) with
 };
 ```
 
-Below the version a feature needs, the renderer degrades where C# has an older spelling: a file-scoped namespace becomes a block, `nint` becomes `IntPtr`. Where it has none, a `record struct` under C# 9 say, the renderer writes it anyway and the consumer's compiler reports it, which it does better than a generator can.
+Below the version a feature needs, the renderer degrades where C# has an older spelling: a file-scoped namespace becomes a block, `nint` becomes `IntPtr`. Where it has none, such as a `record struct` under C# 9, the renderer writes it anyway and the consumer's compiler reports it, which it does better than a generator can.
 
 Under `Qualification.Minimal`, `CSharpRenderer.CollectNamespaces(unit, options)` returns the usings the file needs for `CompilationUnit.Usings`.
 
@@ -133,7 +133,7 @@ dotnet add package Redeclare.Extensions
 
 It holds the types C# has a keyword for, so `TypeReference.Int32` replaces constructing one. `ToPart()` reads a type as a new partial part of itself, and `WithCollectedUsings(options)` fills a file's usings for minimal qualification.
 
-It also meets each item with the style of the file it came from. Roslyn's `Combine` takes one provider and returns `(Left, Right)`, so this is the editorconfig and the language version reached by hand:
+`RenderOptions.From(parseOptions)` is the defaults at the consumer's language version, and `RenderOptions.From(config, parseOptions)` their editorconfig style at that version. `WithRenderOptions` meets each item with the style of the file it came from. Roslyn's `Combine` takes one provider and returns `(Left, Right)`, so this is the editorconfig and the language version reached by hand:
 
 ```csharp
 var style = context.AnalyzerConfigOptionsProvider.Combine(context.ParseOptionsProvider);
@@ -143,10 +143,7 @@ var enums = context.SyntaxProvider
     .Combine(style)
     .Select(static (pair, _) => pair.Left.Info with
     {
-        Options = RenderOptions.From(pair.Right.Left.GetOptions(pair.Left.Tree)) with
-        {
-            Version = ((CSharpParseOptions)pair.Right.Right).LanguageVersion.ToCSharpVersion(),
-        },
+        Options = RenderOptions.From(pair.Right.Left.GetOptions(pair.Left.Tree), pair.Right.Right),
     });
 ```
 

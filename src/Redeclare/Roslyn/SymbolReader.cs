@@ -12,8 +12,8 @@ namespace Redeclare;
 /// <remarks>
 ///     <para>
 ///         Reading gives the shape a symbol knows, not the text it came from: a method comes back with no body,
-///         a property with auto accessors, an interface member without a redundant <c>public</c>, and no
-///         declaration carries <c>partial</c>.
+///         a property with auto accessors, an interface member without a redundant <c>public</c>. Only the
+///         definition half of a partial member carries <c>partial</c>, and no type does.
 ///     </para>
 ///     <para>
 ///         Constants keep their meaning: a default of <c>Level.High</c> comes back as a snippet with a hole for
@@ -32,7 +32,7 @@ internal static partial class SymbolReader
 
         if (type.IsExtension)
         {
-            throw new ArgumentException($"'{type.Name}' is an extension block. Use ReadExtension.", nameof(type));
+            throw new ArgumentException($"'{type.Name}' is an extension block. Use ToExtensionDeclaration.", nameof(type));
         }
 
         if (type.TypeKind is not (TypeKind.Class or TypeKind.Struct or TypeKind.Interface or TypeKind.Enum or TypeKind.Delegate))

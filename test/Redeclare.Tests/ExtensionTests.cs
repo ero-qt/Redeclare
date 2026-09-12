@@ -138,7 +138,7 @@ public sealed class ExtensionTests
             Receiver: new ParameterDeclaration(Type: Types.String, Name: "s"),
             Members: [new FieldDeclaration(Type: Types.Int32, Name: "_count")]);
 
-        Assert.That(() => Holding(block).Render(), Throws.TypeOf<RenderException>().With.Message.Contains("methods and properties"));
+        Assert.That(() => Holding(block).Render(), Throws.TypeOf<RenderException>().With.Message.Contains("methods, operators and properties"));
     }
 
     [Test]
@@ -189,7 +189,7 @@ public sealed class ExtensionTests
 
         using (Assert.EnterMultipleScope())
         {
-            Assert.That(() => block.ToDeclaration(), Throws.ArgumentException.With.Message.Contains("ReadExtension"));
+            Assert.That(() => block.ToDeclaration(), Throws.ArgumentException.With.Message.Contains("ToExtensionDeclaration"));
             Assert.That(block.ToExtensionDeclaration().Receiver.Type, Is.EqualTo(Types.Int32));
             Assert.That(() => compilation.Type("E").ToExtensionDeclaration(), Throws.ArgumentException);
         }

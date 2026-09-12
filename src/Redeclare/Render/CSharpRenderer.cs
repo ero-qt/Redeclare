@@ -62,7 +62,7 @@ internal static partial class CSharpRenderer
         RenderDocumentation(writer, type.DocumentationComment);
         RenderAttributes(writer, type.Attributes, options);
 
-        var head = writer.BeginLine().AppendModifiers(type.Accessibility, type.Modifiers, options, what);
+        var head = writer.BeginLine().AppendModifiers(type.Accessibility, type.Modifiers);
 
         if (type.TypeKind == TypeKind.Delegate)
         {

@@ -54,12 +54,7 @@ internal static partial class CSharpRenderer
     ///     Appends the accessibility and modifiers, each followed by a space, in the order the compiler and the
     ///     style guidelines expect.
     /// </summary>
-    private static StringBuilder AppendModifiers(
-        this StringBuilder text,
-        Accessibility accessibility,
-        Modifiers modifiers,
-        RenderOptions options,
-        string what)
+    private static StringBuilder AppendModifiers(this StringBuilder text, Accessibility accessibility, Modifiers modifiers)
     {
         if (accessibility != Accessibility.NotApplicable)
         {

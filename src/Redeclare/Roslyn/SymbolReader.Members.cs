@@ -9,22 +9,28 @@ internal static partial class SymbolReader
 {
     /// <summary>
     ///     Reads an ordinary method, an explicit implementation, a user-defined operator or a conversion. The body is
-    ///     left null.
+    ///     left null. <c>[return: ...]</c> attributes come along with <c>Target</c> set.
     /// </summary>
     public static MethodDeclaration ReadMethod(IMethodSymbol method, ReadOptions? options = null)
     {
         options ??= ReadOptions.Default;
+
+        if (method.MethodKind is MethodKind.Constructor or MethodKind.StaticConstructor)
+        {
+            throw new ArgumentException($"'{method.Name}' is a constructor. Use ToConstructorDeclaration.", nameof(method));
+        }
 
         if (method.MethodKind is MethodKind.UserDefinedOperator or MethodKind.Conversion && GetOperatorName(method.Name) is null)
         {
             throw new ArgumentException($"'{method.Name}' is not the metadata name of an operator.", nameof(method));
         }
 
+        // An explicit implementation takes its name from the interface member, an operator's included.
         string name = method.MethodKind switch
         {
             MethodKind.UserDefinedOperator or MethodKind.Conversion => GetOperatorName(method.Name)!,
             MethodKind.ExplicitInterfaceImplementation when method.ExplicitInterfaceImplementations.Length > 0
-                => method.ExplicitInterfaceImplementations[0].Name,
+                => GetOperatorName(method.ExplicitInterfaceImplementations[0].Name) ?? method.ExplicitInterfaceImplementations[0].Name,
             _ => method.Name,
         };
 
@@ -122,6 +128,11 @@ internal static partial class SymbolReader
     public static FieldDeclaration ReadField(IFieldSymbol field, ReadOptions? options = null)
     {
         options ??= ReadOptions.Default;
+
+        if (field.ContainingType is { TypeKind: TypeKind.Enum })
+        {
+            throw new ArgumentException($"'{field.Name}' is an enum member. Use ToEnumMemberDeclaration.", nameof(field));
+        }
 
         var modifiers = Modifiers.None;
         if (field.IsConst)

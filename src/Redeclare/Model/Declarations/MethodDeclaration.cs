@@ -3,7 +3,7 @@ using Microsoft.CodeAnalysis;
 namespace Redeclare;
 
 /// <summary>
-///     Represents a method, an explicit interface implementation, or a user-defined operator.
+///     Represents a method, an explicit interface implementation, a user-defined operator, or a conversion.
 /// </summary>
 /// <remarks>
 ///     <paramref name="Body"/> is the text, and the snippet says whether that text is one expression:
@@ -13,7 +13,11 @@ namespace Redeclare;
 ///     right for abstract, extern, partial and interface members.
 /// </remarks>
 /// <param name="ReturnType">The return type. A reference to <c>System.Void</c> for none.</param>
-/// <param name="Name">The name, or <c>operator +</c> and the like for an operator.</param>
+/// <param name="Name">
+///     The name. An operator is <c>operator +</c>, <c>operator checked +=</c> and the like. A conversion is
+///     <c>implicit operator</c>, <c>explicit operator</c> or <c>explicit operator checked</c>, and the renderer
+///     writes <paramref name="ReturnType"/> where the name would go.
+/// </param>
 /// <param name="RefKind">
 ///     How the return is passed back: by value, <c>ref</c>, or <c>ref readonly</c>. <c>ref</c> needs C# 7 and
 ///     <c>ref readonly</c> C# 7.2.

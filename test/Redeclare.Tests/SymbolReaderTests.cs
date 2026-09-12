@@ -851,6 +851,23 @@ public sealed class SymbolReaderTests
     }
 
     [Test]
+    public void ToDeclaration_WrongSymbolKind_PointsAtTheRightMethod()
+    {
+        var repository = Compilation.Type("Fixture.Repository`1");
+        var constructor = repository.InstanceConstructors.Single();
+        var level = Compilation.Type("Fixture.Level").GetMembers("High").OfType<IFieldSymbol>().Single();
+
+        using (Assert.EnterMultipleScope())
+        {
+            Assert.That(() => constructor.ToDeclaration(), Throws.ArgumentException.With.Message.Contains("ToConstructorDeclaration"));
+            Assert.That(constructor.ToConstructorDeclaration().Parameters, Has.Length.EqualTo(4));
+            Assert.That(() => level.ToDeclaration(), Throws.ArgumentException.With.Message.Contains("ToEnumMemberDeclaration"));
+            Assert.That(level.ToEnumMemberDeclaration().Value?.ToString(), Is.EqualTo("5"));
+            Assert.That(constructor.Parameters[1].ToDeclaration().Type.ToString(), Is.EqualTo("string?"));
+        }
+    }
+
+    [Test]
     public void Render_ReadEventsWithBodiesAdded_CompileAgain()
     {
         var watched = Compilation.Type("Fixture.Watched").ToDeclaration();

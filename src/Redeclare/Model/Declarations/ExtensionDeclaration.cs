@@ -8,9 +8,9 @@ namespace Redeclare;
 /// </summary>
 /// <remarks>
 ///     The receiver is a parameter. Its name is what the members' bodies refer to, and an empty name is the
-///     unnamed form, <c>extension(string)</c>, whose members must all be static. Members are methods and
-///     properties. An extension block has no accessibility, modifiers, attributes or documentation of its own,
-///     and those are fixed here.
+///     unnamed form, <c>extension(string)</c>, whose members must all be static. Members are methods, operators
+///     and properties. An extension block has no accessibility, modifiers, attributes or documentation of its
+///     own, and those are fixed here.
 /// </remarks>
 /// <param name="Receiver">The receiver parameter: its type, its name or an empty name, and how it is passed.</param>
 /// <param name="TypeParameters">The type parameters, constraints included.</param>
