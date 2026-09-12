@@ -60,7 +60,7 @@ internal static partial class SymbolReader
             DocumentationComment: ReadDocumentation(constructor, options),
             Attributes: ReadAttributes(constructor, options),
             Accessibility: constructor.IsStatic ? Accessibility.NotApplicable : constructor.DeclaredAccessibility,
-            Modifiers: (constructor.IsStatic ? Modifiers.Static : Modifiers.None) | (constructor.IsPartialDefinition ? Modifiers.Partial : Modifiers.None),
+            Modifiers: ReadMemberModifiers(constructor),
             Parameters: ReadParameters(constructor.Parameters, isExtension: false, options),
             Body: constructor.IsPartialDefinition || constructor.IsExtern ? null : Snippet.Empty);
     }
@@ -218,8 +218,9 @@ internal static partial class SymbolReader
             RefKind: parameter.RefKind,
             IsParams: parameter.IsParams,
             IsThis: isThis,
-            // Checks for a `scoped` written by hand. An `out` parameter is scoped without one, and the symbol reports it anyway.
-            IsScoped: parameter.ScopedKind != ScopedKind.None && parameter.RefKind != RefKind.Out,
+            // Checks for a `scoped` written by hand. An `out` parameter and a `params` span are scoped without one, and
+            // the symbol reports it anyway.
+            IsScoped: parameter.ScopedKind != ScopedKind.None && parameter.RefKind != RefKind.Out && !(parameter.IsParams && parameter.Type.IsRefLikeType),
             Type: ReadTypeReference(parameter.Type),
             Name: parameter.Name,
             Default: parameter.HasExplicitDefaultValue ? FormatConstant(parameter.ExplicitDefaultValue, parameter.Type) : null);

@@ -104,7 +104,8 @@ internal static partial class SymbolReader
         return new TypeDeclaration(
             DocumentationComment: ReadDocumentation(type, options),
             Attributes: ReadAttributes(type, options),
-            Accessibility: type.DeclaredAccessibility,
+            // `file` reports as `internal`.
+            Accessibility: type.IsFileLocal ? Accessibility.NotApplicable : type.DeclaredAccessibility,
             Modifiers: modifiers,
             TypeKind: type.TypeKind,
             IsRecord: type.IsRecord,
@@ -259,6 +260,18 @@ internal static partial class SymbolReader
             if (ReadAttribute(attribute) is { } specification)
             {
                 attributes.Add(specification);
+            }
+        }
+
+        // Reads the `[return: ...]` attributes too. They sit on the return value, not on the method symbol.
+        if (symbol is IMethodSymbol method)
+        {
+            foreach (var attribute in method.GetReturnTypeAttributes())
+            {
+                if (ReadAttribute(attribute) is { } specification)
+                {
+                    attributes.Add(specification with { Target = "return" });
+                }
             }
         }
 
