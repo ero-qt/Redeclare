@@ -60,7 +60,7 @@ internal static partial class SymbolReader
             DocumentationComment: ReadDocumentation(constructor, options),
             Attributes: ReadAttributes(constructor, options),
             Accessibility: constructor.IsStatic ? Accessibility.NotApplicable : constructor.DeclaredAccessibility,
-            Modifiers: (constructor.IsStatic ? Modifiers.Static : Modifiers.None) | (constructor.IsPartialDefinition ? Modifiers.Partial : Modifiers.None),
+            Modifiers: ReadMemberModifiers(constructor),
             Parameters: ReadParameters(constructor.Parameters, isExtension: false, options),
             Body: constructor.IsPartialDefinition || constructor.IsExtern ? null : Snippet.Empty);
     }
