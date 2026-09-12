@@ -381,7 +381,7 @@ public sealed class SymbolReaderTests
             Assert.That(methods.Count(m => m.Name == "OnLoaded"), Is.EqualTo(1), "a partial pair is one symbol");
             Assert.That(methods.Single(m => m.Name == "OnLoaded").Modifiers, Is.EqualTo(Modifiers.Partial));
             Assert.That(methods.Single(m => m.Name == "operator +").Modifiers, Is.EqualTo(Modifiers.Static));
-            Assert.That(methods.Any(m => m.Name.Contains("implicit", System.StringComparison.Ordinal)), Is.False, "conversions have no typed declaration");
+            Assert.That(methods.Single(m => m.Name == "implicit operator").ReturnType, Is.EqualTo(Types.Int32));
         }
     }
 

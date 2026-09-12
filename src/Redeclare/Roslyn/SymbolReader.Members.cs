@@ -8,21 +8,21 @@ namespace Redeclare;
 internal static partial class SymbolReader
 {
     /// <summary>
-    ///     Reads an ordinary method, an explicit implementation, or a user-defined operator. The body is left null.
+    ///     Reads an ordinary method, an explicit implementation, a user-defined operator or a conversion. The body is
+    ///     left null.
     /// </summary>
     public static MethodDeclaration ReadMethod(IMethodSymbol method, ReadOptions? options = null)
     {
         options ??= ReadOptions.Default;
 
-        if (method.MethodKind == MethodKind.UserDefinedOperator && GetOperatorToken(method.Name) is null)
+        if (method.MethodKind is MethodKind.UserDefinedOperator or MethodKind.Conversion && GetOperatorName(method.Name) is null)
         {
-            throw new NotSupportedException(
-                $"'{method.Name}' is a conversion or a checked operator, which has no typed declaration. Use RawMemberDeclaration.");
+            throw new ArgumentException($"'{method.Name}' is not the metadata name of an operator.", nameof(method));
         }
 
         string name = method.MethodKind switch
         {
-            MethodKind.UserDefinedOperator => "operator " + GetOperatorToken(method.Name),
+            MethodKind.UserDefinedOperator or MethodKind.Conversion => GetOperatorName(method.Name)!,
             MethodKind.ExplicitInterfaceImplementation when method.ExplicitInterfaceImplementations.Length > 0
                 => method.ExplicitInterfaceImplementations[0].Name,
             _ => method.Name,

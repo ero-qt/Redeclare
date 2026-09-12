@@ -207,7 +207,7 @@ internal static partial class SymbolReader
                     members.Add(ReadMethod(method, options));
                     break;
                 }
-                case IMethodSymbol { MethodKind: MethodKind.UserDefinedOperator } @operator when GetOperatorToken(@operator.Name) is not null:
+                case IMethodSymbol { MethodKind: MethodKind.UserDefinedOperator or MethodKind.Conversion } @operator:
                 {
                     members.Add(ReadMethod(@operator, options));
                     break;

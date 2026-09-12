@@ -111,16 +111,25 @@ internal static partial class CSharpRenderer
 
         var head = writer.BeginLine()
             .AppendModifiers(method.Accessibility, method.Modifiers, options, what)
-            .Append(RefText(method.RefKind, options, what))
-            .AppendType(method.ReturnType, options)
-            .Append(' ');
-        if (method.ExplicitInterfaceSpecifier is { } explicitInterface)
+            .Append(RefText(method.RefKind, options, what));
+
+        // Writes a conversion as `implicit operator Target(`. The target type takes the name's place.
+        if (method.Name is "implicit operator" or "explicit operator" or "explicit operator checked")
         {
-            head.AppendType(explicitInterface, options).Append('.');
+            head.Append(method.Name).Append(' ').AppendType(method.ReturnType, options);
+        }
+        else
+        {
+            head.AppendType(method.ReturnType, options).Append(' ');
+            if (method.ExplicitInterfaceSpecifier is { } explicitInterface)
+            {
+                head.AppendType(explicitInterface, options).Append('.');
+            }
+
+            head.AppendIdentifier(method.Name);
         }
 
-        head.AppendIdentifier(method.Name)
-            .AppendTypeParameters(method.TypeParameters, options)
+        head.AppendTypeParameters(method.TypeParameters, options)
             .Append('(')
             .AppendParameters(method.Parameters, options, what)
             .Append(')')
