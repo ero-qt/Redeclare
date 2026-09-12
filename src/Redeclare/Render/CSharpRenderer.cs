@@ -29,10 +29,11 @@ internal static partial class CSharpRenderer
 
         writer.BlankLine();
 
-        // A file-scoped namespace must be the only member of its file. A namespace with no name is the global
-        // one and writes no line at all.
+        // Checks whether the file can use a file-scoped namespace. That needs one named namespace with no namespace
+        // inside it, and a C# version that knows the syntax. A namespace with no name is the global namespace and writes no line.
         bool fileScoped = unit.Members is { Length: 1 }
-            && unit.Members[0] is NamespaceDeclaration { Name.Length: > 0 }
+            && unit.Members[0] is NamespaceDeclaration { Name.Length: > 0 } sole
+            && !HoldsNamespace(sole)
             && options.NamespaceDeclarations == NamespaceDeclarationPreference.FileScoped
             && options.Allows(CSharpVersion.CSharp10);
 
@@ -223,6 +224,19 @@ internal static partial class CSharpRenderer
     /// <summary>
     ///     Renders the members of a file or a namespace: namespaces and types, a blank line between them.
     /// </summary>
+    private static bool HoldsNamespace(NamespaceDeclaration ns)
+    {
+        foreach (var member in ns.Members)
+        {
+            if (member is NamespaceDeclaration)
+            {
+                return true;
+            }
+        }
+
+        return false;
+    }
+
     private static void RenderTopLevel(SourceWriter writer, EquatableArray<MemberDeclaration> members, RenderOptions options, bool fileScoped)
     {
         for (int i = 0; i < members.Length; i++)

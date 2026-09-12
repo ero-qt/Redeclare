@@ -457,6 +457,19 @@ public sealed class RenderTests
     }
 
     [Test]
+    public void Render_NamespaceInsideANamespace_KeepsBothAsBlocks()
+    {
+        var nested = new CompilationUnit(
+            Members: [new NamespaceDeclaration(Name: "A", Members: [new NamespaceDeclaration(Name: "B", Members: [new TypeDeclaration(Name: "X")])])],
+            Header: Header);
+
+        var text = nested.Render(RenderOptions.Default);
+
+        Assert.That(text, Does.Contain("namespace A\n{\n    namespace B\n    {"), "a file cannot mix a file-scoped namespace with a block one");
+        Compiling.AssertCompiles(text);
+    }
+
+    [Test]
     public void Render_NamespaceInsideAType_Throws()
     {
         var misplaced = new CompilationUnit(
