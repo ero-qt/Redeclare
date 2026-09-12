@@ -262,6 +262,18 @@ internal static partial class SymbolReader
             }
         }
 
+        // Reads the `[return: ...]` attributes too. They sit on the return value, not on the method symbol.
+        if (symbol is IMethodSymbol method)
+        {
+            foreach (var attribute in method.GetReturnTypeAttributes())
+            {
+                if (ReadAttribute(attribute) is { } specification)
+                {
+                    attributes.Add(specification with { Target = "return" });
+                }
+            }
+        }
+
         return attributes.ToEquatableArray();
     }
 
