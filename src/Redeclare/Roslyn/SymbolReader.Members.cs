@@ -217,7 +217,8 @@ internal static partial class SymbolReader
             RefKind: parameter.RefKind,
             IsParams: parameter.IsParams,
             IsThis: isThis,
-            IsScoped: parameter.ScopedKind != ScopedKind.None,
+            // Checks for a `scoped` written by hand. An `out` parameter is scoped without one, and the symbol reports it anyway.
+            IsScoped: parameter.ScopedKind != ScopedKind.None && parameter.RefKind != RefKind.Out,
             Type: ReadTypeReference(parameter.Type),
             Name: parameter.Name,
             Default: parameter.HasExplicitDefaultValue ? FormatConstant(parameter.ExplicitDefaultValue, parameter.Type) : null);

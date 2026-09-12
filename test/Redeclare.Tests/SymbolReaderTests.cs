@@ -787,6 +787,14 @@ public sealed class SymbolReaderTests
     }
 
     [Test]
+    public void ToDeclaration_OutParameter_IsNotScoped()
+    {
+        var tryParse = Repository.Members.OfType<MethodDeclaration>().Single(m => m.Name == "TryParse");
+
+        Assert.That(tryParse.Parameters[1].IsScoped, Is.False, "the symbol reports the effective scope, which every out parameter has");
+    }
+
+    [Test]
     public void Render_ReadEventsWithBodiesAdded_CompileAgain()
     {
         var watched = Compilation.Type("Fixture.Watched").ToDeclaration();
