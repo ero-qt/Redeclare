@@ -5,9 +5,9 @@ namespace Redeclare;
 ///     the other by cast.
 /// </summary>
 /// <remarks>
-///     A separate enum, so that the renderer can name versions the consumer's Roslyn does not: Roslyn 4.8 has
-///     no <c>LanguageVersion.CSharp13</c>. Every value here is a resolved version that orders correctly, where
-///     <c>LanguageVersion.Default</c> and <c>Latest</c> are placeholders.
+///     A separate enum, so that the renderer can name versions the consumer's Roslyn does not know yet. Every
+///     value here is a resolved version that orders correctly, where <c>LanguageVersion.Default</c> and
+///     <c>Latest</c> are placeholders.
 /// </remarks>
 internal enum CSharpVersion
 {

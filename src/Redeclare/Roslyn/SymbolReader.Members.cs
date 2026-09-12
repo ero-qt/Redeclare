@@ -9,7 +9,7 @@ internal static partial class SymbolReader
 {
     /// <summary>
     ///     Reads an ordinary method, an explicit implementation, a user-defined operator or a conversion. The body is
-    ///     left null.
+    ///     left null. <c>[return: ...]</c> attributes come along with <c>Target</c> set.
     /// </summary>
     public static MethodDeclaration ReadMethod(IMethodSymbol method, ReadOptions? options = null)
     {

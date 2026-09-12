@@ -84,7 +84,8 @@ internal enum Modifiers
     Async = 1 << 12,
 
     /// <summary>
-    ///     <c>partial</c>. Rendered last, where the language requires it.
+    ///     <c>partial</c>. Rendered last, where the language requires it. On a member it marks the definition half,
+    ///     which renders with no body. Partial properties need C# 13, partial events and constructors C# 14.
     /// </summary>
     Partial = 1 << 13,
 

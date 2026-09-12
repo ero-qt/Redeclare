@@ -20,7 +20,7 @@ internal static partial class CSharpRenderer
 
     /// <summary>
     ///     Renders an extension block: <c>extension&lt;T&gt;(Receiver receiver) where ... { members }</c>. Only a
-    ///     non-generic static class may hold one, and it holds only methods and properties.
+    ///     non-generic static class may hold one, and it holds methods, operators, properties and raw text.
     /// </summary>
     private static void RenderExtension(SourceWriter writer, ExtensionDeclaration extension, TypeDeclaration containing, RenderOptions options)
     {
@@ -34,7 +34,7 @@ internal static partial class CSharpRenderer
         {
             if (member is not (MethodDeclaration or PropertyDeclaration or RawMemberDeclaration))
             {
-                throw new RenderException($"{what} holds a {member.GetType().Name}. An extension block holds methods and properties only.");
+                throw new RenderException($"{what} holds a {member.GetType().Name}. An extension block holds methods, operators and properties only.");
             }
         }
 
