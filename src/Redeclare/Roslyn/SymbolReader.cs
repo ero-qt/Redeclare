@@ -30,6 +30,11 @@ internal static partial class SymbolReader
     {
         options ??= ReadOptions.Default;
 
+        if (type.IsExtension)
+        {
+            throw new ArgumentException($"'{type.Name}' is an extension block. Use ReadExtension.", nameof(type));
+        }
+
         if (type.TypeKind is not (TypeKind.Class or TypeKind.Struct or TypeKind.Interface or TypeKind.Enum or TypeKind.Delegate))
         {
             throw new NotSupportedException(
@@ -116,6 +121,24 @@ internal static partial class SymbolReader
     }
 
     /// <summary>
+    ///     Reads an extension block: its receiver, its type parameters and its members.
+    /// </summary>
+    public static ExtensionDeclaration ReadExtension(INamedTypeSymbol extension, ReadOptions? options = null)
+    {
+        options ??= ReadOptions.Default;
+
+        if (!extension.IsExtension || extension.ExtensionParameter is not { } receiver)
+        {
+            throw new ArgumentException($"'{extension.Name}' is not an extension block.", nameof(extension));
+        }
+
+        return new ExtensionDeclaration(
+            Receiver: ReadParameter(receiver, isThis: false, options),
+            TypeParameters: ReadTypeParameters(extension.TypeParameters, options),
+            Members: options.IncludeMembers ? ReadMembers(extension, options) : default);
+    }
+
+    /// <summary>
     ///     Reads a namespace as a declaration with nothing in it, the way a file names the namespace a type lives
     ///     in. The global namespace reads as one with no name, which writes no <c>namespace</c> line.
     /// </summary>
@@ -157,6 +180,11 @@ internal static partial class SymbolReader
 
             switch (member)
             {
+                case INamedTypeSymbol { IsExtension: true } extension:
+                {
+                    members.Add(ReadExtension(extension, options));
+                    break;
+                }
                 case INamedTypeSymbol
                 {
                     TypeKind: TypeKind.Class or TypeKind.Struct or TypeKind.Interface or TypeKind.Enum or TypeKind.Delegate,
