@@ -342,12 +342,12 @@ public sealed class RenderTests
 
         using (Assert.EnterMultipleScope())
         {
-            Assert.That(Unit(statements).Render(arrows), Does.Contain("void M()\n    {\n        a();\n    }"));
-            Assert.That(Unit(expression).Render(arrows), Does.Contain("void M() => a();"));
-            Assert.That(Unit(expression).Render(RenderOptions.Default), Does.Contain("void M()\n    {\n        a();\n    }"));
+            Assert.That(unit(statements).Render(arrows), Does.Contain("void M()\n    {\n        a();\n    }"));
+            Assert.That(unit(expression).Render(arrows), Does.Contain("void M() => a();"));
+            Assert.That(unit(expression).Render(RenderOptions.Default), Does.Contain("void M()\n    {\n        a();\n    }"));
         }
 
-        static CompilationUnit Unit(MethodDeclaration method)
+        static CompilationUnit unit(MethodDeclaration method)
         {
             return new CompilationUnit(Members: [new TypeDeclaration(Name: "C", Members: [method])], Header: Header);
         }

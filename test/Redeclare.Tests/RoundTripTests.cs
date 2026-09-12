@@ -143,11 +143,11 @@ public sealed class RoundTripTests
 
     private static MemberDeclaration WithBody(MemberDeclaration member)
     {
-        const Modifiers bodiless = Modifiers.Abstract | Modifiers.Extern | Modifiers.Partial;
+        const Modifiers Bodiless = Modifiers.Abstract | Modifiers.Extern | Modifiers.Partial;
 
         return member switch
         {
-            MethodDeclaration { Body: null } method when (method.Modifiers & bodiless) == 0
+            MethodDeclaration { Body: null } method when (method.Modifiers & Bodiless) == 0
                 => method with { Body = Snippet.From("throw null!;") },
             PropertyDeclaration { Parameters.IsEmpty: false } indexer
                 => indexer with

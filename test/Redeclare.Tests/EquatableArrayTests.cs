@@ -1,6 +1,6 @@
 using NUnit.Framework;
-using System.Linq;
 using System.Collections.Generic;
+using System.Linq;
 
 namespace Redeclare.Tests;
 
@@ -80,7 +80,7 @@ public sealed class EquatableArrayTests
             Assert.That(array.ToArray(), Is.EqualTo(new[] { 1, 2, 3 }));
             Assert.That(array.ToList(), Is.EqualTo(new[] { 1, 2, 3 }), "it enumerates");
             Assert.That(EquatableArray<int>.Empty, Is.Empty);
-            Assert.That(EquatableArray.Create<int>([1, 2, 3]), Is.EqualTo(array));
+            Assert.That(EquatableArray.Create([1, 2, 3]), Is.EqualTo(array));
         }
     }
 

@@ -148,7 +148,7 @@ public sealed class EnumHelpersGenerator : IIncrementalGenerator
             Body: Snippet.From($$"""
                 switch (name)
                 {
-                    {{Snippet.Concat(members, Arm)}}
+                    {{Snippet.Concat(members, arm)}}
                     default:
                         value = default;
                         return false;
@@ -166,7 +166,7 @@ public sealed class EnumHelpersGenerator : IIncrementalGenerator
 
         return new CompilationUnit(Members: [info.Namespace with { Members = [helper] }], Header: FileHeader);
 
-        Snippet Arm(string member)
+        Snippet arm(string member)
         {
             return Snippet.From($"case nameof({e}.{member}):\n    value = {e}.{member};\n    return true;");
         }
