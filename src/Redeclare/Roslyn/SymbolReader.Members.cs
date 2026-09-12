@@ -252,7 +252,6 @@ internal static partial class SymbolReader
                 constraintTypes[j] = ReadTypeReference(parameter.ConstraintTypes[j]);
             }
 
-            // ITypeParameterSymbol.AllowsRefLikeType is a Roslyn 4.10 API, above the 4.8 these sources compile against.
             result[i] = new TypeParameterDeclaration(
                 Name: parameter.Name,
                 Variance: parameter.Variance,
@@ -262,6 +261,7 @@ internal static partial class SymbolReader
                 HasUnmanagedTypeConstraint: parameter.HasUnmanagedTypeConstraint,
                 HasNotNullConstraint: parameter.HasNotNullConstraint,
                 HasConstructorConstraint: parameter.HasConstructorConstraint,
+                AllowsRefLikeType: parameter.AllowsRefLikeType,
                 ConstraintTypes: constraintTypes,
                 Attributes: ReadAttributes(parameter, options));
         }

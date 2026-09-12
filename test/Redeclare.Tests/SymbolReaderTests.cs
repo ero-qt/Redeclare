@@ -145,6 +145,8 @@ public sealed class SymbolReaderTests
 
             public unsafe delegate void Poke(int* target);
 
+            public static class Holder<T> where T : allows ref struct { }
+
             public partial class Marked<[Mark("param")] T> { }
 
             public sealed class ClashAttribute : Attribute
@@ -805,6 +807,18 @@ public sealed class SymbolReaderTests
         {
             Assert.That(poke.ToDeclaration().Modifiers, Is.EqualTo(Modifiers.Unsafe));
             Assert.That(poke.ToFile().Render(), Does.Contain("public unsafe delegate void Poke(int* target);"));
+        }
+    }
+
+    [Test]
+    public void ToDeclaration_AllowsRefStruct_IsRead()
+    {
+        var holder = Compilation.Type("Fixture.Holder`1");
+
+        using (Assert.EnterMultipleScope())
+        {
+            Assert.That(holder.ToDeclaration().TypeParameters.Single().AllowsRefLikeType, Is.True);
+            Assert.That(holder.ToFile().Render(), Does.Contain("where T : allows ref struct"));
         }
     }
 
