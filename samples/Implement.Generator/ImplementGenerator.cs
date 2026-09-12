@@ -1,5 +1,4 @@
 using Microsoft.CodeAnalysis;
-using Microsoft.CodeAnalysis.CSharp;
 using Microsoft.CodeAnalysis.CSharp.Syntax;
 using Microsoft.CodeAnalysis.Text;
 using Redeclare;
@@ -89,11 +88,8 @@ public sealed class ImplementGenerator : IIncrementalGenerator
             static (node, _) => node is MethodDeclarationSyntax,
             ReadEcho);
 
-        var options = context.ParseOptionsProvider.Select(static (parseOptions, _) => RenderOptions.Default with
-        {
-            Version = ((CSharpParseOptions)parseOptions).LanguageVersion.ToCSharpVersion(),
-            Qualification = Qualification.Minimal,
-        });
+        var options = context.ParseOptionsProvider.Select(static (parseOptions, _) =>
+            RenderOptions.From(parseOptions) with { Qualification = Qualification.Minimal });
 
         context.RegisterSourceOutput(properties.Collect().Combine(methods.Collect()).Combine(options), static (spc, input) =>
         {

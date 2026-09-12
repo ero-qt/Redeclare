@@ -1,5 +1,4 @@
 using Microsoft.CodeAnalysis;
-using Microsoft.CodeAnalysis.CSharp;
 using Microsoft.CodeAnalysis.CSharp.Syntax;
 using Microsoft.CodeAnalysis.Text;
 using Redeclare;
@@ -86,8 +85,7 @@ public sealed class NotifyGenerator : IIncrementalGenerator
             .WithTrackingName(FieldsStep)
             .Collect();
 
-        var options = context.ParseOptionsProvider.Select(static (parseOptions, _) =>
-            RenderOptions.Default with { Version = ((CSharpParseOptions)parseOptions).LanguageVersion.ToCSharpVersion() });
+        var options = context.ParseOptionsProvider.Select(static (parseOptions, _) => RenderOptions.From(parseOptions));
 
         context.RegisterSourceOutput(fields.Combine(options), static (spc, pair) =>
         {
