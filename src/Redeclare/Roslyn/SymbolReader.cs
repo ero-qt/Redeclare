@@ -104,7 +104,8 @@ internal static partial class SymbolReader
         return new TypeDeclaration(
             DocumentationComment: ReadDocumentation(type, options),
             Attributes: ReadAttributes(type, options),
-            Accessibility: type.DeclaredAccessibility,
+            // `file` reports as `internal`.
+            Accessibility: type.IsFileLocal ? Accessibility.NotApplicable : type.DeclaredAccessibility,
             Modifiers: modifiers,
             TypeKind: type.TypeKind,
             IsRecord: type.IsRecord,
