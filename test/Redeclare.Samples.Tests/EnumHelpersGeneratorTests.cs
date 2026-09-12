@@ -97,7 +97,7 @@ public sealed class EnumHelpersGeneratorTests
     {
         var reasons = GeneratorRunner.ReasonsAfterAnEdit<EnumHelpersGenerator>(Source, EnumHelpersGenerator.EnumsStep);
 
-        Assert.That(reasons, Has.All.EqualTo(IncrementalStepRunReason.Cached));
+        Assert.That(reasons, Is.Not.Empty.And.All.EqualTo(IncrementalStepRunReason.Cached));
     }
 
     [Test]

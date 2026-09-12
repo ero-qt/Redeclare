@@ -80,7 +80,7 @@ var options = RenderOptions.From(configOptions.GetOptions(tree)) with
 
 Below the version a feature needs, the renderer degrades where C# has an older spelling: a file-scoped namespace becomes a block, `nint` becomes `IntPtr`. Where it has none, a `record struct` under C# 9 say, the renderer writes it anyway and the consumer's compiler reports it, which it does better than a generator can.
 
-Under `Qualification.Minimal`, `CSharpRenderer.CollectNamespaces(unit)` returns the usings the file needs for `CompilationUnit.Usings`.
+Under `Qualification.Minimal`, `CSharpRenderer.CollectNamespaces(unit, options)` returns the usings the file needs for `CompilationUnit.Usings`.
 
 ## Usage
 
@@ -131,7 +131,7 @@ The transform is the last place a symbol appears, so an edit elsewhere in the co
 dotnet add package Redeclare.Extensions
 ```
 
-It holds the types C# has a keyword for, so `TypeReference.Int32` replaces constructing one. `ToPart()` reads a type as a new partial part of itself, and `WithCollectedUsings()` fills a file's usings for minimal qualification.
+It holds the types C# has a keyword for, so `TypeReference.Int32` replaces constructing one. `ToPart()` reads a type as a new partial part of itself, and `WithCollectedUsings(options)` fills a file's usings for minimal qualification.
 
 It also meets each item with the style of the file it came from. Roslyn's `Combine` takes one provider and returns `(Left, Right)`, so this is the editorconfig and the language version reached by hand:
 

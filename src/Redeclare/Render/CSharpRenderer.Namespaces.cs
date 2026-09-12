@@ -7,21 +7,21 @@ internal static partial class CSharpRenderer
 {
     /// <summary>
     ///     The namespaces every type reference in the file, holes in snippets included, would need as usings
-    ///     under <see cref="Qualification.Minimal"/>, sorted. Types with a keyword are left out. The file's own
-    ///     namespace is left in.
+    ///     under <see cref="Qualification.Minimal"/>, sorted. Types the options write as a keyword are left out.
+    ///     The file's own namespace is left in.
     /// </summary>
-    public static SortedSet<string> CollectNamespaces(CompilationUnit unit)
+    public static SortedSet<string> CollectNamespaces(CompilationUnit unit, RenderOptions options)
     {
         SortedSet<string> namespaces = new(StringComparer.Ordinal);
         foreach (var member in unit.Members)
         {
-            Collect(member, namespaces);
+            Collect(member, namespaces, options);
         }
 
         return namespaces;
     }
 
-    private static void Collect(MemberDeclaration member, SortedSet<string> namespaces)
+    private static void Collect(MemberDeclaration member, SortedSet<string> namespaces, RenderOptions options)
     {
         switch (member)
         {
@@ -29,14 +29,14 @@ internal static partial class CSharpRenderer
             {
                 foreach (var inner in ns.Members)
                 {
-                    Collect(inner, namespaces);
+                    Collect(inner, namespaces, options);
                 }
 
                 break;
             }
             case TypeDeclaration type:
             {
-                Collect(type, namespaces);
+                Collect(type, namespaces, options);
                 break;
             }
             default:
@@ -46,92 +46,92 @@ internal static partial class CSharpRenderer
         }
     }
 
-    private static void Collect(TypeDeclaration type, SortedSet<string> namespaces)
+    private static void Collect(TypeDeclaration type, SortedSet<string> namespaces, RenderOptions options)
     {
-        Collect(type.Attributes, namespaces);
-        Collect(type.BaseType, namespaces);
-        Collect(type.Interfaces, namespaces);
-        Collect(type.ParameterList, namespaces);
-        Collect(type.TypeParameters, namespaces);
-        Collect(type.EnumUnderlyingType, namespaces);
-        Collect(type.ReturnType, namespaces);
-        Collect(type.Members, namespaces);
+        Collect(type.Attributes, namespaces, options);
+        Collect(type.BaseType, namespaces, options);
+        Collect(type.Interfaces, namespaces, options);
+        Collect(type.ParameterList, namespaces, options);
+        Collect(type.TypeParameters, namespaces, options);
+        Collect(type.EnumUnderlyingType, namespaces, options);
+        Collect(type.ReturnType, namespaces, options);
+        Collect(type.Members, namespaces, options);
 
         // The renderer writes the containing chain as partial parts, and a part repeats its type parameters,
         // so their constraints and attributes are in the file even though nothing else of the outer type is.
         for (var outer = type.ContainingType; outer is not null; outer = outer.ContainingType)
         {
-            Collect(outer.TypeParameters, namespaces);
+            Collect(outer.TypeParameters, namespaces, options);
         }
     }
 
-    private static void Collect(EquatableArray<MemberDeclaration> members, SortedSet<string> namespaces)
+    private static void Collect(EquatableArray<MemberDeclaration> members, SortedSet<string> namespaces, RenderOptions options)
     {
         foreach (var member in members)
         {
-            Collect(member.Attributes, namespaces);
+            Collect(member.Attributes, namespaces, options);
             switch (member)
             {
                 case TypeDeclaration nested:
                 {
-                    Collect(nested, namespaces);
+                    Collect(nested, namespaces, options);
                     break;
                 }
                 case ExtensionDeclaration extension:
                 {
-                    Collect([extension.Receiver], namespaces);
-                    Collect(extension.TypeParameters, namespaces);
-                    Collect(extension.Members, namespaces);
+                    Collect([extension.Receiver], namespaces, options);
+                    Collect(extension.TypeParameters, namespaces, options);
+                    Collect(extension.Members, namespaces, options);
                     break;
                 }
                 case MethodDeclaration method:
                 {
-                    Collect(method.ReturnType, namespaces);
-                    Collect(method.Parameters, namespaces);
-                    Collect(method.TypeParameters, namespaces);
-                    Collect(method.Body, namespaces);
-                    Collect(method.ExplicitInterfaceSpecifier, namespaces);
+                    Collect(method.ReturnType, namespaces, options);
+                    Collect(method.Parameters, namespaces, options);
+                    Collect(method.TypeParameters, namespaces, options);
+                    Collect(method.Body, namespaces, options);
+                    Collect(method.ExplicitInterfaceSpecifier, namespaces, options);
                     break;
                 }
                 case ConstructorDeclaration constructor:
                 {
-                    Collect(constructor.Parameters, namespaces);
-                    Collect(constructor.Body, namespaces);
-                    Collect(constructor.Initializer, namespaces);
+                    Collect(constructor.Parameters, namespaces, options);
+                    Collect(constructor.Body, namespaces, options);
+                    Collect(constructor.Initializer, namespaces, options);
                     break;
                 }
                 case PropertyDeclaration property:
                 {
-                    Collect(property.Type, namespaces);
-                    Collect(property.Parameters, namespaces);
-                    Collect(property.Initializer, namespaces);
-                    Collect(property.Getter?.Body, namespaces);
-                    Collect(property.Setter?.Body, namespaces);
-                    Collect(property.ExplicitInterfaceSpecifier, namespaces);
+                    Collect(property.Type, namespaces, options);
+                    Collect(property.Parameters, namespaces, options);
+                    Collect(property.Initializer, namespaces, options);
+                    Collect(property.Getter?.Body, namespaces, options);
+                    Collect(property.Setter?.Body, namespaces, options);
+                    Collect(property.ExplicitInterfaceSpecifier, namespaces, options);
                     break;
                 }
                 case FieldDeclaration field:
                 {
-                    Collect(field.Type, namespaces);
-                    Collect(field.Initializer, namespaces);
+                    Collect(field.Type, namespaces, options);
+                    Collect(field.Initializer, namespaces, options);
                     break;
                 }
                 case EventDeclaration @event:
                 {
-                    Collect(@event.Type, namespaces);
-                    Collect(@event.Adder?.Body, namespaces);
-                    Collect(@event.Remover?.Body, namespaces);
-                    Collect(@event.ExplicitInterfaceSpecifier, namespaces);
+                    Collect(@event.Type, namespaces, options);
+                    Collect(@event.Adder?.Body, namespaces, options);
+                    Collect(@event.Remover?.Body, namespaces, options);
+                    Collect(@event.ExplicitInterfaceSpecifier, namespaces, options);
                     break;
                 }
                 case EnumMemberDeclaration enumMember:
                 {
-                    Collect(enumMember.Value, namespaces);
+                    Collect(enumMember.Value, namespaces, options);
                     break;
                 }
                 case RawMemberDeclaration raw:
                 {
-                    Collect(raw.Text, namespaces);
+                    Collect(raw.Text, namespaces, options);
                     break;
                 }
                 default:
@@ -142,38 +142,38 @@ internal static partial class CSharpRenderer
         }
     }
 
-    private static void Collect(EquatableArray<AttributeSpecification> attributes, SortedSet<string> namespaces)
+    private static void Collect(EquatableArray<AttributeSpecification> attributes, SortedSet<string> namespaces, RenderOptions options)
     {
         foreach (var attribute in attributes)
         {
-            Collect(attribute.Type, namespaces);
+            Collect(attribute.Type, namespaces, options);
             foreach (var argument in attribute.Arguments)
             {
-                Collect(argument, namespaces);
+                Collect(argument, namespaces, options);
             }
         }
     }
 
-    private static void Collect(EquatableArray<ParameterDeclaration> parameters, SortedSet<string> namespaces)
+    private static void Collect(EquatableArray<ParameterDeclaration> parameters, SortedSet<string> namespaces, RenderOptions options)
     {
         foreach (var parameter in parameters)
         {
-            Collect(parameter.Attributes, namespaces);
-            Collect(parameter.Type, namespaces);
-            Collect(parameter.Default, namespaces);
+            Collect(parameter.Attributes, namespaces, options);
+            Collect(parameter.Type, namespaces, options);
+            Collect(parameter.Default, namespaces, options);
         }
     }
 
-    private static void Collect(EquatableArray<TypeParameterDeclaration> typeParameters, SortedSet<string> namespaces)
+    private static void Collect(EquatableArray<TypeParameterDeclaration> typeParameters, SortedSet<string> namespaces, RenderOptions options)
     {
         foreach (var parameter in typeParameters)
         {
-            Collect(parameter.Attributes, namespaces);
-            Collect(parameter.ConstraintTypes, namespaces);
+            Collect(parameter.Attributes, namespaces, options);
+            Collect(parameter.ConstraintTypes, namespaces, options);
         }
     }
 
-    private static void Collect(Snippet? snippet, SortedSet<string> namespaces)
+    private static void Collect(Snippet? snippet, SortedSet<string> namespaces, RenderOptions options)
     {
         if (snippet is null)
         {
@@ -182,19 +182,19 @@ internal static partial class CSharpRenderer
 
         foreach (var hole in snippet.Holes)
         {
-            Collect(hole.Type, namespaces);
+            Collect(hole.Type, namespaces, options);
         }
     }
 
-    private static void Collect(EquatableArray<TypeReference> types, SortedSet<string> namespaces)
+    private static void Collect(EquatableArray<TypeReference> types, SortedSet<string> namespaces, RenderOptions options)
     {
         foreach (var type in types)
         {
-            Collect(type, namespaces);
+            Collect(type, namespaces, options);
         }
     }
 
-    private static void Collect(TypeReference? type, SortedSet<string> namespaces)
+    private static void Collect(TypeReference? type, SortedSet<string> namespaces, RenderOptions options)
     {
         switch (type)
         {
@@ -202,32 +202,32 @@ internal static partial class CSharpRenderer
             {
                 if (named.ContainingType is { } containing)
                 {
-                    Collect(containing, namespaces);
+                    Collect(containing, namespaces, options);
                 }
-                else if (named.ContainingNamespace is { Length: > 0 } ns && Keyword(named) is null)
+                else if (named.ContainingNamespace is { Length: > 0 } ns && !WritesKeyword(named, options))
                 {
                     namespaces.Add(ns);
                 }
 
-                Collect(named.TypeArguments, namespaces);
+                Collect(named.TypeArguments, namespaces, options);
                 break;
             }
             case ArrayTypeReference array:
             {
-                Collect(array.ElementType, namespaces);
+                Collect(array.ElementType, namespaces, options);
                 break;
             }
             case PointerTypeReference pointer:
             {
-                Collect(pointer.PointedAtType, namespaces);
+                Collect(pointer.PointedAtType, namespaces, options);
                 break;
             }
             case FunctionPointerTypeReference functionPointer:
             {
-                Collect(functionPointer.ReturnType, namespaces);
+                Collect(functionPointer.ReturnType, namespaces, options);
                 foreach (var parameter in functionPointer.Parameters)
                 {
-                    Collect(parameter.Type, namespaces);
+                    Collect(parameter.Type, namespaces, options);
                 }
 
                 break;
@@ -236,7 +236,7 @@ internal static partial class CSharpRenderer
             {
                 foreach (var element in tuple.Elements)
                 {
-                    Collect(element.Type, namespaces);
+                    Collect(element.Type, namespaces, options);
                 }
 
                 break;

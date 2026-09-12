@@ -102,7 +102,7 @@ public sealed class ImplementGenerator : IIncrementalGenerator
             {
                 var part = group.Key.Part with { Members = [.. group.Value] };
                 var unit = new CompilationUnit(Members: [group.Key.Namespace with { Members = [part] }], Header: FileHeader)
-                    .WithCollectedUsings();
+                    .WithCollectedUsings(options);
 
                 spc.AddSource(unit.HintName, unit.ToSourceText(options));
             }

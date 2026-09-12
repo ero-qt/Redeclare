@@ -133,13 +133,17 @@ public sealed class SymbolReaderTests
             public interface IWatched
             {
                 event EventHandler Changed;
+                int Size { get; set; }
             }
 
             public sealed class Watched : IWatched
             {
                 event EventHandler IWatched.Changed { add { } remove { } }
                 public event EventHandler Ticked { add { } remove { } }
+                int IWatched.Size { get; set; }
             }
+
+            public unsafe delegate void Poke(int* target);
 
             public partial class Marked<[Mark("param")] T> { }
 
@@ -759,6 +763,52 @@ public sealed class SymbolReaderTests
     }
 
     [Test]
+    public void ToDeclaration_ExplicitInterfaceProperty_LeavesItsAccessorsUnmodified()
+    {
+        var size = Compilation.Type("Fixture.Watched").ToDeclaration().Members.OfType<PropertyDeclaration>().Single();
+
+        using (Assert.EnterMultipleScope())
+        {
+            Assert.That(size.Accessibility, Is.EqualTo(Accessibility.NotApplicable));
+            Assert.That(size.ExplicitInterfaceSpecifier?.ToString(), Is.EqualTo("global::Fixture.IWatched"));
+            Assert.That(size.Getter!.Accessibility, Is.EqualTo(Accessibility.NotApplicable), "the symbol says private, C# forbids saying so");
+            Assert.That(size.Setter!.Accessibility, Is.EqualTo(Accessibility.NotApplicable));
+        }
+    }
+
+    [Test]
+    public void ToDeclaration_EventFromMetadata_IsFieldLike()
+    {
+        var changed = Compilation.Type("System.ComponentModel.INotifyPropertyChanged").ToDeclaration().Members.OfType<EventDeclaration>().Single();
+
+        using (Assert.EnterMultipleScope())
+        {
+            Assert.That(changed.Adder, Is.Null, "metadata cannot say whether the accessors were written, and only a field-like event renders without bodies");
+            Assert.That(changed.Remover, Is.Null);
+        }
+    }
+
+    [Test]
+    public void ToDeclaration_OutParameter_IsNotScoped()
+    {
+        var tryParse = Repository.Members.OfType<MethodDeclaration>().Single(m => m.Name == "TryParse");
+
+        Assert.That(tryParse.Parameters[1].IsScoped, Is.False, "the symbol reports the effective scope, which every out parameter has");
+    }
+
+    [Test]
+    public void ToDeclaration_DelegateWithAPointer_IsUnsafe()
+    {
+        var poke = Compilation.Type("Fixture.Poke");
+
+        using (Assert.EnterMultipleScope())
+        {
+            Assert.That(poke.ToDeclaration().Modifiers, Is.EqualTo(Modifiers.Unsafe));
+            Assert.That(poke.ToFile().Render(), Does.Contain("public unsafe delegate void Poke(int* target);"));
+        }
+    }
+
+    [Test]
     public void Render_ReadEventsWithBodiesAdded_CompileAgain()
     {
         var watched = Compilation.Type("Fixture.Watched").ToDeclaration();
@@ -772,7 +822,15 @@ public sealed class SymbolReaderTests
 
         var text = unit.Render();
 
-        Assert.That(text, Does.Contain("event global::System.EventHandler global::Fixture.IWatched.Changed"));
-        Compiling.AssertCompiles(text, LanguageVersion.Latest, "namespace Fixture { public interface IWatched { event System.EventHandler Changed; } }");
+        using (Assert.EnterMultipleScope())
+        {
+            Assert.That(text, Does.Contain("event global::System.EventHandler global::Fixture.IWatched.Changed"));
+            Assert.That(text, Does.Contain("int global::Fixture.IWatched.Size { get; set; }"));
+        }
+
+        Compiling.AssertCompiles(
+            text,
+            LanguageVersion.Latest,
+            "namespace Fixture { public interface IWatched { event System.EventHandler Changed; int Size { get; set; } } }");
     }
 }

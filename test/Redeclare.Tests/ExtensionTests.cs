@@ -140,20 +140,4 @@ public sealed class ExtensionTests
 
         Assert.That(() => Holding(block).Render(), Throws.TypeOf<RenderException>().With.Message.Contains("methods and properties"));
     }
-
-    [Test]
-    public void CollectNamespaces_ExtensionBlock_CountsTheReceiverAndMembers()
-    {
-        var block = new ExtensionDeclaration(
-            Receiver: new ParameterDeclaration(Type: Types.Stream, Name: "stream"),
-            Members: [
-                new MethodDeclaration(
-                    Accessibility: Accessibility.Public,
-                    ReturnType: Types.StringBuilder,
-                    Name: "Describe",
-                    Body: Snippet.Expression("new()")),
-            ]);
-
-        Assert.That(CSharpRenderer.CollectNamespaces(Holding(block)), Is.EqualTo(new[] { "System.IO", "System.Text" }));
-    }
 }

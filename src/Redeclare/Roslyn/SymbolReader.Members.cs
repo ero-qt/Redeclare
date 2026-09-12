@@ -187,8 +187,10 @@ internal static partial class SymbolReader
     {
         options ??= ReadOptions.Default;
 
-        // A field-like event's accessors are the compiler's. Anything else is the event's own.
-        bool hasAccessors = @event.AddMethod is { IsImplicitlyDeclared: false } || @event.RemoveMethod is { IsImplicitlyDeclared: false };
+        // Checks for accessors written in source. A field-like event gets its accessors from the compiler, and an event
+        // read from metadata has no source to check.
+        bool hasAccessors = @event.AddMethod is { IsImplicitlyDeclared: false, DeclaringSyntaxReferences.Length: > 0 }
+            || @event.RemoveMethod is { IsImplicitlyDeclared: false, DeclaringSyntaxReferences.Length: > 0 };
         var explicitInterface = @event.ExplicitInterfaceImplementations.Length > 0 ? @event.ExplicitInterfaceImplementations[0] : null;
 
         return new EventDeclaration(
@@ -215,7 +217,8 @@ internal static partial class SymbolReader
             RefKind: parameter.RefKind,
             IsParams: parameter.IsParams,
             IsThis: isThis,
-            IsScoped: parameter.ScopedKind != ScopedKind.None,
+            // Checks for a `scoped` written by hand. An `out` parameter is scoped without one, and the symbol reports it anyway.
+            IsScoped: parameter.ScopedKind != ScopedKind.None && parameter.RefKind != RefKind.Out,
             Type: ReadTypeReference(parameter.Type),
             Name: parameter.Name,
             Default: parameter.HasExplicitDefaultValue ? FormatConstant(parameter.ExplicitDefaultValue, parameter.Type) : null);
@@ -347,7 +350,10 @@ internal static partial class SymbolReader
     {
         var accessibility = accessor.DeclaredAccessibility;
 
-        return accessibility == propertyAccessibility || accessor.ContainingType is { TypeKind: TypeKind.Interface }
+        // Checks that the accessor narrows the property. An explicit implementation's accessors cannot carry modifiers.
+        return accessibility == propertyAccessibility
+            || propertyAccessibility == Accessibility.NotApplicable
+            || accessor.ContainingType is { TypeKind: TypeKind.Interface }
             ? Accessibility.NotApplicable
             : accessibility;
     }

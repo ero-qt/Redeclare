@@ -91,6 +91,10 @@ internal static partial class SymbolReader
         // A delegate keeps its signature on the invoke method, where the symbol API puts it. The declaration holds
         // it the way the syntax does, as a return type and a parameter list, and has no members.
         var invoke = type.TypeKind == TypeKind.Delegate ? type.DelegateInvokeMethod : null;
+        if (invoke is not null && MentionsPointer(invoke))
+        {
+            modifiers |= Modifiers.Unsafe;
+        }
 
         return new TypeDeclaration(
             DocumentationComment: ReadDocumentation(type, options),

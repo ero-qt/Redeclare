@@ -5,8 +5,9 @@ namespace Redeclare;
 internal static partial class CSharpRenderer
 {
     /// <summary>
-    ///     Appends a snippet with every hole filled under <paramref name="options"/>, lines separated by
-    ///     <c>\n</c>. Holes are filled straight into the builder, so a hole costs no string of its own.
+    ///     Appends a snippet with every hole filled under <paramref name="options"/>, lines separated by its
+    ///     <see cref="RenderOptions.NewLine"/>. Holes are filled straight into the builder, so a hole costs no string
+    ///     of its own.
     /// </summary>
     public static StringBuilder AppendSnippet(this StringBuilder text, Snippet snippet, RenderOptions options)
     {
@@ -18,7 +19,7 @@ internal static partial class CSharpRenderer
         {
             if (i > 0)
             {
-                text.Append('\n');
+                text.Append(options.NewLine);
 
                 // A later line continues the line the snippet started on, so it repeats that line's indentation.
                 if (lines[i].Length > 0)
@@ -42,7 +43,7 @@ internal static partial class CSharpRenderer
     private static int LineStart(StringBuilder text)
     {
         int start = text.Length;
-        while (start > 0 && text[start - 1] != '\n')
+        while (start > 0 && text[start - 1] is not ('\n' or '\r'))
         {
             start--;
         }

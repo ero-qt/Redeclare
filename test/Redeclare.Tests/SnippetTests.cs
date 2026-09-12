@@ -217,9 +217,9 @@ public sealed class SnippetTests
     [Test]
     public void Concat_WithSelector_MakesOneLinePerItem()
     {
-        var snippet = Snippet.Concat(["a", "b"], name => Snippet.From($"{Types.Int32} {name:I};"));
+        var snippet = Snippet.Concat([(Types.Int32, "a"), (Types.String, "b")], item => Snippet.From($"{item.Item1} {item.Item2:I};"));
 
-        Assert.That(snippet.Render(_minimal), Is.EqualTo("int a;\nint b;"));
+        Assert.That(snippet.Render(_minimal), Is.EqualTo("int a;\nstring b;"), "each line keeps its own hole");
     }
 
     [Test]
