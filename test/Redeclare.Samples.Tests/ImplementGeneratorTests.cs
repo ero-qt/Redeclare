@@ -68,22 +68,42 @@ public sealed class ImplementGeneratorTests
     }
 
     [Test]
-    public void TryRun_DefinitionMismatch_IsTheCompilersToReport()
+    public void Run_SettableOnAGetterOnlyDefinition_FollowsTheDefinition()
     {
-        const string mismatch = """
+        const string GetterOnly = """
             public partial class Settings
             {
                 [Implement.FromEnvironment("HOME", Settable = true)] public partial string? Home { get; }
             }
             """;
 
-        var (files, errors) = GeneratorRunner.TryRun<ImplementGenerator>(mismatch);
+        var (files, errors) = GeneratorRunner.TryRun<ImplementGenerator>(GetterOnly);
         var settings = files.Single(f => f.Contains("partial class Settings", StringComparison.Ordinal));
 
         using (Assert.EnterMultipleScope())
         {
-            Assert.That(settings, Does.Contain("set =>"), "the generator emits what the attribute asked for and checks nothing");
-            Assert.That(errors, Is.Not.Empty, "the compiler reports the accessor mismatch");
+            Assert.That(settings, Does.Not.Contain("set"), "the definition has no setter, so the body for one goes nowhere");
+            Assert.That(errors, Is.Empty);
+        }
+    }
+
+    [Test]
+    public void Run_SetterGivenNoBody_StaysAuto()
+    {
+        const string Unsettable = """
+            public partial class Settings
+            {
+                [Implement.FromEnvironment("HOME")] public partial string? Home { get; set; }
+            }
+            """;
+
+        var (files, errors) = GeneratorRunner.TryRun<ImplementGenerator>(Unsettable);
+        var settings = files.Single(f => f.Contains("partial class Settings", StringComparison.Ordinal));
+
+        using (Assert.EnterMultipleScope())
+        {
+            Assert.That(settings, Does.Contain("\n        set;\n"), "the setter comes along from the definition and keeps no body");
+            Assert.That(errors, Is.Empty, "C# 13 backs an auto accessor next to a bodied one with a field");
         }
     }
 }

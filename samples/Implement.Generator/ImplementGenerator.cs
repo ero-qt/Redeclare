@@ -121,15 +121,12 @@ public sealed class ImplementGenerator : IIncrementalGenerator
         // The name is only ever written back out, so it comes through as the literal the consumer wrote.
         var variable = arguments.ConstructorExpression("name") ?? Snippet.From($"{symbol.Name:L}");
 
-        var definition = symbol.ToDeclaration(new ReadOptions(IncludeAttributes: false));
-        var implementation = definition with
-        {
-            Modifiers = definition.Modifiers | Modifiers.Partial,
-            Getter = new(Body: Snippet.Expression($"{_environment}.GetEnvironmentVariable({variable})")),
-            Setter = arguments.NamedArgument<bool>("Settable")
-                ? new(Body: Snippet.Expression($"{_environment}.SetEnvironmentVariable({variable}, value)"))
-                : null,
-        };
+        var implementation = symbol.ToDeclaration(ReadOptions.Signature)
+            .WithBodies(
+                getter: Snippet.Expression($"{_environment}.GetEnvironmentVariable({variable})"),
+                setter: arguments.NamedArgument<bool>("Settable")
+                    ? Snippet.Expression($"{_environment}.SetEnvironmentVariable({variable}, value)")
+                    : null);
 
         return new(symbol.ContainingType.ToPart(), symbol.ContainingNamespace.ToDeclaration(), implementation);
     }
@@ -137,7 +134,7 @@ public sealed class ImplementGenerator : IIncrementalGenerator
     private static Implementation ReadEcho(GeneratorAttributeSyntaxContext ctx, CancellationToken ct)
     {
         var symbol = (IMethodSymbol)ctx.TargetSymbol;
-        var definition = symbol.ToDeclaration(new ReadOptions(IncludeAttributes: false));
+        var definition = symbol.ToDeclaration(ReadOptions.Signature);
 
         string start = $"Echo {definition.Name}";
         List<Snippet> parts = [Snippet.From($"{start:L}")];
