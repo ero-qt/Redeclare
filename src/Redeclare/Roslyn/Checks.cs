@@ -64,6 +64,22 @@ internal static class Checks
     }
 
     /// <summary>
+    ///     Gets a value indicating whether the property is declared <c>partial</c>, as either half.
+    /// </summary>
+    public static bool IsPartial(this IPropertySymbol property)
+    {
+        return property.IsPartialDefinition || property.PartialDefinitionPart is not null || property.PartialImplementationPart is not null;
+    }
+
+    /// <summary>
+    ///     Gets a value indicating whether the event is declared <c>partial</c>, as either half.
+    /// </summary>
+    public static bool IsPartial(this IEventSymbol @event)
+    {
+        return @event.IsPartialDefinition || @event.PartialDefinitionPart is not null || @event.PartialImplementationPart is not null;
+    }
+
+    /// <summary>
     ///     Gets a value indicating whether the two types have the same original definition: <c>List&lt;int&gt;</c>
     ///     is <c>List&lt;T&gt;</c>. Nullable annotations do not take part.
     /// </summary>

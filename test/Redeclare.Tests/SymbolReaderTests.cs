@@ -147,6 +147,18 @@ public sealed class SymbolReaderTests
 
             public static class Holder<T> where T : allows ref struct { }
 
+            public partial class Parts
+            {
+                public partial Parts();
+                public partial Parts() { }
+                public partial int Size { get; set; }
+                public partial int Size { get => 0; set { } }
+                public partial event EventHandler Tick;
+                public partial event EventHandler Tick { add { } remove { } }
+                public partial void Run();
+                public partial void Run() { }
+            }
+
             public partial class Marked<[Mark("param")] T> { }
 
             public sealed class ClashAttribute : Attribute
@@ -819,6 +831,22 @@ public sealed class SymbolReaderTests
         {
             Assert.That(holder.ToDeclaration().TypeParameters.Single().AllowsRefLikeType, Is.True);
             Assert.That(holder.ToFile().Render(), Does.Contain("where T : allows ref struct"));
+        }
+    }
+
+    [Test]
+    public void ToDeclaration_PartialMembers_ReadPartialAndRenderTheDefinitions()
+    {
+        var parts = Compilation.Type("Fixture.Parts");
+        var text = parts.ToFile().Render();
+
+        using (Assert.EnterMultipleScope())
+        {
+            Assert.That(parts.ToDeclaration().Members.Select(m => m.Modifiers), Has.All.EqualTo(Modifiers.Partial));
+            Assert.That(text, Does.Contain("public partial Parts();"));
+            Assert.That(text, Does.Contain("public partial int Size { get; set; }"));
+            Assert.That(text, Does.Contain("public partial event global::System.EventHandler Tick;"));
+            Assert.That(text, Does.Contain("public partial void Run();"));
         }
     }
 

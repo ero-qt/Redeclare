@@ -44,7 +44,8 @@ internal static partial class SymbolReader
     }
 
     /// <summary>
-    ///     Reads a constructor. The body is an empty block.
+    ///     Reads a constructor. The body is an empty block, or none for a <c>partial</c> definition or an <c>extern</c>
+    ///     constructor.
     /// </summary>
     public static ConstructorDeclaration ReadConstructor(IMethodSymbol constructor, ReadOptions? options = null)
     {
@@ -59,9 +60,9 @@ internal static partial class SymbolReader
             DocumentationComment: ReadDocumentation(constructor, options),
             Attributes: ReadAttributes(constructor, options),
             Accessibility: constructor.IsStatic ? Accessibility.NotApplicable : constructor.DeclaredAccessibility,
-            Modifiers: constructor.IsStatic ? Modifiers.Static : Modifiers.None,
+            Modifiers: (constructor.IsStatic ? Modifiers.Static : Modifiers.None) | (constructor.IsPartialDefinition ? Modifiers.Partial : Modifiers.None),
             Parameters: ReadParameters(constructor.Parameters, isExtension: false, options),
-            Body: Snippet.Empty);
+            Body: constructor.IsPartialDefinition || constructor.IsExtern ? null : Snippet.Empty);
     }
 
     /// <summary>
@@ -358,6 +359,17 @@ internal static partial class SymbolReader
             : accessibility;
     }
 
+    private static bool IsPartialDefinition(ISymbol member)
+    {
+        return member switch
+        {
+            IMethodSymbol method => method.IsPartialDefinition,
+            IPropertySymbol property => property.IsPartialDefinition,
+            IEventSymbol @event => @event.IsPartialDefinition,
+            _ => false,
+        };
+    }
+
     private static Modifiers ReadMemberModifiers(ISymbol member)
     {
         var modifiers = Modifiers.None;
@@ -398,6 +410,11 @@ internal static partial class SymbolReader
             modifiers |= Modifiers.Unsafe;
         }
 
+        if (IsPartialDefinition(member))
+        {
+            modifiers |= Modifiers.Partial;
+        }
+
         if (member is IMethodSymbol method)
         {
             if (method.IsAsync)
@@ -408,11 +425,6 @@ internal static partial class SymbolReader
             if (method.IsReadOnly && !method.IsStatic && method.ContainingType is { TypeKind: TypeKind.Struct, IsReadOnly: false })
             {
                 modifiers |= Modifiers.ReadOnly;
-            }
-
-            if (method.IsPartialDefinition)
-            {
-                modifiers |= Modifiers.Partial;
             }
         }
 
