@@ -775,6 +775,18 @@ public sealed class SymbolReaderTests
     }
 
     [Test]
+    public void ToDeclaration_EventFromMetadata_IsFieldLike()
+    {
+        var changed = Compilation.Type("System.ComponentModel.INotifyPropertyChanged").ToDeclaration().Members.OfType<EventDeclaration>().Single();
+
+        using (Assert.EnterMultipleScope())
+        {
+            Assert.That(changed.Adder, Is.Null, "metadata cannot say whether the accessors were written, and only a field-like event renders without bodies");
+            Assert.That(changed.Remover, Is.Null);
+        }
+    }
+
+    [Test]
     public void Render_ReadEventsWithBodiesAdded_CompileAgain()
     {
         var watched = Compilation.Type("Fixture.Watched").ToDeclaration();
