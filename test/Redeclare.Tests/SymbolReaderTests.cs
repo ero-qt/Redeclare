@@ -111,6 +111,12 @@ public sealed class SymbolReaderTests
                 public delegate* unmanaged[Cdecl]<int, void> Callback;
             }
 
+            public struct Mixed
+            {
+                public int Count { readonly get => 0; set { } }
+                public int Tagged { get; [Obsolete] set; }
+            }
+
             public readonly struct Frozen
             {
                 public int Length => 0;
@@ -479,6 +485,26 @@ public sealed class SymbolReaderTests
             Assert.That(members["Seal"].Modifiers, Is.EqualTo(Modifiers.Sealed), "without sealed a bodiless interface method is abstract");
             Assert.That(members["Loose"].Modifiers, Is.EqualTo(Modifiers.None), "virtual is implied on an instance member with a body");
         }
+    }
+
+    [Test]
+    public void ToDeclaration_AccessorsWithReadOnlyAndAttributes_KeepThem()
+    {
+        var mixed = Compilation.Type("Fixture.Mixed");
+        var properties = mixed.ToDeclaration().Members.OfType<PropertyDeclaration>().ToDictionary(p => p.Name);
+        var text = mixed.ToFile().Render();
+
+        using (Assert.EnterMultipleScope())
+        {
+            Assert.That(properties["Count"].Modifiers, Is.EqualTo(Modifiers.None), "only one accessor is readonly");
+            Assert.That(properties["Count"].Getter!.IsReadOnly, Is.True);
+            Assert.That(properties["Count"].Setter!.IsReadOnly, Is.False);
+            Assert.That(properties["Tagged"].Setter!.Attributes.Single().Type.ToString(), Is.EqualTo("global::System.ObsoleteAttribute"));
+            Assert.That(text, Does.Contain("public int Count { readonly get; set; }"));
+            Assert.That(text, Does.Contain("public int Tagged { get; [global::System.ObsoleteAttribute] set; }"));
+        }
+
+        Compiling.AssertCompiles(text);
     }
 
     [Test]

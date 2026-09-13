@@ -249,12 +249,12 @@ internal static partial class CSharpRenderer
             head.Append(" { ");
             if (getter is not null)
             {
-                AppendAccessorHead(head, getter, "get").Append("; ");
+                AppendAccessorHead(head, getter, "get", options).Append("; ");
             }
 
             if (setter is not null)
             {
-                AppendAccessorHead(head, setter, setter.IsInitOnly ? "init" : "set").Append("; ");
+                AppendAccessorHead(head, setter, setter.IsInitOnly ? "init" : "set", options).Append("; ");
             }
 
             head.Append('}');
@@ -274,13 +274,13 @@ internal static partial class CSharpRenderer
         {
             if (getter is not null)
             {
-                AppendAccessorHead(writer.BeginLine(), getter, "get");
+                AppendAccessorHead(writer.BeginLine(), getter, "get", options);
                 RenderBody(writer, getter.Body, options.Accessors, CSharpVersion.CSharp7, options, returnsValue: true, what);
             }
 
             if (setter is not null)
             {
-                AppendAccessorHead(writer.BeginLine(), setter, setter.IsInitOnly ? "init" : "set");
+                AppendAccessorHead(writer.BeginLine(), setter, setter.IsInitOnly ? "init" : "set", options);
                 RenderBody(writer, setter.Body, options.Accessors, CSharpVersion.CSharp7, options, returnsValue: false, what);
             }
         }
@@ -359,18 +359,28 @@ internal static partial class CSharpRenderer
         writer.EndLine();
         using (writer.Block())
         {
-            AppendAccessorHead(writer.BeginLine(), @event.Adder!, "add");
+            AppendAccessorHead(writer.BeginLine(), @event.Adder!, "add", options);
             RenderBody(writer, @event.Adder!.Body, options.Accessors, CSharpVersion.CSharp7, options, returnsValue: false, what);
-            AppendAccessorHead(writer.BeginLine(), @event.Remover!, "remove");
+            AppendAccessorHead(writer.BeginLine(), @event.Remover!, "remove", options);
             RenderBody(writer, @event.Remover!.Body, options.Accessors, CSharpVersion.CSharp7, options, returnsValue: false, what);
         }
     }
 
-    private static StringBuilder AppendAccessorHead(StringBuilder text, AccessorDeclaration accessor, string keyword)
+    private static StringBuilder AppendAccessorHead(StringBuilder text, AccessorDeclaration accessor, string keyword, RenderOptions options)
     {
+        foreach (var attribute in accessor.Attributes)
+        {
+            text.Append('[').AppendAttribute(attribute, options).Append("] ");
+        }
+
         if (accessor.Accessibility != Accessibility.NotApplicable)
         {
             text.Append(AccessibilityText(accessor.Accessibility)).Append(' ');
+        }
+
+        if (accessor.IsReadOnly)
+        {
+            text.Append("readonly ");
         }
 
         return text.Append(keyword);

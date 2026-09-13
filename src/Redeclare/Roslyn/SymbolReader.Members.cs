@@ -1,4 +1,6 @@
 using Microsoft.CodeAnalysis;
+using Microsoft.CodeAnalysis.CSharp;
+using Microsoft.CodeAnalysis.CSharp.Syntax;
 using System;
 using System.Collections.Immutable;
 using System.Globalization;
@@ -83,18 +85,14 @@ internal static partial class SymbolReader
             modifiers |= Modifiers.Required;
         }
 
-        if (HasReadOnlyAccessors(property) && IsInstanceMemberOfMutableStruct(property))
+        bool propertyReadOnly = HasReadOnlyAccessors(property) && IsInstanceMemberOfMutableStruct(property);
+        if (propertyReadOnly)
         {
             modifiers |= Modifiers.ReadOnly;
         }
 
-        var getter = property.GetMethod is { } get
-            ? new AccessorDeclaration(Accessibility: ReadAccessorAccessibility(get, accessibility))
-            : null;
-
-        var setter = property.SetMethod is { } set
-            ? new AccessorDeclaration(Accessibility: ReadAccessorAccessibility(set, accessibility), IsInitOnly: set.IsInitOnly)
-            : null;
+        var getter = property.GetMethod is { } get ? ReadAccessor(get, accessibility, propertyReadOnly, options) : null;
+        var setter = property.SetMethod is { } set ? ReadAccessor(set, accessibility, propertyReadOnly, options) : null;
 
         return new PropertyDeclaration(
             DocumentationComment: ReadDocumentation(property, options),
@@ -353,6 +351,32 @@ internal static partial class SymbolReader
             IArrayTypeSymbol array => MentionsPointer(array.ElementType),
             _ => false,
         };
+    }
+
+    private static AccessorDeclaration ReadAccessor(IMethodSymbol accessor, Accessibility propertyAccessibility, bool propertyReadOnly, ReadOptions options)
+    {
+        return new AccessorDeclaration(
+            Accessibility: ReadAccessorAccessibility(accessor, propertyAccessibility),
+            IsInitOnly: accessor.IsInitOnly,
+            IsReadOnly: !propertyReadOnly && HasWrittenReadOnly(accessor),
+            Attributes: ReadAttributes(accessor, options));
+    }
+
+    /// <summary>
+    ///     Checks for a <c>readonly</c> written on the accessor. The compiler marks every auto getter of a struct
+    ///     readonly, so the symbol alone does not say whether the word is there.
+    /// </summary>
+    private static bool HasWrittenReadOnly(IMethodSymbol accessor)
+    {
+        foreach (var reference in accessor.DeclaringSyntaxReferences)
+        {
+            if (reference.GetSyntax() is AccessorDeclarationSyntax syntax && syntax.Modifiers.Any(SyntaxKind.ReadOnlyKeyword))
+            {
+                return true;
+            }
+        }
+
+        return false;
     }
 
     private static Accessibility ReadAccessorAccessibility(IMethodSymbol accessor, Accessibility propertyAccessibility)

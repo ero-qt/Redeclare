@@ -14,7 +14,14 @@ namespace Redeclare;
 /// </param>
 /// <param name="IsInitOnly">Whether a setter is <c>init</c>. Needs C# 9.</param>
 /// <param name="Accessibility">The accessibility, when narrower than the property's. <c>NotApplicable</c> writes none.</param>
+/// <param name="IsReadOnly">
+///     Whether the accessor is <c>readonly</c> on its own, <c>readonly get</c>, in a struct whose property is not.
+///     Needs C# 8.
+/// </param>
+/// <param name="Attributes">The attributes on the accessor, written before it.</param>
 internal sealed record AccessorDeclaration(
     Snippet? Body = null,
     bool IsInitOnly = false,
-    Accessibility Accessibility = Accessibility.NotApplicable);
+    Accessibility Accessibility = Accessibility.NotApplicable,
+    bool IsReadOnly = false,
+    EquatableArray<AttributeSpecification> Attributes = default);
