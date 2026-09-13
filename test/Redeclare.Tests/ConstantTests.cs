@@ -111,7 +111,7 @@ public sealed class ConstantTests
     {
         var type = Compilation.Type("Fixture.Marked");
 
-        string Default(string method)
+        string getDefault(string method)
         {
             var parameter = type.GetMembers(method).OfType<IMethodSymbol>().Single().Parameters[0];
 
@@ -120,9 +120,9 @@ public sealed class ConstantTests
 
         using (Assert.EnterMultipleScope())
         {
-            Assert.That(Default("G"), Is.EqualTo("default"), "an unconstrained T is neither a value nor a reference");
-            Assert.That(Default("H"), Is.EqualTo("null"));
-            Assert.That(Default("I"), Is.EqualTo("null"));
+            Assert.That(getDefault("G"), Is.EqualTo("default"), "an unconstrained T is neither a value nor a reference");
+            Assert.That(getDefault("H"), Is.EqualTo("null"));
+            Assert.That(getDefault("I"), Is.EqualTo("null"));
         }
     }
 

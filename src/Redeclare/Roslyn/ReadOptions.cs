@@ -29,4 +29,14 @@ internal sealed record ReadOptions(
     ///     are the ones being added rather than the ones already declared elsewhere.
     /// </remarks>
     public static ReadOptions Shape { get; } = new(IncludeMembers: false, IncludeAttributes: false);
+
+    /// <summary>
+    ///     Gets the options that read a member's signature and nothing else: no attributes, no documentation.
+    /// </summary>
+    /// <remarks>
+    ///     This is what the implementing half of a partial member is written from. The compiler joins the attributes
+    ///     of both halves, so one read along with the signature is applied twice, and the documentation comment
+    ///     belongs to the definition.
+    /// </remarks>
+    public static ReadOptions Signature { get; } = new(IncludeAttributes: false);
 }

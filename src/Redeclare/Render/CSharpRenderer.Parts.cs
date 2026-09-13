@@ -61,26 +61,26 @@ internal static partial class CSharpRenderer
             text.Append(AccessibilityText(accessibility)).Append(' ');
         }
 
-        Append(Modifiers.File, "file");
-        Append(Modifiers.Const, "const");
-        Append(Modifiers.Static, "static");
-        Append(Modifiers.Extern, "extern");
-        Append(Modifiers.New, "new");
-        Append(Modifiers.Virtual, "virtual");
-        Append(Modifiers.Abstract, "abstract");
-        Append(Modifiers.Sealed, "sealed");
-        Append(Modifiers.Override, "override");
-        Append(Modifiers.ReadOnly, "readonly");
-        Append(Modifiers.Unsafe, "unsafe");
-        Append(Modifiers.Required, "required");
-        Append(Modifiers.Volatile, "volatile");
-        Append(Modifiers.Async, "async");
-        Append(Modifiers.Ref, "ref");
-        Append(Modifiers.Partial, "partial");
+        append(Modifiers.File, "file");
+        append(Modifiers.Const, "const");
+        append(Modifiers.Static, "static");
+        append(Modifiers.Extern, "extern");
+        append(Modifiers.New, "new");
+        append(Modifiers.Virtual, "virtual");
+        append(Modifiers.Abstract, "abstract");
+        append(Modifiers.Sealed, "sealed");
+        append(Modifiers.Override, "override");
+        append(Modifiers.ReadOnly, "readonly");
+        append(Modifiers.Unsafe, "unsafe");
+        append(Modifiers.Required, "required");
+        append(Modifiers.Volatile, "volatile");
+        append(Modifiers.Async, "async");
+        append(Modifiers.Ref, "ref");
+        append(Modifiers.Partial, "partial");
 
         return text;
 
-        void Append(Modifiers flag, string keyword)
+        void append(Modifiers flag, string keyword)
         {
             if ((modifiers & flag) != 0)
             {
@@ -310,39 +310,39 @@ internal static partial class CSharpRenderer
                 bool annotated = parameter.ReferenceTypeConstraintNullableAnnotation == NullableAnnotation.Annotated
                     && options.NullableAnnotations
                     && options.Allows(CSharpVersion.CSharp8);
-                Separate().Append(annotated ? "class?" : "class");
+                separate().Append(annotated ? "class?" : "class");
             }
 
             if (parameter.HasUnmanagedTypeConstraint)
             {
-                Separate().Append("unmanaged");
+                separate().Append("unmanaged");
             }
             else if (parameter.HasValueTypeConstraint)
             {
-                Separate().Append("struct");
+                separate().Append("struct");
             }
 
             if (parameter.HasNotNullConstraint)
             {
-                Separate().Append("notnull");
+                separate().Append("notnull");
             }
 
             foreach (var constraintType in parameter.ConstraintTypes)
             {
-                Separate().AppendType(constraintType, options);
+                separate().AppendType(constraintType, options);
             }
 
             if (parameter.HasConstructorConstraint)
             {
-                Separate().Append("new()");
+                separate().Append("new()");
             }
 
             if (parameter.AllowsRefLikeType)
             {
-                Separate().Append("allows ref struct");
+                separate().Append("allows ref struct");
             }
 
-            StringBuilder Separate()
+            StringBuilder separate()
             {
                 if (!first)
                 {

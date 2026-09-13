@@ -1,3 +1,4 @@
+using Microsoft.CodeAnalysis;
 using System.Collections.Generic;
 using System.Globalization;
 using System.Text;
@@ -15,12 +16,20 @@ namespace Redeclare;
 ///         file declares no symbol of its own, which is why this record has no <c>Declaration</c> suffix.
 ///     </para>
 ///     <para>
-///         <paramref name="Header"/> is one text written as it is: the header comment, <c>#nullable enable</c>,
-///         <c>#pragma warning disable</c>, whatever belongs above the usings. It is empty unless written, so a
-///         generated file says <c>&lt;auto-generated/&gt;</c> itself.
+///         <paramref name="Header"/> is one text written as it is at the top of the file. It is empty unless
+///         written, so a generated file says <c>&lt;auto-generated/&gt;</c> itself. The nullable context and the
+///         warnings to disable are written after it, as directives, so they follow the render options.
 ///     </para>
 /// </remarks>
-/// <param name="Header">Text written as it is above the usings, or <see langword="null"/> for none.</param>
+/// <param name="Header">Text written as it is at the top of the file, or <see langword="null"/> for none.</param>
+/// <param name="NullableContext">
+///     The <c>#nullable</c> directive under the header, or <see langword="null"/> for none. Written only under C# 8
+///     or later, since the directive does not exist before that.
+/// </param>
+/// <param name="DisabledWarnings">
+///     The warnings a <c>#pragma warning disable</c> under the header names: <c>CS1591</c>, <c>IDE0005</c>. Empty
+///     for no directive.
+/// </param>
 /// <param name="Usings">The using directives without the keyword: <c>System</c>, <c>static System.Math</c>, <c>Alias = Ns.Type</c>.</param>
 /// <param name="Members">
 ///     The namespaces and types, in order. A type here is in the global namespace. A lone namespace renders
@@ -28,6 +37,8 @@ namespace Redeclare;
 /// </param>
 internal sealed record CompilationUnit(
     Snippet? Header = null,
+    NullableContextOptions? NullableContext = null,
+    EquatableArray<string> DisabledWarnings = default,
     EquatableArray<string> Usings = default,
     EquatableArray<MemberDeclaration> Members = default)
 {

@@ -702,7 +702,7 @@ public sealed class SymbolReaderTests
     [Test]
     public void Render_KeywordNames_EscapeEverywhere()
     {
-        const string source = """
+        const string Source = """
             namespace @event
             {
                 public class @class<@int>
@@ -716,7 +716,7 @@ public sealed class SymbolReaderTests
             }
             """;
 
-        string rendered = Compiling.Compile(source).Type("event.class`1").ToFile().Render();
+        string rendered = Compiling.Compile(Source).Type("event.class`1").ToFile().Render();
 
         using (Assert.EnterMultipleScope())
         {

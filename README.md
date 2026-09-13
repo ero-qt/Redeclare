@@ -26,7 +26,7 @@ Declarations are positional records under `Model/Declarations`. `null` means abs
 
 | Record | Declares |
 |---|---|
-| `CompilationUnit` | A file: header, usings, members. `HintName` names it for `AddSource`. |
+| `CompilationUnit` | A file: header, `#nullable` and `#pragma warning disable` directives, usings, members. `HintName` names it for `AddSource`. |
 | `NamespaceDeclaration` | A namespace. An empty name is the global one and writes no line. |
 | `TypeDeclaration` | Classes, structs, interfaces, enums, records and delegates. `ContainingType` gives a nested type its enclosing parts. |
 | `ExtensionDeclaration` | A C# 14 extension block. |

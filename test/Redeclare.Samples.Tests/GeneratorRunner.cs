@@ -63,9 +63,9 @@ internal static class GeneratorRunner
         string? replacement = null)
         where TGenerator : IIncrementalGenerator, new()
     {
-        const string unrelatedName = "Unrelated.cs";
+        const string UnrelatedName = "Unrelated.cs";
         var marked = CSharpSyntaxTree.ParseText(source, path: "Marked.cs");
-        var unrelated = CSharpSyntaxTree.ParseText("class Unrelated { }", path: unrelatedName);
+        var unrelated = CSharpSyntaxTree.ParseText("class Unrelated { }", path: UnrelatedName);
         var compilation = Compile(marked, unrelated);
 
         GeneratorDriver driver = CSharpGeneratorDriver.Create(
@@ -75,7 +75,7 @@ internal static class GeneratorRunner
         driver = driver.RunGenerators(compilation);
 
         var edited = replacement is null
-            ? compilation.ReplaceSyntaxTree(unrelated, CSharpSyntaxTree.ParseText("class Unrelated { int x; }", path: unrelatedName))
+            ? compilation.ReplaceSyntaxTree(unrelated, CSharpSyntaxTree.ParseText("class Unrelated { int x; }", path: UnrelatedName))
             : compilation.ReplaceSyntaxTree(marked, CSharpSyntaxTree.ParseText(replacement, path: "Marked.cs"));
 
         driver = driver.RunGenerators(edited);
