@@ -17,6 +17,8 @@ internal static partial class CSharpRenderer
             writer.WriteSnippet(header, options);
         }
 
+        RenderDirectives(writer, unit, options);
+
         if (!unit.Usings.IsEmpty)
         {
             writer.BlankLine();
@@ -225,6 +227,47 @@ internal static partial class CSharpRenderer
     /// <summary>
     ///     Renders the members of a file or a namespace: namespaces and types, a blank line between them.
     /// </summary>
+    /// <summary>
+    ///     Writes the <c>#nullable</c> and <c>#pragma warning disable</c> lines under the header. <c>#nullable</c> is
+    ///     C# 8, and below that it is left out.
+    /// </summary>
+    private static void RenderDirectives(SourceWriter writer, CompilationUnit unit, RenderOptions options)
+    {
+        bool nullable = unit.NullableContext is { } context && options.Allows(CSharpVersion.CSharp8);
+        if (!nullable && unit.DisabledWarnings.IsEmpty)
+        {
+            return;
+        }
+
+        writer.BlankLine();
+        if (nullable)
+        {
+            writer.WriteLine(unit.NullableContext switch
+            {
+                NullableContextOptions.Disable => "#nullable disable",
+                NullableContextOptions.Warnings => "#nullable enable warnings",
+                NullableContextOptions.Annotations => "#nullable enable annotations",
+                _ => "#nullable enable",
+            });
+        }
+
+        if (!unit.DisabledWarnings.IsEmpty)
+        {
+            var line = writer.BeginLine().Append("#pragma warning disable ");
+            for (int i = 0; i < unit.DisabledWarnings.Length; i++)
+            {
+                if (i > 0)
+                {
+                    line.Append(", ");
+                }
+
+                line.Append(unit.DisabledWarnings[i]);
+            }
+
+            writer.EndLine();
+        }
+    }
+
     private static bool HoldsNamespace(NamespaceDeclaration ns)
     {
         foreach (var member in ns.Members)
