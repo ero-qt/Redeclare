@@ -93,8 +93,6 @@ internal static partial class SymbolReader
             ? ReadTypeReference(enumType)
             : null;
 
-        // Reads a delegate's signature from its `Invoke` method, where the symbol API keeps it. The declaration
-        // holds it the way the syntax does, as a return type and a parameter list, and has no members.
         var invoke = type.TypeKind == TypeKind.Delegate ? type.DelegateInvokeMethod : null;
         if (invoke is not null && MentionsPointer(invoke))
         {
@@ -263,7 +261,6 @@ internal static partial class SymbolReader
             }
         }
 
-        // Reads the `[return: ...]` attributes too. They sit on the return value, not on the method symbol.
         if (symbol is IMethodSymbol method)
         {
             foreach (var attribute in method.GetReturnTypeAttributes())
@@ -291,21 +288,24 @@ internal static partial class SymbolReader
             return null;
         }
 
-        // Strips the `<member name="...">` wrapper the compiler adds. It is not part of what was written.
-        List<string> kept = [];
+        List<string> inner = [];
         foreach (var line in Snippet.Dedent(xml!))
         {
-            var trimmed = line.Trim();
-            if (trimmed.StartsWith("<member ", StringComparison.Ordinal) || trimmed == "</member>")
+            if (!IsMemberTag(line))
             {
-                continue;
+                inner.Add(line);
             }
-
-            kept.Add(line);
         }
 
-        var body = Snippet.Dedent(string.Join("\n", kept));
+        var body = Snippet.Dedent(string.Join("\n", inner));
 
         return body.IsEmpty ? null : string.Join("\n", [.. body]);
+    }
+
+    private static bool IsMemberTag(string line)
+    {
+        var trimmed = line.Trim();
+
+        return trimmed.StartsWith("<member ", StringComparison.Ordinal) || trimmed == "</member>";
     }
 }

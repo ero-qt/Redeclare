@@ -268,7 +268,6 @@ internal sealed record Snippet
         int position = 0;
         while (start >= 0)
         {
-            // Writes a start marker with no end marker as plain text. The caller put it there.
             int end = line.IndexOf(HoleEnd, start);
             if (end < 0)
             {

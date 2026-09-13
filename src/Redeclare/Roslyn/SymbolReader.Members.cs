@@ -25,15 +25,6 @@ internal static partial class SymbolReader
             throw new ArgumentException($"'{method.Name}' is not the metadata name of an operator.", nameof(method));
         }
 
-        // An explicit implementation takes its name from the interface member, an operator's included.
-        string name = method.MethodKind switch
-        {
-            MethodKind.UserDefinedOperator or MethodKind.Conversion => GetOperatorName(method.Name)!,
-            MethodKind.ExplicitInterfaceImplementation when method.ExplicitInterfaceImplementations.Length > 0
-                => GetOperatorName(method.ExplicitInterfaceImplementations[0].Name) ?? method.ExplicitInterfaceImplementations[0].Name,
-            _ => method.Name,
-        };
-
         return new MethodDeclaration(
             DocumentationComment: ReadDocumentation(method, options),
             Attributes: ReadAttributes(method, options),
@@ -41,12 +32,19 @@ internal static partial class SymbolReader
             Modifiers: ReadMemberModifiers(method),
             ReturnType: ReadTypeReference(method.ReturnType),
             RefKind: method.RefKind,
-            Name: name,
+            Name: ReadMethodName(method),
             ExplicitInterfaceSpecifier: method.ExplicitInterfaceImplementations.Length > 0
                 ? ReadTypeReference(method.ExplicitInterfaceImplementations[0].ContainingType)
                 : null,
             TypeParameters: ReadTypeParameters(method.TypeParameters, options),
             Parameters: ReadParameters(method.Parameters, method.IsExtensionMethod, options));
+    }
+
+    private static string ReadMethodName(IMethodSymbol method)
+    {
+        var declared = method.ExplicitInterfaceImplementations.Length > 0 ? method.ExplicitInterfaceImplementations[0] : method;
+
+        return declared.MethodKind is MethodKind.UserDefinedOperator or MethodKind.Conversion ? GetOperatorName(declared.Name)! : declared.Name;
     }
 
     /// <summary>
@@ -85,10 +83,7 @@ internal static partial class SymbolReader
             modifiers |= Modifiers.Required;
         }
 
-        // Reads `readonly` off the accessors, where a struct member keeps it. Inside a `readonly` struct it is implied.
-        bool accessorsReadOnly = property.GetMethod is null or { IsReadOnly: true }
-            && property.SetMethod is null or { IsReadOnly: true };
-        if (accessorsReadOnly && !property.IsStatic && property.ContainingType is { TypeKind: TypeKind.Struct, IsReadOnly: false })
+        if (HasReadOnlyAccessors(property) && IsInstanceMemberOfMutableStruct(property))
         {
             modifiers |= Modifiers.ReadOnly;
         }
@@ -164,7 +159,6 @@ internal static partial class SymbolReader
             modifiers |= Modifiers.Unsafe;
         }
 
-        // Reads a fixed-size buffer by its element type. The symbol's type is a pointer to that element.
         var type = field.IsFixedSizeBuffer && field.Type is IPointerTypeSymbol pointer ? pointer.PointedAtType : field.Type;
 
         return new FieldDeclaration(
@@ -203,10 +197,7 @@ internal static partial class SymbolReader
     {
         options ??= ReadOptions.Default;
 
-        // Checks for accessors written in source. A field-like event gets its accessors from the compiler, and an event
-        // read from metadata has no source to check.
-        bool hasAccessors = @event.AddMethod is { IsImplicitlyDeclared: false, DeclaringSyntaxReferences.Length: > 0 }
-            || @event.RemoveMethod is { IsImplicitlyDeclared: false, DeclaringSyntaxReferences.Length: > 0 };
+        bool hasAccessors = IsWrittenInSource(@event.AddMethod) || IsWrittenInSource(@event.RemoveMethod);
         var explicitInterface = @event.ExplicitInterfaceImplementations.Length > 0 ? @event.ExplicitInterfaceImplementations[0] : null;
 
         return new EventDeclaration(
@@ -233,9 +224,7 @@ internal static partial class SymbolReader
             RefKind: parameter.RefKind,
             IsParams: parameter.IsParams,
             IsThis: isThis,
-            // Checks for a `scoped` written by hand. An `out` parameter and a `params` span are scoped without one, and
-            // the symbol reports it anyway.
-            IsScoped: parameter.ScopedKind != ScopedKind.None && parameter.RefKind != RefKind.Out && !(parameter.IsParams && parameter.Type.IsRefLikeType),
+            IsScoped: HasExplicitScoped(parameter),
             Type: ReadTypeReference(parameter.Type),
             Name: parameter.Name,
             Default: parameter.HasExplicitDefaultValue ? FormatConstant(parameter.ExplicitDefaultValue, parameter.Type) : null);
@@ -368,14 +357,33 @@ internal static partial class SymbolReader
 
     private static Accessibility ReadAccessorAccessibility(IMethodSymbol accessor, Accessibility propertyAccessibility)
     {
-        var accessibility = accessor.DeclaredAccessibility;
+        bool narrows = accessor.DeclaredAccessibility != propertyAccessibility;
+        bool explicitImplementation = propertyAccessibility == Accessibility.NotApplicable;
+        bool inInterface = accessor.ContainingType is { TypeKind: TypeKind.Interface };
 
-        // Checks that the accessor narrows the property. An explicit implementation's accessors cannot carry modifiers.
-        return accessibility == propertyAccessibility
-            || propertyAccessibility == Accessibility.NotApplicable
-            || accessor.ContainingType is { TypeKind: TypeKind.Interface }
-            ? Accessibility.NotApplicable
-            : accessibility;
+        return narrows && !explicitImplementation && !inInterface ? accessor.DeclaredAccessibility : Accessibility.NotApplicable;
+    }
+
+    private static bool HasReadOnlyAccessors(IPropertySymbol property)
+    {
+        return property.GetMethod is null or { IsReadOnly: true } && property.SetMethod is null or { IsReadOnly: true };
+    }
+
+    private static bool IsInstanceMemberOfMutableStruct(ISymbol member)
+    {
+        return !member.IsStatic && member.ContainingType is { TypeKind: TypeKind.Struct, IsReadOnly: false };
+    }
+
+    private static bool IsWrittenInSource(IMethodSymbol? accessor)
+    {
+        return accessor is { IsImplicitlyDeclared: false, DeclaringSyntaxReferences.Length: > 0 };
+    }
+
+    private static bool HasExplicitScoped(IParameterSymbol parameter)
+    {
+        bool implied = parameter.RefKind == RefKind.Out || (parameter.IsParams && parameter.Type.IsRefLikeType);
+
+        return parameter.ScopedKind != ScopedKind.None && !implied;
     }
 
     private static bool IsPartialDefinition(ISymbol member)
@@ -414,9 +422,7 @@ internal static partial class SymbolReader
             modifiers |= Modifiers.Override;
         }
 
-        // Roslyn reports `sealed void M() { }` in an interface as neither virtual, abstract nor sealed.
-        bool sealedInInterface = inInterface && !member.IsStatic && !member.IsVirtual && !member.IsAbstract && !IsExplicitImplementation(member);
-        if (member.IsSealed || sealedInInterface)
+        if (member.IsSealed || IsSealedInterfaceMember(member))
         {
             modifiers |= Modifiers.Sealed;
         }
@@ -443,12 +449,25 @@ internal static partial class SymbolReader
                 modifiers |= Modifiers.Async;
             }
 
-            if (method.IsReadOnly && !method.IsStatic && method.ContainingType is { TypeKind: TypeKind.Struct, IsReadOnly: false })
+            if (method.IsReadOnly && IsInstanceMemberOfMutableStruct(method))
             {
                 modifiers |= Modifiers.ReadOnly;
             }
         }
 
         return modifiers;
+    }
+
+    /// <summary>
+    ///     Checks for <c>sealed</c> on an interface member. Roslyn reports <c>sealed void M() { }</c> in an interface
+    ///     as neither virtual, abstract nor sealed, so the member is sealed when it is none of the three.
+    /// </summary>
+    private static bool IsSealedInterfaceMember(ISymbol member)
+    {
+        return member.ContainingType is { TypeKind: TypeKind.Interface }
+            && !member.IsStatic
+            && !member.IsVirtual
+            && !member.IsAbstract
+            && !IsExplicitImplementation(member);
     }
 }

@@ -31,16 +31,7 @@ internal static partial class CSharpRenderer
 
         writer.BlankLine();
 
-        // Checks whether the file can use a file-scoped namespace. That needs one named namespace with no namespace
-        // inside it, and a C# version that knows the syntax. A namespace with no name is the global namespace and
-        // writes no line.
-        bool fileScoped = unit.Members is { Length: 1 }
-            && unit.Members[0] is NamespaceDeclaration { Name.Length: > 0 } sole
-            && !HoldsNamespace(sole)
-            && options.NamespaceDeclarations == NamespaceDeclarationPreference.FileScoped
-            && options.Allows(CSharpVersion.CSharp10);
-
-        RenderTopLevel(writer, unit.Members, options, fileScoped);
+        RenderTopLevel(writer, unit.Members, options, fileScoped: CanBeFileScoped(unit, options));
 
         return writer.ToString();
     }
@@ -52,8 +43,6 @@ internal static partial class CSharpRenderer
     /// </summary>
     public static void Render(SourceWriter writer, TypeDeclaration type, RenderOptions options)
     {
-        // Writes the `partial` parts around a type that stands alone. Those parts carry the kind, the name and the
-        // type parameters, and nothing else.
         if (type.ContainingType is { } containing)
         {
             RenderInside(writer, containing, type, options);
@@ -287,6 +276,16 @@ internal static partial class CSharpRenderer
 
             writer.EndLine();
         }
+    }
+
+    private static bool CanBeFileScoped(CompilationUnit unit, RenderOptions options)
+    {
+        bool preferred = options.NamespaceDeclarations == NamespaceDeclarationPreference.FileScoped && options.Allows(CSharpVersion.CSharp10);
+
+        return preferred
+            && unit.Members is { Length: 1 }
+            && unit.Members[0] is NamespaceDeclaration { Name.Length: > 0 } sole
+            && !HoldsNamespace(sole);
     }
 
     private static bool HoldsNamespace(NamespaceDeclaration ns)

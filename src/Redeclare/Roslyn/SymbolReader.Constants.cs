@@ -96,8 +96,7 @@ internal static partial class SymbolReader
             return FormatConstant(value, nullable.TypeArguments[0]);
         }
 
-        // Writes `NaN` and the infinities through their fields, since they have no literal. The type is a hole, so
-        // the options decide how it is spelled, as they do for an enum member's type.
+        // `NaN` and the infinities have no literal.
         if (NonFiniteMember(value) is { } nonFinite)
         {
             return Snippet.From($"{ReadTypeReference(type) with { NullableAnnotation = NullableAnnotation.None }}.{nonFinite}");

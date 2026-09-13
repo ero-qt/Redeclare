@@ -115,18 +115,9 @@ internal static partial class CSharpRenderer
             .AppendModifiers(method.Accessibility, method.Modifiers)
             .Append(RefText(method.RefKind, options, what));
 
-        // Writes a conversion as `implicit operator Target(`. The target type takes the name's place, and an
-        // explicit implementation puts its interface between the keyword and `operator`.
-        if (method.Name is "implicit operator" or "explicit operator" or "explicit operator checked")
+        if (IsConversion(method))
         {
-            int keyword = method.Name.IndexOf(' ');
-            head.Append(method.Name, 0, keyword + 1);
-            if (method.ExplicitInterfaceSpecifier is { } explicitInterface)
-            {
-                head.AppendType(explicitInterface, options).Append('.');
-            }
-
-            head.Append(method.Name, keyword + 1, method.Name.Length - keyword - 1).Append(' ').AppendType(method.ReturnType, options);
+            AppendConversionHead(head, method, options);
         }
         else
         {
@@ -145,11 +136,39 @@ internal static partial class CSharpRenderer
             .Append(')')
             .AppendConstraints(method.TypeParameters, options, what);
 
-        // Checks whether the body hands a value back. An `async` method returning `Task`, or any task-like type without
-        // a type argument, does not.
-        bool returnsValue = method.ReturnType is not NamedTypeReference { SpecialType: SpecialType.System_Void }
-            && !((method.Modifiers & Modifiers.Async) != 0 && method.ReturnType is NamedTypeReference { Arity: 0 });
-        RenderBody(writer, method.Body, options.Methods, CSharpVersion.CSharp6, options, returnsValue, what);
+        RenderBody(writer, method.Body, options.Methods, CSharpVersion.CSharp6, options, ReturnsValue(method), what);
+    }
+
+    private static bool IsConversion(MethodDeclaration method)
+    {
+        return method.Name is "implicit operator" or "explicit operator" or "explicit operator checked";
+    }
+
+    /// <summary>
+    ///     Appends <c>implicit IFoo.operator Target</c>: the keyword, the interface of an explicit implementation,
+    ///     then <c>operator</c> and the target type where a method has its name.
+    /// </summary>
+    private static void AppendConversionHead(StringBuilder head, MethodDeclaration method, RenderOptions options)
+    {
+        int split = method.Name.IndexOf(' ') + 1;
+        string keyword = method.Name.Substring(0, split);
+        string rest = method.Name.Substring(split);
+
+        head.Append(keyword);
+        if (method.ExplicitInterfaceSpecifier is { } explicitInterface)
+        {
+            head.AppendType(explicitInterface, options).Append('.');
+        }
+
+        head.Append(rest).Append(' ').AppendType(method.ReturnType, options);
+    }
+
+    private static bool ReturnsValue(MethodDeclaration method)
+    {
+        bool isVoid = method.ReturnType is NamedTypeReference { SpecialType: SpecialType.System_Void };
+        bool isAsyncTask = (method.Modifiers & Modifiers.Async) != 0 && method.ReturnType is NamedTypeReference { Arity: 0 };
+
+        return !isVoid && !isAsyncTask;
     }
 
     private static void RenderConstructor(SourceWriter writer, ConstructorDeclaration constructor, TypeDeclaration containing, RenderOptions options)
@@ -218,7 +237,6 @@ internal static partial class CSharpRenderer
             head.AppendIdentifier(property.Name);
         }
 
-        // Writes a getter-only property with an expression getter as `=> expression` when the options prefer that.
         var preference = property.IsIndexer ? options.Indexers : options.Properties;
         if (setter is null && getter is { Body: { IsExpression: true } expression } && Arrow(expression, preference, CSharpVersion.CSharp6, options))
         {
@@ -374,8 +392,6 @@ internal static partial class CSharpRenderer
     {
         if (body is { IsExpression: true } expression)
         {
-            // Catches an expression body with nothing in it, which could only render as a dangling `=>`. Whether the
-            // text is really one expression is for the compiler to say.
             if (expression.IsEmpty)
             {
                 throw new RenderException($"{what} has an expression body with no expression. Use Snippet.Empty as a block body for an empty one.");
@@ -387,8 +403,6 @@ internal static partial class CSharpRenderer
                 return;
             }
 
-            // Writes the expression as a block, since the options want one. A `return` goes in front when there is a
-            // value, unless the expression is a `throw`, which is a statement on its own.
             bool returns = returnsValue && !IsThrow(expression);
             writer.EndLine();
             using (writer.Block())
@@ -396,7 +410,6 @@ internal static partial class CSharpRenderer
                 var lines = expression.Lines;
                 for (int i = 0; i < lines.Length; i++)
                 {
-                    // Keeps an empty line empty. Dedent trims the blank edges, so only a line in the middle can be empty here.
                     if (lines[i].Length == 0)
                     {
                         writer.EndLine();
