@@ -1,5 +1,6 @@
 using Microsoft.CodeAnalysis;
 using System;
+using System.Globalization;
 using System.Text;
 
 namespace Redeclare;
@@ -274,12 +275,22 @@ internal static partial class CSharpRenderer
         RenderDocumentation(writer, field.DocumentationComment);
         RenderAttributes(writer, field.Attributes, options);
 
-        writer.BeginLine()
+        var head = writer.BeginLine()
             .AppendModifiers(field.Accessibility, field.Modifiers)
-            .Append(RefText(field.RefKind, options, what))
-            .AppendType(field.Type, options)
+            .Append(RefText(field.RefKind, options, what));
+        if (field.FixedSize > 0)
+        {
+            head.Append("fixed ");
+        }
+
+        head.AppendType(field.Type, options)
             .Append(' ')
             .AppendIdentifier(field.Name);
+        if (field.FixedSize > 0)
+        {
+            head.Append('[').Append(field.FixedSize.ToString(CultureInfo.InvariantCulture)).Append(']');
+        }
+
         if (field.Initializer is { } initializer)
         {
             writer.BeginLine().Append(" = ");

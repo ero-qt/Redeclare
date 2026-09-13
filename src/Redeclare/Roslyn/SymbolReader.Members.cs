@@ -159,18 +159,22 @@ internal static partial class SymbolReader
             modifiers |= Modifiers.Required;
         }
 
-        if (MentionsPointer(field))
+        if (MentionsPointer(field) || field.IsFixedSizeBuffer)
         {
             modifiers |= Modifiers.Unsafe;
         }
+
+        // Reads a fixed-size buffer by its element type. The symbol's type is a pointer to that element.
+        var type = field.IsFixedSizeBuffer && field.Type is IPointerTypeSymbol pointer ? pointer.PointedAtType : field.Type;
 
         return new FieldDeclaration(
             DocumentationComment: ReadDocumentation(field, options),
             Attributes: ReadAttributes(field, options),
             Accessibility: field.DeclaredAccessibility,
             Modifiers: modifiers,
-            Type: ReadTypeReference(field.Type),
+            Type: ReadTypeReference(type),
             RefKind: field.RefKind,
+            FixedSize: field.FixedSize,
             Name: field.Name,
             Initializer: field.IsConst && field.HasConstantValue ? FormatConstant(field.ConstantValue, field.Type) : null);
     }

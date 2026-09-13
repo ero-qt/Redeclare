@@ -145,6 +145,11 @@ public sealed class SymbolReaderTests
 
             public unsafe delegate void Poke(int* target);
 
+            public unsafe struct Buffer
+            {
+                public fixed byte Data[16];
+            }
+
             public static class Holder<T> where T : allows ref struct { }
 
             public partial class Parts
@@ -822,6 +827,22 @@ public sealed class SymbolReaderTests
         var tryParse = Repository.Members.OfType<MethodDeclaration>().Single(m => m.Name == "TryParse");
 
         Assert.That(tryParse.Parameters[1].IsScoped, Is.False, "the symbol reports the effective scope, which every out parameter has");
+    }
+
+    [Test]
+    public void ToDeclaration_FixedSizeBuffer_ReadsTheSizeAndRendersFixed()
+    {
+        var buffer = Compilation.Type("Fixture.Buffer");
+        var data = buffer.ToDeclaration().Members.OfType<FieldDeclaration>().Single();
+
+        using (Assert.EnterMultipleScope())
+        {
+            Assert.That(data.FixedSize, Is.EqualTo(16));
+            Assert.That(data.Type, Is.EqualTo(Types.Byte), "the element type, not a pointer to it");
+            Assert.That(buffer.ToFile().Render(), Does.Contain("public unsafe fixed byte Data[16];"));
+        }
+
+        Compiling.AssertCompiles(buffer.ToFile().Render());
     }
 
     [Test]
