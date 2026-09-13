@@ -50,6 +50,7 @@ internal static partial class CSharpRenderer
     {
         Collect(type.Attributes, namespaces, options);
         Collect(type.BaseType, namespaces, options);
+        Collect(type.BaseArguments, namespaces, options);
         Collect(type.Interfaces, namespaces, options);
         Collect(type.ParameterList, namespaces, options);
         Collect(type.TypeParameters, namespaces, options);
