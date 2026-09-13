@@ -46,19 +46,40 @@ internal static partial class CSharpRenderer
     }
 
     /// <summary>
-    ///     Renders a type declaration and its members.
+    ///     Renders a type declaration and its members. A type that names the type it is declared in is written
+    ///     inside one <c>partial</c> part per containing type, outermost first, so that a file holding one nested
+    ///     type puts it back where it belongs.
     /// </summary>
     public static void Render(SourceWriter writer, TypeDeclaration type, RenderOptions options)
     {
-        // Writes a nested type inside one `partial` part per containing type, outermost first. Those parts carry
-        // the kind, the name and the type parameters, and nothing else.
+        // Writes the `partial` parts around a type that stands alone. Those parts carry the kind, the name and the
+        // type parameters, and nothing else.
         if (type.ContainingType is { } containing)
         {
-            var wrapped = containing with { Members = [type with { ContainingType = null }] };
-            Render(writer, PartOf(wrapped), options);
+            RenderInside(writer, containing, type, options);
             return;
         }
 
+        RenderDeclaration(writer, type, options);
+    }
+
+    private static void RenderInside(SourceWriter writer, TypeDeclaration containing, TypeDeclaration type, RenderOptions options)
+    {
+        if (containing.ContainingType is { } outer)
+        {
+            RenderInside(writer, outer, PartOf(containing) with { Members = [type] }, options);
+            return;
+        }
+
+        RenderDeclaration(writer, PartOf(containing) with { Members = [type] }, options);
+    }
+
+    /// <summary>
+    ///     Renders the declaration itself. A member type keeps its <c>ContainingType</c> as a fact about where it
+    ///     is declared, and its place in the member list decides where it is written.
+    /// </summary>
+    private static void RenderDeclaration(SourceWriter writer, TypeDeclaration type, RenderOptions options)
+    {
         string what = $"Type '{type.Name}'";
 
         RenderDocumentation(writer, type.DocumentationComment);
@@ -168,7 +189,7 @@ internal static partial class CSharpRenderer
         {
             case TypeDeclaration nested:
             {
-                Render(writer, nested, options);
+                RenderDeclaration(writer, nested, options);
                 break;
             }
             case NamespaceDeclaration ns:

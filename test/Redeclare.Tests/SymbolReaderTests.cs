@@ -386,6 +386,20 @@ public sealed class SymbolReaderTests
     }
 
     [Test]
+    public void ToDeclaration_TypeWithNestedTypes_RendersThemInsideItAndCompiles()
+    {
+        var wrapper = Compilation.Type("Fixture.Wrapper");
+
+        using (Assert.EnterMultipleScope())
+        {
+            Assert.That(wrapper.ToDeclaration().Members.OfType<TypeDeclaration>().Single().ContainingType?.Name, Is.EqualTo("Wrapper"), "a member type still knows where it is declared");
+            Assert.That(wrapper.ToFile().Render(), Does.Contain("public class Wrapper\n{\n    public class Only\n    {\n    }\n}"));
+        }
+
+        Compiling.AssertCompiles(wrapper.ToFile().Render());
+    }
+
+    [Test]
     public void ToDeclaration_NestedTypes_ReadRecordsDelegatesAndEnums()
     {
         var nested = Repository.Members.OfType<TypeDeclaration>().ToDictionary(t => t.Name);
