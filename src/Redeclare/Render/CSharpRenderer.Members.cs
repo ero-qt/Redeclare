@@ -1,4 +1,5 @@
 using Microsoft.CodeAnalysis;
+using System;
 using System.Text;
 
 namespace Redeclare;
@@ -375,7 +376,9 @@ internal static partial class CSharpRenderer
                 return;
             }
 
-            // Writes the expression as a block, since the options want one. A `return` goes in front when there is a value.
+            // Writes the expression as a block, since the options want one. A `return` goes in front when there is a
+            // value, unless the expression is a `throw`, which is a statement on its own.
+            bool returns = returnsValue && !IsThrow(expression);
             writer.EndLine();
             using (writer.Block())
             {
@@ -390,7 +393,7 @@ internal static partial class CSharpRenderer
                     }
 
                     var text = writer.BeginLine();
-                    if (i == 0 && returnsValue)
+                    if (i == 0 && returns)
                     {
                         text.Append("return ");
                     }
@@ -421,6 +424,16 @@ internal static partial class CSharpRenderer
 
         writer.BeginLine().Append(';');
         writer.EndLine();
+    }
+
+    /// <summary>
+    ///     Checks whether the expression is a <c>throw</c>. The first line starts with the keyword and a space.
+    /// </summary>
+    private static bool IsThrow(Snippet expression)
+    {
+        string first = expression.Lines[0].TrimStart();
+
+        return first.StartsWith("throw ", StringComparison.Ordinal);
     }
 
     private static bool Arrow(Snippet expression, ExpressionBodyPreference preference, CSharpVersion since, RenderOptions options)
