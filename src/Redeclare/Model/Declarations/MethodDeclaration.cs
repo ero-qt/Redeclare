@@ -3,7 +3,8 @@ using Microsoft.CodeAnalysis;
 namespace Redeclare;
 
 /// <summary>
-///     Represents a method, an explicit interface implementation, a user-defined operator, or a conversion.
+///     Represents a method, an explicit interface implementation, a user-defined operator, a conversion, or a
+///     finalizer.
 /// </summary>
 /// <remarks>
 ///     <paramref name="Body"/> is the text, and the snippet says whether that text is one expression:
@@ -16,7 +17,8 @@ namespace Redeclare;
 /// <param name="Name">
 ///     The name. An operator is <c>operator +</c>, <c>operator checked +=</c> and the like. A conversion is
 ///     <c>implicit operator</c>, <c>explicit operator</c> or <c>explicit operator checked</c>, and the renderer
-///     writes <paramref name="ReturnType"/> where the name would go.
+///     writes <paramref name="ReturnType"/> where the name would go. A finalizer is <c>~Name</c>, written without
+///     a return type.
 /// </param>
 /// <param name="RefKind">
 ///     How the return is passed back: by value, <c>ref</c>, or <c>ref readonly</c>. <c>ref</c> needs C# 7 and

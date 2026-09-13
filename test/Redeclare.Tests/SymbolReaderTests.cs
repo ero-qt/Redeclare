@@ -111,6 +111,11 @@ public sealed class SymbolReaderTests
                 public delegate* unmanaged[Cdecl]<int, void> Callback;
             }
 
+            public class Handle
+            {
+                ~Handle() { }
+            }
+
             public struct Mixed
             {
                 public int Count { readonly get => 0; set { } }
@@ -485,6 +490,24 @@ public sealed class SymbolReaderTests
             Assert.That(members["Seal"].Modifiers, Is.EqualTo(Modifiers.Sealed), "without sealed a bodiless interface method is abstract");
             Assert.That(members["Loose"].Modifiers, Is.EqualTo(Modifiers.None), "virtual is implied on an instance member with a body");
         }
+    }
+
+    [Test]
+    public void ToDeclaration_Finalizer_ReadsAsAMethodNamedWithATilde()
+    {
+        var handle = Compilation.Type("Fixture.Handle");
+        var finalizer = handle.ToDeclaration().Members.OfType<MethodDeclaration>().Single();
+        var text = handle.ToFile().Render();
+
+        using (Assert.EnterMultipleScope())
+        {
+            Assert.That(finalizer.Name, Is.EqualTo("~Handle"));
+            Assert.That(finalizer.Accessibility, Is.EqualTo(Accessibility.NotApplicable));
+            Assert.That(finalizer.Modifiers, Is.EqualTo(Modifiers.None));
+            Assert.That(text, Does.Contain("    ~Handle();"));
+        }
+
+        Compiling.AssertCompiles(text.Replace("~Handle();", "~Handle() { }", System.StringComparison.Ordinal));
     }
 
     [Test]

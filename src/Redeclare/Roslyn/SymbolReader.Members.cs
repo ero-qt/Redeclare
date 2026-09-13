@@ -10,8 +10,9 @@ namespace Redeclare;
 internal static partial class SymbolReader
 {
     /// <summary>
-    ///     Reads an ordinary method, an explicit implementation, a user-defined operator or a conversion. The body is
-    ///     left null. <c>[return: ...]</c> attributes come along with <c>Target</c> set.
+    ///     Reads an ordinary method, an explicit implementation, a user-defined operator, a conversion or a finalizer.
+    ///     The body is left null. <c>[return: ...]</c> attributes come along with <c>Target</c> set. A finalizer is
+    ///     named <c>~Name</c>.
     /// </summary>
     public static MethodDeclaration ReadMethod(IMethodSymbol method, ReadOptions? options = null)
     {
@@ -46,7 +47,12 @@ internal static partial class SymbolReader
     {
         var declared = method.ExplicitInterfaceImplementations.Length > 0 ? method.ExplicitInterfaceImplementations[0] : method;
 
-        return declared.MethodKind is MethodKind.UserDefinedOperator or MethodKind.Conversion ? GetOperatorName(declared.Name)! : declared.Name;
+        return declared.MethodKind switch
+        {
+            MethodKind.UserDefinedOperator or MethodKind.Conversion => GetOperatorName(declared.Name)!,
+            MethodKind.Destructor => "~" + declared.ContainingType.Name,
+            _ => declared.Name,
+        };
     }
 
     /// <summary>
@@ -279,7 +285,8 @@ internal static partial class SymbolReader
     /// </summary>
     private static Accessibility ReadMemberAccessibility(ISymbol member)
     {
-        if (member.ContainingType is { TypeKind: TypeKind.Interface } && member.DeclaredAccessibility == Accessibility.Public)
+        bool publicInInterface = member.ContainingType is { TypeKind: TypeKind.Interface } && member.DeclaredAccessibility == Accessibility.Public;
+        if (publicInInterface || member is IMethodSymbol { MethodKind: MethodKind.Destructor })
         {
             return Accessibility.NotApplicable;
         }
@@ -423,6 +430,11 @@ internal static partial class SymbolReader
 
     private static Modifiers ReadMemberModifiers(ISymbol member)
     {
+        if (member is IMethodSymbol { MethodKind: MethodKind.Destructor })
+        {
+            return Modifiers.None;
+        }
+
         var modifiers = Modifiers.None;
         bool inInterface = member.ContainingType is { TypeKind: TypeKind.Interface };
 

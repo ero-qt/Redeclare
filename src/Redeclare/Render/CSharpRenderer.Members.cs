@@ -119,6 +119,10 @@ internal static partial class CSharpRenderer
         {
             AppendConversionHead(head, method, options);
         }
+        else if (IsFinalizer(method))
+        {
+            head.Append(method.Name);
+        }
         else
         {
             head.AppendType(method.ReturnType, options).Append(' ');
@@ -137,6 +141,11 @@ internal static partial class CSharpRenderer
             .AppendConstraints(method.TypeParameters, options, what);
 
         RenderBody(writer, method.Body, options.Methods, CSharpVersion.CSharp6, options, ReturnsValue(method), what);
+    }
+
+    private static bool IsFinalizer(MethodDeclaration method)
+    {
+        return method.Name.StartsWith("~", StringComparison.Ordinal);
     }
 
     private static bool IsConversion(MethodDeclaration method)
