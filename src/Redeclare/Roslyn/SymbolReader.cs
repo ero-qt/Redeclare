@@ -201,7 +201,7 @@ internal static partial class SymbolReader
                     members.Add(ReadConstructor(constructor, options));
                     break;
                 }
-                case IMethodSymbol { MethodKind: MethodKind.Ordinary or MethodKind.ExplicitInterfaceImplementation } method:
+                case IMethodSymbol { MethodKind: MethodKind.Ordinary or MethodKind.ExplicitInterfaceImplementation or MethodKind.Destructor } method:
                 {
                     members.Add(ReadMethod(method, options));
                     break;

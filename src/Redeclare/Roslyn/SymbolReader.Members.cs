@@ -1,4 +1,6 @@
 using Microsoft.CodeAnalysis;
+using Microsoft.CodeAnalysis.CSharp;
+using Microsoft.CodeAnalysis.CSharp.Syntax;
 using System;
 using System.Collections.Immutable;
 using System.Globalization;
@@ -8,8 +10,9 @@ namespace Redeclare;
 internal static partial class SymbolReader
 {
     /// <summary>
-    ///     Reads an ordinary method, an explicit implementation, a user-defined operator or a conversion. The body is
-    ///     left null. <c>[return: ...]</c> attributes come along with <c>Target</c> set.
+    ///     Reads an ordinary method, an explicit implementation, a user-defined operator, a conversion or a finalizer.
+    ///     The body is left null. <c>[return: ...]</c> attributes come along with <c>Target</c> set. A finalizer is
+    ///     named <c>~Name</c>.
     /// </summary>
     public static MethodDeclaration ReadMethod(IMethodSymbol method, ReadOptions? options = null)
     {
@@ -44,7 +47,12 @@ internal static partial class SymbolReader
     {
         var declared = method.ExplicitInterfaceImplementations.Length > 0 ? method.ExplicitInterfaceImplementations[0] : method;
 
-        return declared.MethodKind is MethodKind.UserDefinedOperator or MethodKind.Conversion ? GetOperatorName(declared.Name)! : declared.Name;
+        return declared.MethodKind switch
+        {
+            MethodKind.UserDefinedOperator or MethodKind.Conversion => GetOperatorName(declared.Name)!,
+            MethodKind.Destructor => "~" + declared.ContainingType.Name,
+            _ => declared.Name,
+        };
     }
 
     /// <summary>
@@ -83,18 +91,14 @@ internal static partial class SymbolReader
             modifiers |= Modifiers.Required;
         }
 
-        if (HasReadOnlyAccessors(property) && IsInstanceMemberOfMutableStruct(property))
+        bool propertyReadOnly = HasReadOnlyAccessors(property) && IsInstanceMemberOfMutableStruct(property);
+        if (propertyReadOnly)
         {
             modifiers |= Modifiers.ReadOnly;
         }
 
-        var getter = property.GetMethod is { } get
-            ? new AccessorDeclaration(Accessibility: ReadAccessorAccessibility(get, accessibility))
-            : null;
-
-        var setter = property.SetMethod is { } set
-            ? new AccessorDeclaration(Accessibility: ReadAccessorAccessibility(set, accessibility), IsInitOnly: set.IsInitOnly)
-            : null;
+        var getter = property.GetMethod is { } get ? ReadAccessor(get, accessibility, propertyReadOnly, options) : null;
+        var setter = property.SetMethod is { } set ? ReadAccessor(set, accessibility, propertyReadOnly, options) : null;
 
         return new PropertyDeclaration(
             DocumentationComment: ReadDocumentation(property, options),
@@ -281,7 +285,8 @@ internal static partial class SymbolReader
     /// </summary>
     private static Accessibility ReadMemberAccessibility(ISymbol member)
     {
-        if (member.ContainingType is { TypeKind: TypeKind.Interface } && member.DeclaredAccessibility == Accessibility.Public)
+        bool publicInInterface = member.ContainingType is { TypeKind: TypeKind.Interface } && member.DeclaredAccessibility == Accessibility.Public;
+        if (publicInInterface || member is IMethodSymbol { MethodKind: MethodKind.Destructor })
         {
             return Accessibility.NotApplicable;
         }
@@ -355,6 +360,32 @@ internal static partial class SymbolReader
         };
     }
 
+    private static AccessorDeclaration ReadAccessor(IMethodSymbol accessor, Accessibility propertyAccessibility, bool propertyReadOnly, ReadOptions options)
+    {
+        return new AccessorDeclaration(
+            Accessibility: ReadAccessorAccessibility(accessor, propertyAccessibility),
+            IsInitOnly: accessor.IsInitOnly,
+            IsReadOnly: !propertyReadOnly && HasWrittenReadOnly(accessor),
+            Attributes: ReadAttributes(accessor, options));
+    }
+
+    /// <summary>
+    ///     Checks for a <c>readonly</c> written on the accessor. The compiler marks every auto getter of a struct
+    ///     readonly, so the symbol alone does not say whether the word is there.
+    /// </summary>
+    private static bool HasWrittenReadOnly(IMethodSymbol accessor)
+    {
+        foreach (var reference in accessor.DeclaringSyntaxReferences)
+        {
+            if (reference.GetSyntax() is AccessorDeclarationSyntax syntax && syntax.Modifiers.Any(SyntaxKind.ReadOnlyKeyword))
+            {
+                return true;
+            }
+        }
+
+        return false;
+    }
+
     private static Accessibility ReadAccessorAccessibility(IMethodSymbol accessor, Accessibility propertyAccessibility)
     {
         bool narrows = accessor.DeclaredAccessibility != propertyAccessibility;
@@ -399,6 +430,11 @@ internal static partial class SymbolReader
 
     private static Modifiers ReadMemberModifiers(ISymbol member)
     {
+        if (member is IMethodSymbol { MethodKind: MethodKind.Destructor })
+        {
+            return Modifiers.None;
+        }
+
         var modifiers = Modifiers.None;
         bool inInterface = member.ContainingType is { TypeKind: TypeKind.Interface };
 

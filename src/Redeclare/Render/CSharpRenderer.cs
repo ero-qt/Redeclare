@@ -142,6 +142,11 @@ internal static partial class CSharpRenderer
         else if (type.BaseType is { } baseType)
         {
             head.Append(" : ").AppendType(baseType, options);
+            if (type.BaseArguments is { } arguments)
+            {
+                head.Append('(').AppendSnippet(arguments, options).Append(')');
+            }
+
             if (!type.Interfaces.IsEmpty)
             {
                 head.Append(", ").AppendTypes(type.Interfaces, options);
@@ -150,6 +155,11 @@ internal static partial class CSharpRenderer
         else if (!type.Interfaces.IsEmpty)
         {
             head.Append(" : ").AppendTypes(type.Interfaces, options);
+        }
+
+        if (type.BaseArguments is not null && type.BaseType is null)
+        {
+            throw new RenderException($"{what} passes arguments to a base class but names none. Set BaseType.");
         }
 
         head.AppendConstraints(type.TypeParameters, options, what);
@@ -400,6 +410,7 @@ internal static partial class CSharpRenderer
             Attributes = default,
             ParameterList = default,
             BaseType = null,
+            BaseArguments = null,
             Interfaces = default,
             EnumUnderlyingType = null,
         };

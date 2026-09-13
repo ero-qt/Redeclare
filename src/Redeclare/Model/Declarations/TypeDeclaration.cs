@@ -28,6 +28,10 @@ namespace Redeclare;
 ///     C# 9, other types need C# 12. A delegate's parameters live here and need nothing.
 /// </param>
 /// <param name="BaseType">The base class, or <see langword="null"/> for <c>object</c> or none.</param>
+/// <param name="BaseArguments">
+///     The arguments a primary constructor passes to the base class, the part inside the parentheses of
+///     <c>: Base(x)</c>, or <see langword="null"/> for none. Needs <paramref name="BaseType"/>.
+/// </param>
 /// <param name="Interfaces">The implemented interfaces, in declaration order.</param>
 /// <param name="EnumUnderlyingType">The underlying type of an enum, when it is not <c>int</c>.</param>
 /// <param name="ReturnType">A delegate's return type. Required when <paramref name="TypeKind"/> is a delegate, and refused otherwise.</param>
@@ -49,6 +53,7 @@ internal sealed record TypeDeclaration(
     EquatableArray<TypeParameterDeclaration> TypeParameters = default,
     EquatableArray<ParameterDeclaration> ParameterList = default,
     TypeReference? BaseType = null,
+    Snippet? BaseArguments = null,
     EquatableArray<TypeReference> Interfaces = default,
     TypeReference? EnumUnderlyingType = null,
     TypeReference? ReturnType = null,

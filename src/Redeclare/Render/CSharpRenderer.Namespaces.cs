@@ -50,6 +50,7 @@ internal static partial class CSharpRenderer
     {
         Collect(type.Attributes, namespaces, options);
         Collect(type.BaseType, namespaces, options);
+        Collect(type.BaseArguments, namespaces, options);
         Collect(type.Interfaces, namespaces, options);
         Collect(type.ParameterList, namespaces, options);
         Collect(type.TypeParameters, namespaces, options);
@@ -104,8 +105,8 @@ internal static partial class CSharpRenderer
                     Collect(property.Type, namespaces, options);
                     Collect(property.Parameters, namespaces, options);
                     Collect(property.Initializer, namespaces, options);
-                    Collect(property.Getter?.Body, namespaces, options);
-                    Collect(property.Setter?.Body, namespaces, options);
+                    Collect(property.Getter, namespaces, options);
+                    Collect(property.Setter, namespaces, options);
                     Collect(property.ExplicitInterfaceSpecifier, namespaces, options);
                     break;
                 }
@@ -118,8 +119,8 @@ internal static partial class CSharpRenderer
                 case EventDeclaration @event:
                 {
                     Collect(@event.Type, namespaces, options);
-                    Collect(@event.Adder?.Body, namespaces, options);
-                    Collect(@event.Remover?.Body, namespaces, options);
+                    Collect(@event.Adder, namespaces, options);
+                    Collect(@event.Remover, namespaces, options);
                     Collect(@event.ExplicitInterfaceSpecifier, namespaces, options);
                     break;
                 }
@@ -169,6 +170,15 @@ internal static partial class CSharpRenderer
         {
             Collect(parameter.Attributes, namespaces, options);
             Collect(parameter.ConstraintTypes, namespaces, options);
+        }
+    }
+
+    private static void Collect(AccessorDeclaration? accessor, SortedSet<string> namespaces, RenderOptions options)
+    {
+        if (accessor is not null)
+        {
+            Collect(accessor.Attributes, namespaces, options);
+            Collect(accessor.Body, namespaces, options);
         }
     }
 

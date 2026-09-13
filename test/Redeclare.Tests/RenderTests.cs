@@ -457,6 +457,36 @@ public sealed class RenderTests
     }
 
     [Test]
+    public void Render_PrimaryConstructorWithBaseArguments_WritesTheBaseCall()
+    {
+        var @base = new NamedTypeReference(Name: "B", ContainingNamespace: "N");
+        var derived = new TypeDeclaration(
+            Accessibility: Accessibility.Public,
+            Name: "D",
+            ParameterList: [new ParameterDeclaration(Type: Types.Int32, Name: "x")],
+            BaseType: @base,
+            BaseArguments: Snippet.From("x"));
+        var unit = new CompilationUnit(
+            Members: [new NamespaceDeclaration(Name: "N", Members: [derived])],
+            Header: Header);
+
+        var text = unit.Render();
+
+        Assert.That(text, Does.Contain("public class D(int x) : global::N.B(x)"));
+        Compiling.AssertCompiles(text, LanguageVersion.Latest, "namespace N { public class B(int x) { } }");
+    }
+
+    [Test]
+    public void Render_BaseArgumentsWithoutABaseType_Throws()
+    {
+        var orphan = new TypeDeclaration(Name: "D", BaseArguments: Snippet.From("1"));
+
+        Assert.That(
+            () => new CompilationUnit(Members: [orphan]).Render(),
+            Throws.TypeOf<RenderException>().With.Message.Contains("BaseType"));
+    }
+
+    [Test]
     public void Render_NamespaceInsideANamespace_KeepsBothAsBlocks()
     {
         var nested = new CompilationUnit(
