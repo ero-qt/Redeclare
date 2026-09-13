@@ -140,15 +140,19 @@ internal static partial class SymbolReader
     }
 
     /// <summary>
-    ///     A primitive as a C# literal. <c>float</c> and <c>decimal</c> take their suffix, since the bare spelling
-    ///     is a <c>double</c> literal.
+    ///     A primitive as a C# literal. Every numeric type but <c>int</c> takes its suffix, so that the literal keeps
+    ///     the type it had where an <c>object</c> would box it.
     /// </summary>
     private static string FormatPrimitive(object value)
     {
         return value switch
         {
             float single => SymbolDisplay.FormatPrimitive(single, quoteStrings: false, useHexadecimalNumbers: false) + "f",
+            double number => SymbolDisplay.FormatPrimitive(number, quoteStrings: false, useHexadecimalNumbers: false) + "D",
             decimal number => number.ToString(CultureInfo.InvariantCulture) + "m",
+            long number => number.ToString(CultureInfo.InvariantCulture) + "L",
+            ulong number => number.ToString(CultureInfo.InvariantCulture) + "UL",
+            uint number => number.ToString(CultureInfo.InvariantCulture) + "U",
             _ => SymbolDisplay.FormatPrimitive(value, quoteStrings: true, useHexadecimalNumbers: false) ?? "default",
         };
     }
