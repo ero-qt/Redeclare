@@ -29,6 +29,9 @@ public sealed class ConstantTests
             [Serializable]
             public class Marked
             {
+                [Mark("open", Kind = typeof(Nullable<>))]
+                public int Open;
+
                 public void G<T>(T unconstrained = default) { }
                 public void H<T>(T reference = default) where T : class { }
                 public void I<T>(T? nullableValue = default) where T : struct { }
@@ -47,6 +50,14 @@ public sealed class ConstantTests
         var mark = Compilation.Type("Fixture.Marked").GetAttributes().Single(a => a.AttributeClass!.Name == "MarkAttribute").ToSpecification()!;
 
         Assert.That(mark.Arguments[4].ToString(), Is.EqualTo("Tags = new string[] { \"a\", \"b\" }"));
+    }
+
+    [Test]
+    public void ToSpecification_UnboundNullableTypeArgument_StaysNullable()
+    {
+        var mark = Compilation.Type("Fixture.Marked").GetMembers("Open").Single().GetAttributes().Single().ToSpecification()!;
+
+        Assert.That(mark.Arguments.Select(a => a.ToString()), Has.Member("Kind = typeof(global::System.Nullable<>)"));
     }
 
     [Test]
