@@ -20,14 +20,9 @@ internal static partial class CSharpRenderer
             if (i > 0)
             {
                 text.Append(options.NewLine);
-
-                // Repeats the indentation of the line the snippet started on. Every later line continues that line.
                 if (lines[i].Length > 0)
                 {
-                    for (int j = indentStart; j < indentEnd; j++)
-                    {
-                        text.Append(text[j]);
-                    }
+                    CopyIndent(text, indentStart, indentEnd);
                 }
             }
 
@@ -35,6 +30,14 @@ internal static partial class CSharpRenderer
         }
 
         return text;
+    }
+
+    private static void CopyIndent(StringBuilder text, int start, int end)
+    {
+        for (int i = start; i < end; i++)
+        {
+            text.Append(text[i]);
+        }
     }
 
     /// <summary>
