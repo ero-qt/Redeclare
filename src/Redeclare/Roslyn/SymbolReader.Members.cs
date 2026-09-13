@@ -297,15 +297,18 @@ internal static partial class SymbolReader
             return Accessibility.NotApplicable;
         }
 
-        bool isExplicit = member switch
+        return IsExplicitImplementation(member) ? Accessibility.NotApplicable : member.DeclaredAccessibility;
+    }
+
+    private static bool IsExplicitImplementation(ISymbol member)
+    {
+        return member switch
         {
             IMethodSymbol method => method.ExplicitInterfaceImplementations.Length > 0,
             IPropertySymbol property => property.ExplicitInterfaceImplementations.Length > 0,
             IEventSymbol @event => @event.ExplicitInterfaceImplementations.Length > 0,
             _ => false,
         };
-
-        return isExplicit ? Accessibility.NotApplicable : member.DeclaredAccessibility;
     }
 
     /// <summary>
@@ -401,7 +404,7 @@ internal static partial class SymbolReader
             modifiers |= Modifiers.Abstract;
         }
 
-        if (member.IsVirtual && !inInterface)
+        if (member.IsVirtual && (!inInterface || member.IsStatic))
         {
             modifiers |= Modifiers.Virtual;
         }
@@ -411,7 +414,9 @@ internal static partial class SymbolReader
             modifiers |= Modifiers.Override;
         }
 
-        if (member.IsSealed && !inInterface)
+        // Roslyn reports `sealed void M() { }` in an interface as neither virtual, abstract nor sealed.
+        bool sealedInInterface = inInterface && !member.IsStatic && !member.IsVirtual && !member.IsAbstract && !IsExplicitImplementation(member);
+        if (member.IsSealed || sealedInInterface)
         {
             modifiers |= Modifiers.Sealed;
         }

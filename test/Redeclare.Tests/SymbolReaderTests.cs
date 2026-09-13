@@ -150,6 +150,13 @@ public sealed class SymbolReaderTests
                 public fixed byte Data[16];
             }
 
+            public interface IDefaults<T>
+            {
+                static virtual T Zero => default!;
+                sealed void Seal() { }
+                void Loose() { }
+            }
+
             public static class Holder<T> where T : allows ref struct { }
 
             public partial class Parts
@@ -453,6 +460,24 @@ public sealed class SymbolReaderTests
             Assert.That(get.Accessibility, Is.EqualTo(Accessibility.NotApplicable));
             Assert.That(get.Modifiers, Is.EqualTo(Modifiers.None));
             Assert.That(empty.Modifiers, Is.EqualTo(Modifiers.Static | Modifiers.Abstract));
+        }
+    }
+
+    [Test]
+    public void ToDeclaration_InterfaceMembers_KeepStaticVirtualAndSealed()
+    {
+        var members = Compilation.Type("Fixture.IDefaults`1").ToDeclaration().Members.ToDictionary(m => m switch
+        {
+            PropertyDeclaration property => property.Name,
+            MethodDeclaration method => method.Name,
+            _ => "",
+        });
+
+        using (Assert.EnterMultipleScope())
+        {
+            Assert.That(members["Zero"].Modifiers, Is.EqualTo(Modifiers.Static | Modifiers.Virtual), "without virtual a static interface member cannot be overridden");
+            Assert.That(members["Seal"].Modifiers, Is.EqualTo(Modifiers.Sealed), "without sealed a bodiless interface method is abstract");
+            Assert.That(members["Loose"].Modifiers, Is.EqualTo(Modifiers.None), "virtual is implied on an instance member with a body");
         }
     }
 
