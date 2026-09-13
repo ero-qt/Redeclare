@@ -23,16 +23,20 @@ public sealed class ConstantTests
                 public MarkAttribute(string name, Level level = Level.Low, params int[] codes) { }
                 public Type? Kind { get; set; }
                 public string[]? Tags { get; set; }
+                public object? Boxed { get; set; }
             }
 
             [Mark("repo", Level.High, 1, 2, Kind = typeof(List<int>), Tags = new[] { "a", "b" })]
             [Serializable]
             public class Marked
             {
+                [Mark("open", Kind = typeof(Nullable<>), Boxed = 6L)]
+                public int Open;
+
                 public void G<T>(T unconstrained = default) { }
                 public void H<T>(T reference = default) where T : class { }
                 public void I<T>(T? nullableValue = default) where T : struct { }
-                public void M(int a = 4, string? b = null, Level c = Level.High, Level d = (Level)9, ConsoleColor e = default, int? f = null, long g = 3, float h = 0.25f, decimal i = 1.5m, char j = 'x', bool k = true, int l = default, double m = double.NaN, float n = float.PositiveInfinity, double o = double.NegativeInfinity) { }
+                public void M(int a = 4, string? b = null, Level c = Level.High, Level d = (Level)9, ConsoleColor e = default, int? f = null, long g = 3, float h = 0.25f, decimal i = 1.5m, char j = 'x', bool k = true, int l = default, double m = double.NaN, float n = float.PositiveInfinity, double o = double.NegativeInfinity, ulong p = 4, uint q = 5, double r = 1.5) { }
             }
         }
         """;
@@ -47,6 +51,22 @@ public sealed class ConstantTests
         var mark = Compilation.Type("Fixture.Marked").GetAttributes().Single(a => a.AttributeClass!.Name == "MarkAttribute").ToSpecification()!;
 
         Assert.That(mark.Arguments[4].ToString(), Is.EqualTo("Tags = new string[] { \"a\", \"b\" }"));
+    }
+
+    [Test]
+    public void ToSpecification_UnboundNullableTypeArgument_StaysNullable()
+    {
+        var mark = Compilation.Type("Fixture.Marked").GetMembers("Open").Single().GetAttributes().Single().ToSpecification()!;
+
+        Assert.That(mark.Arguments.Select(a => a.ToString()), Has.Member("Kind = typeof(global::System.Nullable<>)"));
+    }
+
+    [Test]
+    public void ToSpecification_BoxedLongArgument_KeepsTheSuffix()
+    {
+        var mark = Compilation.Type("Fixture.Marked").GetMembers("Open").Single().GetAttributes().Single().ToSpecification()!;
+
+        Assert.That(mark.Arguments.Select(a => a.ToString()), Has.Member("Boxed = 6L"), "without the suffix the argument boxes an int");
     }
 
     [Test]
@@ -94,7 +114,7 @@ public sealed class ConstantTests
                 "(global::Fixture.Level)9",
                 "global::System.ConsoleColor.Black",
                 "null",
-                "3",
+                "3L",
                 "0.25f",
                 "1.5m",
                 "'x'",
@@ -103,6 +123,9 @@ public sealed class ConstantTests
                 "double.NaN",
                 "float.PositiveInfinity",
                 "double.NegativeInfinity",
+                "4UL",
+                "5U",
+                "1.5D",
             }));
     }
 

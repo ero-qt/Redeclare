@@ -159,18 +159,22 @@ internal static partial class SymbolReader
             modifiers |= Modifiers.Required;
         }
 
-        if (MentionsPointer(field))
+        if (MentionsPointer(field) || field.IsFixedSizeBuffer)
         {
             modifiers |= Modifiers.Unsafe;
         }
+
+        // Reads a fixed-size buffer by its element type. The symbol's type is a pointer to that element.
+        var type = field.IsFixedSizeBuffer && field.Type is IPointerTypeSymbol pointer ? pointer.PointedAtType : field.Type;
 
         return new FieldDeclaration(
             DocumentationComment: ReadDocumentation(field, options),
             Attributes: ReadAttributes(field, options),
             Accessibility: field.DeclaredAccessibility,
             Modifiers: modifiers,
-            Type: ReadTypeReference(field.Type),
+            Type: ReadTypeReference(type),
             RefKind: field.RefKind,
+            FixedSize: field.FixedSize,
             Name: field.Name,
             Initializer: field.IsConst && field.HasConstantValue ? FormatConstant(field.ConstantValue, field.Type) : null);
     }
@@ -293,15 +297,18 @@ internal static partial class SymbolReader
             return Accessibility.NotApplicable;
         }
 
-        bool isExplicit = member switch
+        return IsExplicitImplementation(member) ? Accessibility.NotApplicable : member.DeclaredAccessibility;
+    }
+
+    private static bool IsExplicitImplementation(ISymbol member)
+    {
+        return member switch
         {
             IMethodSymbol method => method.ExplicitInterfaceImplementations.Length > 0,
             IPropertySymbol property => property.ExplicitInterfaceImplementations.Length > 0,
             IEventSymbol @event => @event.ExplicitInterfaceImplementations.Length > 0,
             _ => false,
         };
-
-        return isExplicit ? Accessibility.NotApplicable : member.DeclaredAccessibility;
     }
 
     /// <summary>
@@ -397,7 +404,7 @@ internal static partial class SymbolReader
             modifiers |= Modifiers.Abstract;
         }
 
-        if (member.IsVirtual && !inInterface)
+        if (member.IsVirtual && (!inInterface || member.IsStatic))
         {
             modifiers |= Modifiers.Virtual;
         }
@@ -407,7 +414,9 @@ internal static partial class SymbolReader
             modifiers |= Modifiers.Override;
         }
 
-        if (member.IsSealed && !inInterface)
+        // Roslyn reports `sealed void M() { }` in an interface as neither virtual, abstract nor sealed.
+        bool sealedInInterface = inInterface && !member.IsStatic && !member.IsVirtual && !member.IsAbstract && !IsExplicitImplementation(member);
+        if (member.IsSealed || sealedInInterface)
         {
             modifiers |= Modifiers.Sealed;
         }

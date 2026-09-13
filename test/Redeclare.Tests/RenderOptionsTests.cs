@@ -26,6 +26,22 @@ public sealed class RenderOptionsTests
     }
 
     [Test]
+    public void Render_ThrowExpressionBodyAsABlock_GetsNoReturn()
+    {
+        var method = new MethodDeclaration(
+            Accessibility: Accessibility.Public,
+            ReturnType: Types.Int32,
+            Name: "Get",
+            Body: Snippet.Expression($"throw new {Types.NotImplementedException}()"));
+        var unit = new CompilationUnit(Members: [new TypeDeclaration(Name: "C", Members: [method])], Header: Header);
+
+        var text = unit.Render(RenderOptions.Default with { Methods = ExpressionBodyPreference.Never });
+
+        Assert.That(text, Does.Contain("{\n        throw new global::System.NotImplementedException();\n    }"));
+        Compiling.AssertCompiles(text);
+    }
+
+    [Test]
     public void Render_AsyncTaskMethodAsABlock_ReturnsNothing()
     {
         var task = new NamedTypeReference(Name: "Task", ContainingNamespace: "System.Threading.Tasks");

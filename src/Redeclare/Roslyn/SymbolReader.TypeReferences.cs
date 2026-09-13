@@ -43,7 +43,7 @@ internal static partial class SymbolReader
             return new ErrorTypeReference(Text: named.ToDisplayString(_qualified));
         }
 
-        if (named.OriginalDefinition.SpecialType == SpecialType.System_Nullable_T && named.TypeArguments.Length == 1)
+        if (named.OriginalDefinition.SpecialType == SpecialType.System_Nullable_T && !named.IsUnboundGenericType)
         {
             return ReadTypeReference(named.TypeArguments[0]) with { NullableAnnotation = NullableAnnotation.Annotated };
         }

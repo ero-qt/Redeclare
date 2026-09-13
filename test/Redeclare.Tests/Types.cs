@@ -31,6 +31,8 @@ internal static class Types
 
     public static NamedTypeReference Console { get; } = new(Name: "Console", ContainingNamespace: "System");
 
+    public static NamedTypeReference NotImplementedException { get; } = new(Name: "NotImplementedException", ContainingNamespace: "System");
+
     public static NamedTypeReference SerializableAttribute { get; } = new(Name: "SerializableAttribute", ContainingNamespace: "System");
 
     public static NamedTypeReference Stream { get; } = new(Name: "Stream", ContainingNamespace: "System.IO");

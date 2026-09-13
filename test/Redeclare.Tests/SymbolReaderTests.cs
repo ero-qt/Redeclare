@@ -145,6 +145,18 @@ public sealed class SymbolReaderTests
 
             public unsafe delegate void Poke(int* target);
 
+            public unsafe struct Buffer
+            {
+                public fixed byte Data[16];
+            }
+
+            public interface IDefaults<T>
+            {
+                static virtual T Zero => default!;
+                sealed void Seal() { }
+                void Loose() { }
+            }
+
             public static class Holder<T> where T : allows ref struct { }
 
             public partial class Parts
@@ -386,6 +398,20 @@ public sealed class SymbolReaderTests
     }
 
     [Test]
+    public void ToDeclaration_TypeWithNestedTypes_RendersThemInsideItAndCompiles()
+    {
+        var wrapper = Compilation.Type("Fixture.Wrapper");
+
+        using (Assert.EnterMultipleScope())
+        {
+            Assert.That(wrapper.ToDeclaration().Members.OfType<TypeDeclaration>().Single().ContainingType?.Name, Is.EqualTo("Wrapper"), "a member type still knows where it is declared");
+            Assert.That(wrapper.ToFile().Render(), Does.Contain("public class Wrapper\n{\n    public class Only\n    {\n    }\n}"));
+        }
+
+        Compiling.AssertCompiles(wrapper.ToFile().Render());
+    }
+
+    [Test]
     public void ToDeclaration_NestedTypes_ReadRecordsDelegatesAndEnums()
     {
         var nested = Repository.Members.OfType<TypeDeclaration>().ToDictionary(t => t.Name);
@@ -434,6 +460,24 @@ public sealed class SymbolReaderTests
             Assert.That(get.Accessibility, Is.EqualTo(Accessibility.NotApplicable));
             Assert.That(get.Modifiers, Is.EqualTo(Modifiers.None));
             Assert.That(empty.Modifiers, Is.EqualTo(Modifiers.Static | Modifiers.Abstract));
+        }
+    }
+
+    [Test]
+    public void ToDeclaration_InterfaceMembers_KeepStaticVirtualAndSealed()
+    {
+        var members = Compilation.Type("Fixture.IDefaults`1").ToDeclaration().Members.ToDictionary(m => m switch
+        {
+            PropertyDeclaration property => property.Name,
+            MethodDeclaration method => method.Name,
+            _ => "",
+        });
+
+        using (Assert.EnterMultipleScope())
+        {
+            Assert.That(members["Zero"].Modifiers, Is.EqualTo(Modifiers.Static | Modifiers.Virtual), "without virtual a static interface member cannot be overridden");
+            Assert.That(members["Seal"].Modifiers, Is.EqualTo(Modifiers.Sealed), "without sealed a bodiless interface method is abstract");
+            Assert.That(members["Loose"].Modifiers, Is.EqualTo(Modifiers.None), "virtual is implied on an instance member with a body");
         }
     }
 
@@ -808,6 +852,22 @@ public sealed class SymbolReaderTests
         var tryParse = Repository.Members.OfType<MethodDeclaration>().Single(m => m.Name == "TryParse");
 
         Assert.That(tryParse.Parameters[1].IsScoped, Is.False, "the symbol reports the effective scope, which every out parameter has");
+    }
+
+    [Test]
+    public void ToDeclaration_FixedSizeBuffer_ReadsTheSizeAndRendersFixed()
+    {
+        var buffer = Compilation.Type("Fixture.Buffer");
+        var data = buffer.ToDeclaration().Members.OfType<FieldDeclaration>().Single();
+
+        using (Assert.EnterMultipleScope())
+        {
+            Assert.That(data.FixedSize, Is.EqualTo(16));
+            Assert.That(data.Type, Is.EqualTo(Types.Byte), "the element type, not a pointer to it");
+            Assert.That(buffer.ToFile().Render(), Does.Contain("public unsafe fixed byte Data[16];"));
+        }
+
+        Compiling.AssertCompiles(buffer.ToFile().Render());
     }
 
     [Test]
