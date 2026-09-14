@@ -8,7 +8,7 @@ namespace Redeclare;
 /// </summary>
 /// <remarks>
 ///     Each one renders as its keyword under <see cref="RenderOptions.PredefinedTypeKeywords"/>, and as its framework
-///     name without it. <see cref="NativeInt"/> and <see cref="NativeUInt"/> render as <c>IntPtr</c> and
+///     name without it. <see cref="IntPtr"/> and <see cref="UIntPtr"/> render as <c>IntPtr</c> and
 ///     <c>UIntPtr</c> below C# 9, which is the same type in metadata.
 /// </remarks>
 internal abstract partial record TypeReference
@@ -62,11 +62,11 @@ internal abstract partial record TypeReference
     public static NamedTypeReference Void { get; } = Predefined("Void", SpecialType.System_Void);
 
     /// <summary>Gets <c>nint</c>.</summary>
-    public static NamedTypeReference NativeInt { get; } =
+    public static NamedTypeReference IntPtr { get; } =
         Predefined("IntPtr", SpecialType.System_IntPtr) with { IsNativeIntegerType = true };
 
     /// <summary>Gets <c>nuint</c>.</summary>
-    public static NamedTypeReference NativeUInt { get; } =
+    public static NamedTypeReference UIntPtr { get; } =
         Predefined("UIntPtr", SpecialType.System_UIntPtr) with { IsNativeIntegerType = true };
 
     private static NamedTypeReference Predefined(string name, SpecialType specialType, TypeKind kind = TypeKind.Struct)
