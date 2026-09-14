@@ -207,7 +207,7 @@ public sealed class SymbolReaderTests
 
     private static CSharpCompilation Compilation => field ??= Compiling.AssertCompiles(FixtureSource);
 
-    private static TypeDeclaration Repository => Compilation.Type("Fixture.Repository`1").ToDeclaration(_withDocs);
+    private static TypeDeclaration Repository => Compilation.Type("Fixture.Repository`1").ToTypeDeclaration(_withDocs);
 
     [Test]
     public void ToDeclaration_Class_ReadsShapeWithoutPartial()
@@ -415,7 +415,7 @@ public sealed class SymbolReaderTests
 
         using (Assert.EnterMultipleScope())
         {
-            Assert.That(wrapper.ToDeclaration().Members.OfType<TypeDeclaration>().Single().ContainingType?.Name, Is.EqualTo("Wrapper"), "a member type still knows where it is declared");
+            Assert.That(wrapper.ToTypeDeclaration().Members.OfType<TypeDeclaration>().Single().ContainingType?.Name, Is.EqualTo("Wrapper"), "a member type still knows where it is declared");
             Assert.That(wrapper.ToFile().Render(), Does.Contain("public class Wrapper\n{\n    public class Only\n    {\n    }\n}"));
         }
 
@@ -445,7 +445,7 @@ public sealed class SymbolReaderTests
     [Test]
     public void ToDeclaration_Enum_ReadsUnderlyingTypeAndValues()
     {
-        var level = Compilation.Type("Fixture.Level").ToDeclaration();
+        var level = Compilation.Type("Fixture.Level").ToTypeDeclaration();
 
         using (Assert.EnterMultipleScope())
         {
@@ -459,7 +459,7 @@ public sealed class SymbolReaderTests
     [Test]
     public void ToDeclaration_Interface_DropsRedundantModifiers()
     {
-        var declaration = Compilation.Type("Fixture.IRepository`2").ToDeclaration();
+        var declaration = Compilation.Type("Fixture.IRepository`2").ToTypeDeclaration();
         var get = declaration.Members.OfType<MethodDeclaration>().Single();
         var empty = declaration.Members.OfType<PropertyDeclaration>().Single(p => p.Name == "Empty");
 
@@ -476,7 +476,7 @@ public sealed class SymbolReaderTests
     [Test]
     public void ToDeclaration_InterfaceMembers_KeepStaticVirtualAndSealed()
     {
-        var members = Compilation.Type("Fixture.IDefaults`1").ToDeclaration().Members.ToDictionary(m => m switch
+        var members = Compilation.Type("Fixture.IDefaults`1").ToTypeDeclaration().Members.ToDictionary(m => m switch
         {
             PropertyDeclaration property => property.Name,
             MethodDeclaration method => method.Name,
@@ -495,7 +495,7 @@ public sealed class SymbolReaderTests
     public void ToDeclaration_Finalizer_ReadsAsAMethodNamedWithATilde()
     {
         var handle = Compilation.Type("Fixture.Handle");
-        var finalizer = handle.ToDeclaration().Members.OfType<MethodDeclaration>().Single();
+        var finalizer = handle.ToTypeDeclaration().Members.OfType<MethodDeclaration>().Single();
         var text = handle.ToFile().Render();
 
         using (Assert.EnterMultipleScope())
@@ -513,7 +513,7 @@ public sealed class SymbolReaderTests
     public void ToDeclaration_AccessorsWithReadOnlyAndAttributes_KeepThem()
     {
         var mixed = Compilation.Type("Fixture.Mixed");
-        var properties = mixed.ToDeclaration().Members.OfType<PropertyDeclaration>().ToDictionary(p => p.Name);
+        var properties = mixed.ToTypeDeclaration().Members.OfType<PropertyDeclaration>().ToDictionary(p => p.Name);
         var text = mixed.ToFile().Render();
 
         using (Assert.EnterMultipleScope())
@@ -532,8 +532,8 @@ public sealed class SymbolReaderTests
     [Test]
     public void ToDeclaration_ReadOnlyStructMembers_CarryReadOnlyOnlyWhereWritten()
     {
-        var window = Compilation.Type("Fixture.Window`1").ToDeclaration();
-        var frozen = Compilation.Type("Fixture.Frozen").ToDeclaration();
+        var window = Compilation.Type("Fixture.Window`1").ToTypeDeclaration();
+        var frozen = Compilation.Type("Fixture.Frozen").ToTypeDeclaration();
 
         using (Assert.EnterMultipleScope())
         {
@@ -550,7 +550,7 @@ public sealed class SymbolReaderTests
     [Test]
     public void ToDeclaration_ExtensionMethod_MarksTheReceiver()
     {
-        var twice = Compilation.Type("Fixture.Extensions").ToDeclaration().Members.OfType<MethodDeclaration>().Single();
+        var twice = Compilation.Type("Fixture.Extensions").ToTypeDeclaration().Members.OfType<MethodDeclaration>().Single();
 
         Assert.That(twice.Parameters.Single().IsThis, Is.True);
     }
@@ -567,14 +567,15 @@ public sealed class SymbolReaderTests
             Assert.That(picker.ReturnType, Is.EqualTo(Types.Int32));
             Assert.That(picker.Parameters.Select(p => (p.RefKind, p.IsParams)), Is.EqualTo(new[] { (RefKind.In, false), (RefKind.None, true) }));
             Assert.That(picker.TypeParameters[0].HasValueTypeConstraint, Is.True);
-            Assert.That(() => symbol.ToDeclaration(), Throws.ArgumentException.With.Message.Contains("ToDelegateDeclaration"));
+            Assert.That(symbol.ToDeclaration(), Is.EqualTo(picker), "the kind-free read hands back the same record");
+            Assert.That(() => symbol.ToTypeDeclaration(), Throws.ArgumentException.With.Message.Contains("ToDelegateDeclaration"));
         }
     }
 
     [Test]
     public void ToDeclaration_RefMembersAndFunctionPointers_ReadRefKinds()
     {
-        var slot = Compilation.Type("Fixture.Slot`1").ToDeclaration();
+        var slot = Compilation.Type("Fixture.Slot`1").ToTypeDeclaration();
         var value = slot.Members.OfType<FieldDeclaration>().Single(f => f.Name == "Value");
         var callback = (FunctionPointerTypeReference)slot.Members.OfType<FieldDeclaration>().Single(f => f.Name == "Callback").Type;
         var peek = slot.Members.OfType<PropertyDeclaration>().Single();
@@ -595,8 +596,8 @@ public sealed class SymbolReaderTests
     [Test]
     public void ToDeclaration_SameSourceTwice_IsEqual()
     {
-        var first = Compiling.AssertCompiles(FixtureSource).Type("Fixture.Repository`1").ToDeclaration(_withDocs);
-        var second = Compiling.AssertCompiles(FixtureSource).Type("Fixture.Repository`1").ToDeclaration(_withDocs);
+        var first = Compiling.AssertCompiles(FixtureSource).Type("Fixture.Repository`1").ToTypeDeclaration(_withDocs);
+        var second = Compiling.AssertCompiles(FixtureSource).Type("Fixture.Repository`1").ToTypeDeclaration(_withDocs);
 
         using (Assert.EnterMultipleScope())
         {
@@ -608,8 +609,8 @@ public sealed class SymbolReaderTests
     [Test]
     public void ToDeclaration_Nested_ReadsTheContainingShape()
     {
-        var nested = Compilation.Type("Fixture.Repository`1+Nested`1").ToDeclaration();
-        var wrapper = Compilation.Type("Fixture.Wrapper").ToDeclaration();
+        var nested = Compilation.Type("Fixture.Repository`1+Nested`1").ToTypeDeclaration();
+        var wrapper = Compilation.Type("Fixture.Wrapper").ToTypeDeclaration();
 
         using (Assert.EnterMultipleScope())
         {
@@ -661,7 +662,7 @@ public sealed class SymbolReaderTests
     public void ToDeclaration_ShapeWithPartial_CompilesAsANewPart()
     {
         var type = Compilation.Type("Fixture.Repository`1");
-        var shape = type.ToDeclaration(ReadOptions.Shape);
+        var shape = type.ToTypeDeclaration(ReadOptions.Shape);
         var part = shape with
         {
             Modifiers = shape.Modifiers | Modifiers.Partial,
@@ -679,7 +680,7 @@ public sealed class SymbolReaderTests
         // A symbol does not know which constructor was primary, and the reader never fills ParameterList for a record, so the
         // only thing a careless part repeats is the attribute.
         var positional = Compilation.Type("Fixture.Positional");
-        var shape = positional.ToDeclaration(new ReadOptions(IncludeMembers: false));
+        var shape = positional.ToTypeDeclaration(new ReadOptions(IncludeMembers: false));
         var unit = new CompilationUnit(Members: [positional.ContainingNamespace.ToDeclaration() with
         {
             Members = [shape with { Modifiers = shape.Modifiers | Modifiers.Partial }],
@@ -698,7 +699,7 @@ public sealed class SymbolReaderTests
     public void ToDeclaration_WithoutAttributes_LeavesThemOffTypeParametersToo()
     {
         var marked = Compilation.Type("Fixture.Marked`1");
-        var shape = marked.ToDeclaration(ReadOptions.Shape);
+        var shape = marked.ToTypeDeclaration(ReadOptions.Shape);
         var unit = new CompilationUnit(Members: [marked.ContainingNamespace.ToDeclaration() with
         {
             Members = [shape with { Modifiers = shape.Modifiers | Modifiers.Partial }],
@@ -710,7 +711,7 @@ public sealed class SymbolReaderTests
         {
             Assert.That(part, Does.Contain("partial class Marked<T>"));
             Assert.That(part, Does.Not.Contain("MarkAttribute"));
-            Assert.That(marked.ToDeclaration().TypeParameters[0].Attributes, Is.Not.Empty, "reading the type itself still gives them");
+            Assert.That(marked.ToTypeDeclaration().TypeParameters[0].Attributes, Is.Not.Empty, "reading the type itself still gives them");
         }
 
         Compiling.AssertCompiles(FixtureSource, LanguageVersion.Latest, part);
@@ -720,9 +721,9 @@ public sealed class SymbolReaderTests
     public void ToDeclaration_ReadOptions_DecideHowMuchIsRead()
     {
         var key = Compilation.Type("Fixture.Repository`1+Key");
-        var whole = key.ToDeclaration();
-        var withImplicit = key.ToDeclaration(new ReadOptions(IncludeImplicitlyDeclared: true));
-        var shape = key.ToDeclaration(new ReadOptions(IncludeMembers: false));
+        var whole = key.ToTypeDeclaration();
+        var withImplicit = key.ToTypeDeclaration(new ReadOptions(IncludeImplicitlyDeclared: true));
+        var shape = key.ToTypeDeclaration(new ReadOptions(IncludeMembers: false));
 
         using (Assert.EnterMultipleScope())
         {
@@ -741,10 +742,10 @@ public sealed class SymbolReaderTests
                 new NamespaceDeclaration(
                     Name: "Fixture",
                     Members: [
-                        Compilation.Type("Fixture.Level").ToDeclaration(_withDocs),
-                        Compilation.Type("Fixture.MarkAttribute").ToDeclaration(_withDocs),
-                        Compilation.Type("Fixture.IRepository`2").ToDeclaration(_withDocs),
-                        Compilation.Type("Fixture.Window`1").ToDeclaration(_withDocs),
+                        Compilation.Type("Fixture.Level").ToTypeDeclaration(_withDocs),
+                        Compilation.Type("Fixture.MarkAttribute").ToTypeDeclaration(_withDocs),
+                        Compilation.Type("Fixture.IRepository`2").ToTypeDeclaration(_withDocs),
+                        Compilation.Type("Fixture.Window`1").ToTypeDeclaration(_withDocs),
                     ]),
             ],
             Header: Header);
@@ -838,7 +839,7 @@ public sealed class SymbolReaderTests
     public void ToDeclaration_PointerMembers_CarryUnsafe()
     {
         var pointer = Repository.Members.OfType<PropertyDeclaration>().Single(p => p.Name == "Pointer");
-        var callback = Compilation.Type("Fixture.Slot`1").ToDeclaration().Members.OfType<FieldDeclaration>()
+        var callback = Compilation.Type("Fixture.Slot`1").ToTypeDeclaration().Members.OfType<FieldDeclaration>()
             .Single(f => f.Name == "Callback");
 
         using (Assert.EnterMultipleScope())
@@ -854,7 +855,7 @@ public sealed class SymbolReaderTests
     [Test]
     public void ToDeclaration_EventsWithAccessors_ReadThemAsShape()
     {
-        var events = Compilation.Type("Fixture.Watched").ToDeclaration().Members.OfType<EventDeclaration>().ToDictionary(e => e.Name);
+        var events = Compilation.Type("Fixture.Watched").ToTypeDeclaration().Members.OfType<EventDeclaration>().ToDictionary(e => e.Name);
 
         using (Assert.EnterMultipleScope())
         {
@@ -870,7 +871,7 @@ public sealed class SymbolReaderTests
     [Test]
     public void ToDeclaration_ExplicitInterfaceProperty_LeavesItsAccessorsUnmodified()
     {
-        var size = Compilation.Type("Fixture.Watched").ToDeclaration().Members.OfType<PropertyDeclaration>().Single();
+        var size = Compilation.Type("Fixture.Watched").ToTypeDeclaration().Members.OfType<PropertyDeclaration>().Single();
 
         using (Assert.EnterMultipleScope())
         {
@@ -884,7 +885,7 @@ public sealed class SymbolReaderTests
     [Test]
     public void ToDeclaration_EventFromMetadata_IsFieldLike()
     {
-        var changed = Compilation.Type("System.ComponentModel.INotifyPropertyChanged").ToDeclaration().Members.OfType<EventDeclaration>().Single();
+        var changed = Compilation.Type("System.ComponentModel.INotifyPropertyChanged").ToTypeDeclaration().Members.OfType<EventDeclaration>().Single();
 
         using (Assert.EnterMultipleScope())
         {
@@ -904,7 +905,7 @@ public sealed class SymbolReaderTests
     public void ToDeclaration_FixedSizeBuffer_ReadsTheSizeAndRendersFixed()
     {
         var buffer = Compilation.Type("Fixture.Buffer");
-        var data = buffer.ToDeclaration().Members.OfType<FieldDeclaration>().Single();
+        var data = buffer.ToTypeDeclaration().Members.OfType<FieldDeclaration>().Single();
 
         using (Assert.EnterMultipleScope())
         {
@@ -935,7 +936,7 @@ public sealed class SymbolReaderTests
 
         using (Assert.EnterMultipleScope())
         {
-            Assert.That(holder.ToDeclaration().TypeParameters.Single().AllowsRefLikeType, Is.True);
+            Assert.That(holder.ToTypeDeclaration().TypeParameters.Single().AllowsRefLikeType, Is.True);
             Assert.That(holder.ToFile().Render(), Does.Contain("where T : allows ref struct"));
         }
     }
@@ -948,7 +949,7 @@ public sealed class SymbolReaderTests
 
         using (Assert.EnterMultipleScope())
         {
-            Assert.That(parts.ToDeclaration().Members.Select(m => m.Modifiers), Has.All.EqualTo(Modifiers.Partial));
+            Assert.That(parts.ToTypeDeclaration().Members.Select(m => m.Modifiers), Has.All.EqualTo(Modifiers.Partial));
             Assert.That(text, Does.Contain("public partial Parts();"));
             Assert.That(text, Does.Contain("public partial int Size { get; set; }"));
             Assert.That(text, Does.Contain("public partial event global::System.EventHandler Tick;"));
@@ -976,7 +977,7 @@ public sealed class SymbolReaderTests
     [Test]
     public void Render_ReadEventsWithBodiesAdded_CompileAgain()
     {
-        var watched = Compilation.Type("Fixture.Watched").ToDeclaration();
+        var watched = Compilation.Type("Fixture.Watched").ToTypeDeclaration();
         var withBodies = watched with
         {
             Members = [.. watched.Members.Select(m => m is EventDeclaration e

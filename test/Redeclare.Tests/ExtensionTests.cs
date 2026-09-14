@@ -163,7 +163,7 @@ public sealed class ExtensionTests
                 public static int Plain(this int x) => x;
             }
             """);
-        var extensions = compilation.Type("Sample.Extensions").ToDeclaration();
+        var extensions = compilation.Type("Sample.Extensions").ToTypeDeclaration();
         var blocks = extensions.Members.OfType<ExtensionDeclaration>().ToList();
         var text = compilation.Type("Sample.Extensions").ToFile().Render();
 
@@ -182,14 +182,15 @@ public sealed class ExtensionTests
     }
 
     [Test]
-    public void ToDeclaration_ExtensionBlockItself_Throws()
+    public void ToDeclaration_ExtensionBlockItself_ReadsAnExtensionDeclaration()
     {
         var compilation = Compiling.AssertCompiles("public static class E { extension(int x) { public int Twice => x * 2; } }");
         var block = compilation.Type("E").GetTypeMembers().Single();
 
         using (Assert.EnterMultipleScope())
         {
-            Assert.That(() => block.ToDeclaration(), Throws.ArgumentException.With.Message.Contains("ToExtensionDeclaration"));
+            Assert.That(block.ToDeclaration(), Is.TypeOf<ExtensionDeclaration>());
+            Assert.That(() => block.ToTypeDeclaration(), Throws.ArgumentException.With.Message.Contains("ToExtensionDeclaration"));
             Assert.That(block.ToExtensionDeclaration().Receiver.Type, Is.EqualTo(Types.Int32));
             Assert.That(() => compilation.Type("E").ToExtensionDeclaration(), Throws.ArgumentException);
         }

@@ -91,7 +91,7 @@ public sealed class RoundTripTests
     {
         // A file-local type has a mangled metadata name, so the namespace is walked instead of looked up.
         var members = _compilation.GlobalNamespace.GetNamespaceMembers().Single(n => n.Name == "Trip").GetTypeMembers()
-            .Select(type => WithBodies(type.ToDeclaration()))
+            .Select(type => WithBodies(type.ToTypeDeclaration()))
             .ToArray();
         var unit = new CompilationUnit(
             Members: [new NamespaceDeclaration(Name: "Trip", Members: [.. members])],

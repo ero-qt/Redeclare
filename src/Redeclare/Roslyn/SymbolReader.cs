@@ -53,12 +53,12 @@ internal sealed partial class SymbolReader
     {
         if (type.IsExtension)
         {
-            throw new ArgumentException($"'{type.Name}' is an extension block. Use ToExtensionDeclaration.", nameof(type));
+            throw new ArgumentException($"'{type.Name}' is an extension block. Use ToExtensionDeclaration or ToDeclaration.", nameof(type));
         }
 
         if (type.TypeKind == TypeKind.Delegate)
         {
-            throw new ArgumentException($"'{type.Name}' is a delegate. Use ToDelegateDeclaration.", nameof(type));
+            throw new ArgumentException($"'{type.Name}' is a delegate. Use ToDelegateDeclaration or ToDeclaration.", nameof(type));
         }
 
         if (type.TypeKind is not (TypeKind.Class or TypeKind.Struct or TypeKind.Interface or TypeKind.Enum))

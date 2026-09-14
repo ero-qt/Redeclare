@@ -12,10 +12,26 @@ namespace Redeclare;
 internal static class RoslynExtensions
 {
     /// <summary>
-    ///     Reads a type symbol into a declaration. See <see cref="SymbolReader.ReadType"/>. A delegate reads through
-    ///     <see cref="ToDelegateDeclaration"/> and an extension block through <see cref="ToExtensionDeclaration"/>.
+    ///     Reads a named type symbol into whichever declaration it is: a <see cref="TypeDeclaration"/>, a
+    ///     <see cref="DelegateDeclaration"/> or an <see cref="ExtensionDeclaration"/>. The three <c>To*Declaration</c>
+    ///     methods read a symbol whose kind is known and keep the type.
     /// </summary>
-    public static TypeDeclaration ToDeclaration(this INamedTypeSymbol type, ReadOptions? options = null)
+    public static MemberDeclaration ToDeclaration(this INamedTypeSymbol type, ReadOptions? options = null)
+    {
+        var reader = SymbolReader.Create(options);
+
+        return type switch
+        {
+            { IsExtension: true } => reader.ReadExtension(type),
+            { TypeKind: TypeKind.Delegate } => reader.ReadDelegate(type),
+            _ => reader.ReadType(type),
+        };
+    }
+
+    /// <summary>
+    ///     Reads a class, struct, interface, enum or record symbol into a declaration. See <see cref="SymbolReader.ReadType"/>.
+    /// </summary>
+    public static TypeDeclaration ToTypeDeclaration(this INamedTypeSymbol type, ReadOptions? options = null)
     {
         return SymbolReader.Create(options).ReadType(type);
     }
