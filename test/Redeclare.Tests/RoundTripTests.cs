@@ -156,7 +156,7 @@ public sealed class RoundTripTests
                     Setter = indexer.Setter is { } set ? set with { Body = Snippet.Empty } : null,
                 },
             EventDeclaration { ExplicitInterfaceSpecifier: not null } @event
-                => @event with { Adder = new AccessorDeclaration(Body: Snippet.Empty), Remover = new AccessorDeclaration(Body: Snippet.Empty) },
+                => @event with { Accessors = new EventAccessors(new AccessorDeclaration(Body: Snippet.Empty), new AccessorDeclaration(Body: Snippet.Empty)) },
             ConstructorDeclaration { Parameters.IsEmpty: true, Modifiers: Modifiers.None } constructor
                 => constructor with { Initializer = Snippet.From("base(0)") },
             TypeDeclaration nested => WithBodies(nested),

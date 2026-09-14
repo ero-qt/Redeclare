@@ -5,14 +5,9 @@ namespace Redeclare;
 /// <summary>
 ///     Represents an event, field-like or with accessors.
 /// </summary>
-/// <remarks>
-///     Both accessors <see langword="null"/> is a field-like event, <c>event T Name;</c>. C# requires an event
-///     that declares one accessor to declare both, so supplying only one is a <see cref="RenderException"/>.
-/// </remarks>
 /// <param name="Type">The delegate type.</param>
 /// <param name="Name">The name.</param>
-/// <param name="Adder">The <c>add</c> accessor, or <see langword="null"/> for a field-like event.</param>
-/// <param name="Remover">The <c>remove</c> accessor, or <see langword="null"/> for a field-like event.</param>
+/// <param name="Accessors">The <c>add</c> and <c>remove</c> accessors, or <see langword="null"/> for a field-like event, <c>event T Name;</c>.</param>
 /// <param name="ExplicitInterfaceSpecifier">
 ///     The interface for an explicit implementation, <c>event T IFoo.Name</c>, or <see langword="null"/>. C# requires
 ///     an explicit implementation to declare both accessors.
@@ -24,8 +19,7 @@ namespace Redeclare;
 internal sealed record EventDeclaration(
     TypeReference Type,
     string Name,
-    AccessorDeclaration? Adder = null,
-    AccessorDeclaration? Remover = null,
+    EventAccessors? Accessors = null,
     TypeReference? ExplicitInterfaceSpecifier = null,
     Accessibility Accessibility = Accessibility.NotApplicable,
     Modifiers Modifiers = Modifiers.None,

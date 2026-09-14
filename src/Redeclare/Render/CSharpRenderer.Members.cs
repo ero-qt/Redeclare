@@ -322,13 +322,7 @@ internal static partial class CSharpRenderer
     {
         string what = $"Event '{containing.Name}.{@event.Name}'";
 
-        bool fieldLike = @event.Adder is null && @event.Remover is null;
-        if (!fieldLike && (@event.Adder is null || @event.Remover is null))
-        {
-            throw new RenderException($"{what} declares one accessor. C# requires an event with accessors to have both add and remove.");
-        }
-
-        if (fieldLike && @event.ExplicitInterfaceSpecifier is not null)
+        if (@event.Accessors is null && @event.ExplicitInterfaceSpecifier is not null)
         {
             throw new RenderException($"{what} is an explicit implementation. C# requires an explicit implementation to declare both accessors.");
         }
@@ -348,7 +342,7 @@ internal static partial class CSharpRenderer
 
         head.AppendIdentifier(@event.Name);
 
-        if (fieldLike)
+        if (@event.Accessors is not { } accessors)
         {
             head.Append(';');
             writer.EndLine();
@@ -358,10 +352,10 @@ internal static partial class CSharpRenderer
         writer.EndLine();
         using (writer.Block())
         {
-            AppendAccessorHead(writer.BeginLine(), @event.Adder!, "add", options);
-            RenderBody(writer, @event.Adder!.Body, options.Accessors, CSharpVersion.CSharp7, options, returnsValue: false, what);
-            AppendAccessorHead(writer.BeginLine(), @event.Remover!, "remove", options);
-            RenderBody(writer, @event.Remover!.Body, options.Accessors, CSharpVersion.CSharp7, options, returnsValue: false, what);
+            AppendAccessorHead(writer.BeginLine(), accessors.Add, "add", options);
+            RenderBody(writer, accessors.Add.Body, options.Accessors, CSharpVersion.CSharp7, options, returnsValue: false, what);
+            AppendAccessorHead(writer.BeginLine(), accessors.Remove, "remove", options);
+            RenderBody(writer, accessors.Remove.Body, options.Accessors, CSharpVersion.CSharp7, options, returnsValue: false, what);
         }
     }
 

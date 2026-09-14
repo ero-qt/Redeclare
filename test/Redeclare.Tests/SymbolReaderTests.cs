@@ -859,13 +859,12 @@ public sealed class SymbolReaderTests
 
         using (Assert.EnterMultipleScope())
         {
-            Assert.That(events["Ticked"].Adder, Is.EqualTo(new AccessorDeclaration()));
-            Assert.That(events["Ticked"].Remover, Is.EqualTo(new AccessorDeclaration()));
+            Assert.That(events["Ticked"].Accessors, Is.EqualTo(EventAccessors.Auto));
             Assert.That(events["Ticked"].ExplicitInterfaceSpecifier, Is.Null);
             Assert.That(events["Changed"].Name, Is.EqualTo("Changed"), "the interface is not part of the name");
             Assert.That(events["Changed"].ExplicitInterfaceSpecifier?.ToString(), Is.EqualTo("global::Fixture.IWatched"));
             Assert.That(events["Changed"].Accessibility, Is.EqualTo(Accessibility.NotApplicable));
-            Assert.That(Repository.Members.OfType<EventDeclaration>().Single().Adder, Is.Null, "a field-like event has no accessors of its own");
+            Assert.That(Repository.Members.OfType<EventDeclaration>().Single().Accessors, Is.Null, "a field-like event has no accessors of its own");
         }
     }
 
@@ -890,8 +889,7 @@ public sealed class SymbolReaderTests
 
         using (Assert.EnterMultipleScope())
         {
-            Assert.That(changed.Adder, Is.Null, "metadata cannot say whether the accessors were written, and only a field-like event renders without bodies");
-            Assert.That(changed.Remover, Is.Null);
+            Assert.That(changed.Accessors, Is.Null, "metadata cannot say whether the accessors were written, and only a field-like event renders without bodies");
         }
     }
 
@@ -983,7 +981,7 @@ public sealed class SymbolReaderTests
         var withBodies = watched with
         {
             Members = [.. watched.Members.Select(m => m is EventDeclaration e
-                ? e with { Adder = new AccessorDeclaration(Body: Snippet.Empty), Remover = new AccessorDeclaration(Body: Snippet.Empty) }
+                ? e with { Accessors = new EventAccessors(new AccessorDeclaration(Body: Snippet.Empty), new AccessorDeclaration(Body: Snippet.Empty)) }
                 : m)],
         };
         var unit = new CompilationUnit(Members: [new NamespaceDeclaration(Name: "Fixture", Members: [withBodies])], Header: Header);

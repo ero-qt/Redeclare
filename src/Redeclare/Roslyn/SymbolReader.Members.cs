@@ -204,8 +204,7 @@ internal static partial class SymbolReader
             Modifiers: ReadMemberModifiers(facts),
             Type: ReadTypeReference(@event.Type),
             Name: facts.Declared.Name,
-            Adder: hasAccessors ? new AccessorDeclaration() : null,
-            Remover: hasAccessors ? new AccessorDeclaration() : null,
+            Accessors: hasAccessors ? EventAccessors.Auto : null,
             ExplicitInterfaceSpecifier: ReadExplicitInterfaceSpecifier(facts));
     }
 
