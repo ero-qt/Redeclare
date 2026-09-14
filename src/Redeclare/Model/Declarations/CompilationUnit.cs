@@ -67,23 +67,34 @@ internal sealed record CompilationUnit(
                 member = inner[0];
             }
 
-            if (member is not TypeDeclaration type)
+            var (own, containing) = member switch
+            {
+                TypeDeclaration type => (type, type.ContainingType),
+                DelegateDeclaration @delegate => ((MemberDeclaration)@delegate, @delegate.ContainingType),
+                _ => (null, null),
+            };
+            if (own is null)
             {
                 return "Generated.g.cs";
             }
 
-            List<TypeDeclaration> chain = [];
-            for (var current = type; current is not null; current = current.ContainingType)
+            List<(string Name, int Arity)> chain = [own switch
             {
-                chain.Add(current);
+                TypeDeclaration type => (type.Name, type.TypeParameters.Length),
+                DelegateDeclaration @delegate => (@delegate.Name, @delegate.TypeParameters.Length),
+                _ => ("", 0),
+            }];
+            for (var current = containing; current is not null; current = current.ContainingType)
+            {
+                chain.Add((current.Name, current.TypeParameters.Length));
             }
 
             for (int i = chain.Count - 1; i >= 0; i--)
             {
                 name.Append(chain[i].Name);
-                if (!chain[i].TypeParameters.IsEmpty)
+                if (chain[i].Arity > 0)
                 {
-                    name.Append('`').Append(chain[i].TypeParameters.Length.ToString(CultureInfo.InvariantCulture));
+                    name.Append('`').Append(chain[i].Arity.ToString(CultureInfo.InvariantCulture));
                 }
 
                 name.Append('.');

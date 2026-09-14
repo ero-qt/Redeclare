@@ -47,7 +47,7 @@ internal sealed partial class SymbolReader
     }
 
     /// <summary>
-    ///     Reads a class, struct, interface, enum, record or delegate.
+    ///     Reads a class, struct, interface, enum or record.
     /// </summary>
     public TypeDeclaration ReadType(INamedTypeSymbol type)
     {
@@ -56,11 +56,16 @@ internal sealed partial class SymbolReader
             throw new ArgumentException($"'{type.Name}' is an extension block. Use ToExtensionDeclaration.", nameof(type));
         }
 
-        if (type.TypeKind is not (TypeKind.Class or TypeKind.Struct or TypeKind.Interface or TypeKind.Enum or TypeKind.Delegate))
+        if (type.TypeKind == TypeKind.Delegate)
+        {
+            throw new ArgumentException($"'{type.Name}' is a delegate. Use ToDelegateDeclaration.", nameof(type));
+        }
+
+        if (type.TypeKind is not (TypeKind.Class or TypeKind.Struct or TypeKind.Interface or TypeKind.Enum))
         {
             throw new NotSupportedException(
-                $"'{type.Name}' is a {type.TypeKind}. Only classes, structs, interfaces, enums, records and delegates have a typed "
-                + "declaration. Use RawMemberDeclaration.");
+                $"'{type.Name}' is a {type.TypeKind}. Only classes, structs, interfaces, enums and records have a typed declaration. "
+                + "Use RawMemberDeclaration.");
         }
 
         var modifiers = Modifiers.None;
@@ -114,30 +119,60 @@ internal sealed partial class SymbolReader
             ? ReadTypeReference(enumType)
             : null;
 
-        var invoke = type.TypeKind == TypeKind.Delegate ? type.DelegateInvokeMethod : null;
-        if (invoke is not null && MentionsPointer(invoke))
-        {
-            modifiers |= Modifiers.Unsafe;
-        }
-
         return new TypeDeclaration(
             DocumentationComment: ReadDocumentation(type),
             Attributes: ReadAttributes(type),
-            // `file` reports as `internal`.
-            Accessibility: type.IsFileLocal ? Accessibility.NotApplicable : type.DeclaredAccessibility,
+            Accessibility: ReadTypeAccessibility(type),
             Modifiers: modifiers,
             TypeKind: type.TypeKind,
             IsRecord: type.IsRecord,
             Name: type.Name,
             ContainingType: type.ContainingType is { } outer ? ReadShape(outer) : null,
             TypeParameters: ReadTypeParameters(type.TypeParameters),
-            ParameterList: invoke is null ? default : ReadParameters(invoke.Parameters, isExtension: false),
-            BaseType: invoke is null ? baseType : null,
-            Interfaces: invoke is null ? interfaces.ToEquatableArray() : default,
+            BaseType: baseType,
+            Interfaces: interfaces.ToEquatableArray(),
             EnumUnderlyingType: underlying,
-            ReturnType: invoke is null ? null : ReadTypeReference(invoke.ReturnType),
-            RefKind: invoke?.RefKind ?? RefKind.None,
-            Members: _options.IncludeMembers && invoke is null ? ReadMembers(type) : default);
+            Members: _options.IncludeMembers ? ReadMembers(type) : default);
+    }
+
+    /// <summary>
+    ///     Reads a delegate. The signature comes from its <c>Invoke</c> method.
+    /// </summary>
+    public DelegateDeclaration ReadDelegate(INamedTypeSymbol type)
+    {
+        if (type.TypeKind != TypeKind.Delegate || type.DelegateInvokeMethod is not { } invoke)
+        {
+            throw new ArgumentException($"'{type.Name}' is not a delegate.", nameof(type));
+        }
+
+        var modifiers = Modifiers.None;
+        if (type.IsFileLocal)
+        {
+            modifiers |= Modifiers.File;
+        }
+
+        if (MentionsPointer(invoke))
+        {
+            modifiers |= Modifiers.Unsafe;
+        }
+
+        return new DelegateDeclaration(
+            DocumentationComment: ReadDocumentation(type),
+            Attributes: ReadAttributes(type),
+            Accessibility: ReadTypeAccessibility(type),
+            Modifiers: modifiers,
+            ReturnType: ReadTypeReference(invoke.ReturnType),
+            RefKind: invoke.RefKind,
+            Name: type.Name,
+            ContainingType: type.ContainingType is { } outer ? ReadShape(outer) : null,
+            TypeParameters: ReadTypeParameters(type.TypeParameters),
+            Parameters: ReadParameters(invoke.Parameters, isExtension: false));
+    }
+
+    private static Accessibility ReadTypeAccessibility(INamedTypeSymbol type)
+    {
+        // `file` reports as `internal`.
+        return type.IsFileLocal ? Accessibility.NotApplicable : type.DeclaredAccessibility;
     }
 
     /// <summary>
@@ -203,10 +238,12 @@ internal sealed partial class SymbolReader
                     members.Add(ReadExtension(extension));
                     break;
                 }
-                case INamedTypeSymbol
+                case INamedTypeSymbol { TypeKind: TypeKind.Delegate } nested:
                 {
-                    TypeKind: TypeKind.Class or TypeKind.Struct or TypeKind.Interface or TypeKind.Enum or TypeKind.Delegate,
-                } nested:
+                    members.Add(ReadDelegate(nested));
+                    break;
+                }
+                case INamedTypeSymbol { TypeKind: TypeKind.Class or TypeKind.Struct or TypeKind.Interface or TypeKind.Enum } nested:
                 {
                     members.Add(ReadType(nested));
                     break;

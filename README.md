@@ -28,7 +28,8 @@ Declarations are positional records under `Model/Declarations`. `null` means abs
 |---|---|
 | `CompilationUnit` | A file: header, `#nullable` and `#pragma warning disable` directives, usings, members. `HintName` names it for `AddSource`. |
 | `NamespaceDeclaration` | A namespace. An empty name is the global one and writes no line. |
-| `TypeDeclaration` | Classes, structs, interfaces, enums, records and delegates. `ContainingType` gives a nested type its enclosing parts. |
+| `TypeDeclaration` | Classes, structs, interfaces, enums and records. `ContainingType` gives a nested type its enclosing parts. |
+| `DelegateDeclaration` | A delegate: return type, name and parameters. |
 | `ExtensionDeclaration` | A C# 14 extension block. |
 | `MethodDeclaration`, `ConstructorDeclaration`, `PropertyDeclaration`, `FieldDeclaration`, `EventDeclaration`, `EnumMemberDeclaration` | Members. Bodies and initializers are `Snippet`s. |
 | `RawMemberDeclaration` | Verbatim text for what the model does not express, such as a finalizer. |
@@ -57,7 +58,7 @@ Format specifiers pin a hole's qualification: `{type:g}` writes `global::`, `{ty
 
 ## Reading
 
-`ToDeclaration()` reads a type, method, property, field, event, parameter or namespace symbol into the shape the symbol knows: methods without bodies, properties with auto accessors, `partial` only on a partial definition, no `public` on interface members. Operators, conversions and destructors read as methods whose `MethodName` says which they are, and a plain `string` is an identifier. `ToExtensionDeclaration()` reads a C# 14 extension block, `ToConstructorDeclaration()` a constructor and `ToEnumMemberDeclaration()` an enum member. An enum default reads as the member that has the value, and `typeof(List<int>)` in an attribute reads with a hole for the type.
+`ToDeclaration()` reads a type, method, property, field, event, parameter or namespace symbol into the shape the symbol knows: methods without bodies, properties with auto accessors, `partial` only on a partial definition, no `public` on interface members. Operators, conversions and destructors read as methods whose `MethodName` says which they are, and a plain `string` is an identifier. `ToDelegateDeclaration()` reads a delegate, `ToExtensionDeclaration()` a C# 14 extension block, `ToConstructorDeclaration()` a constructor and `ToEnumMemberDeclaration()` an enum member. An enum default reads as the member that has the value, and `typeof(List<int>)` in an attribute reads with a hole for the type.
 
 `ReadOptions` decides whether members, attributes, documentation comments and implicitly declared members come along. `ReadOptions.Shape` reads the type alone, which is what a new partial part may repeat.
 

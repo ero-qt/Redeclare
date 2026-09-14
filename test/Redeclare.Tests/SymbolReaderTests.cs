@@ -437,8 +437,7 @@ public sealed class SymbolReaderTests
             Assert.That(nested["Entry"].TypeKind, Is.EqualTo(TypeKind.Class));
             Assert.That(nested["Entry"].Members.OfType<PropertyDeclaration>().Select(p => p.Name), Is.EqualTo(new[] { "Value", "Extra" }));
             Assert.That(nested["Nested"].Members.OfType<FieldDeclaration>().Single().Type.ToString(), Is.EqualTo("TInner?"));
-            Assert.That(nested["Handler"].TypeKind, Is.EqualTo(TypeKind.Delegate), "a nested delegate is a nested type like any other");
-            Assert.That(nested["Handler"].ParameterList.Single().Type, Is.EqualTo(Types.T));
+            Assert.That(Repository.Members.OfType<DelegateDeclaration>().Single().Parameters.Single().Type, Is.EqualTo(Types.T), "a nested delegate is a member like any other");
             Assert.That(nested["State"].Members.OfType<EnumMemberDeclaration>().Select(m => m.Value?.ToString()), Is.EqualTo(new[] { "0", "1" }));
         }
     }
@@ -557,18 +556,18 @@ public sealed class SymbolReaderTests
     }
 
     [Test]
-    public void ToDeclaration_Delegate_ReadsSignatureAndNoMembers()
+    public void ToDelegateDeclaration_Delegate_ReadsTheSignature()
     {
-        var picker = Compilation.Type("Fixture.Picker`1").ToDeclaration();
+        var symbol = Compilation.Type("Fixture.Picker`1");
+        var picker = symbol.ToDelegateDeclaration();
 
         using (Assert.EnterMultipleScope())
         {
-            Assert.That(picker.TypeKind, Is.EqualTo(TypeKind.Delegate));
             Assert.That(picker.RefKind, Is.EqualTo(RefKind.RefReadOnly));
             Assert.That(picker.ReturnType, Is.EqualTo(Types.Int32));
-            Assert.That(picker.ParameterList.Select(p => (p.RefKind, p.IsParams)), Is.EqualTo(new[] { (RefKind.In, false), (RefKind.None, true) }));
-            Assert.That(picker.Members.IsEmpty, Is.True);
+            Assert.That(picker.Parameters.Select(p => (p.RefKind, p.IsParams)), Is.EqualTo(new[] { (RefKind.In, false), (RefKind.None, true) }));
             Assert.That(picker.TypeParameters[0].HasValueTypeConstraint, Is.True);
+            Assert.That(() => symbol.ToDeclaration(), Throws.ArgumentException.With.Message.Contains("ToDelegateDeclaration"));
         }
     }
 
@@ -924,7 +923,7 @@ public sealed class SymbolReaderTests
 
         using (Assert.EnterMultipleScope())
         {
-            Assert.That(poke.ToDeclaration().Modifiers, Is.EqualTo(Modifiers.Unsafe));
+            Assert.That(poke.ToDelegateDeclaration().Modifiers, Is.EqualTo(Modifiers.Unsafe));
             Assert.That(poke.ToFile().Render(), Does.Contain("public unsafe delegate void Poke(int* target);"));
         }
     }

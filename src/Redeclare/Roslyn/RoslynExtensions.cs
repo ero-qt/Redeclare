@@ -12,11 +12,20 @@ namespace Redeclare;
 internal static class RoslynExtensions
 {
     /// <summary>
-    ///     Reads a type symbol into a declaration. See <see cref="SymbolReader.ReadType"/>.
+    ///     Reads a type symbol into a declaration. See <see cref="SymbolReader.ReadType"/>. A delegate reads through
+    ///     <see cref="ToDelegateDeclaration"/> and an extension block through <see cref="ToExtensionDeclaration"/>.
     /// </summary>
     public static TypeDeclaration ToDeclaration(this INamedTypeSymbol type, ReadOptions? options = null)
     {
         return SymbolReader.Create(options).ReadType(type);
+    }
+
+    /// <summary>
+    ///     Reads a delegate symbol into a declaration. See <see cref="SymbolReader.ReadDelegate"/>.
+    /// </summary>
+    public static DelegateDeclaration ToDelegateDeclaration(this INamedTypeSymbol type, ReadOptions? options = null)
+    {
+        return SymbolReader.Create(options).ReadDelegate(type);
     }
 
     /// <summary>

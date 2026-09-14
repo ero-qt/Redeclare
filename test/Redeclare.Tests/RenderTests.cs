@@ -255,13 +255,12 @@ public sealed class RenderTests
                 new NamespaceDeclaration(
                     Name: "Sample",
                     Members: [
-                    new TypeDeclaration(
+                    new DelegateDeclaration(
                         Accessibility: Accessibility.Public,
                         Name: "Callback",
-                        TypeKind: TypeKind.Delegate,
                         TypeParameters: [new TypeParameterDeclaration(Name: "T", HasValueTypeConstraint: true)],
                         ReturnType: Types.Boolean,
-                        ParameterList: [
+                        Parameters: [
                             new ParameterDeclaration(Type: Types.T, Name: "value"),
                             new ParameterDeclaration(RefKind: RefKind.Out, Type: Types.String, Name: "text"),
                         ]),

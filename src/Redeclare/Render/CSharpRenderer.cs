@@ -1,5 +1,4 @@
 using Microsoft.CodeAnalysis;
-using System.Text;
 
 namespace Redeclare;
 
@@ -54,7 +53,21 @@ internal static partial class CSharpRenderer
         RenderDeclaration(writer, type);
     }
 
-    private static void RenderInside(SourceWriter writer, TypeDeclaration containing, TypeDeclaration type)
+    /// <summary>
+    ///     Renders a delegate declaration, inside the <c>partial</c> parts of its containing types when it names them.
+    /// </summary>
+    public static void Render(SourceWriter writer, DelegateDeclaration @delegate)
+    {
+        if (@delegate.ContainingType is { } containing)
+        {
+            RenderInside(writer, containing, @delegate);
+            return;
+        }
+
+        RenderDelegate(writer, @delegate);
+    }
+
+    private static void RenderInside(SourceWriter writer, TypeDeclaration containing, MemberDeclaration type)
     {
         var part = containing with { Members = [type] };
         if (containing.ContainingType is { } outer)
@@ -80,17 +93,6 @@ internal static partial class CSharpRenderer
         RenderAttributes(writer, type.Attributes);
 
         var head = writer.BeginLine().AppendModifiers(type.Accessibility, type.Modifiers);
-
-        if (type.TypeKind == TypeKind.Delegate)
-        {
-            RenderDelegate(writer, head, type, what);
-            return;
-        }
-
-        if (type.ReturnType is { } stray)
-        {
-            throw new RenderException($"{what} is a {type.TypeKind} with a return type ({RenderType(stray, options)}). Only a delegate has one.");
-        }
 
         switch (type.TypeKind, type.IsRecord)
         {
@@ -195,6 +197,11 @@ internal static partial class CSharpRenderer
             case TypeDeclaration nested:
             {
                 RenderDeclaration(writer, nested);
+                break;
+            }
+            case DelegateDeclaration @delegate:
+            {
+                RenderDelegate(writer, @delegate);
                 break;
             }
             case NamespaceDeclaration ns:
@@ -362,6 +369,11 @@ internal static partial class CSharpRenderer
                     Render(writer, type);
                     break;
                 }
+                case DelegateDeclaration @delegate:
+                {
+                    Render(writer, @delegate);
+                    break;
+                }
                 default:
                 {
                     throw new RenderException(
@@ -371,39 +383,27 @@ internal static partial class CSharpRenderer
         }
     }
 
-    /// <summary>
-    ///     Renders a delegate, the one type declaration that is a signature and nothing else: it takes the return
-    ///     type and parameter list and ends at a semicolon.
-    /// </summary>
-    private static void RenderDelegate(SourceWriter writer, StringBuilder head, TypeDeclaration type, string what)
+    private static void RenderDelegate(SourceWriter writer, DelegateDeclaration @delegate)
     {
         var options = writer.Options;
 
-        if (type.ReturnType is not { } returnType)
-        {
-            throw new RenderException($"{what} is a delegate without a return type. Set ReturnType, a reference to System.Void for none.");
-        }
+        string what = $"Delegate '{@delegate.Name}'";
 
-        if (!type.Members.IsEmpty)
-        {
-            throw new RenderException($"{what} is a delegate with {type.Members.Length} members. A delegate declares only its signature.");
-        }
+        RenderDocumentation(writer, @delegate.DocumentationComment);
+        RenderAttributes(writer, @delegate.Attributes);
 
-        if (type.BaseType is not null || !type.Interfaces.IsEmpty)
-        {
-            throw new RenderException($"{what} is a delegate with a base type or interfaces. A delegate has neither.");
-        }
-
-        head.Append("delegate ")
-            .Append(RefText(type.RefKind, what))
-            .AppendType(returnType, options)
+        writer.BeginLine()
+            .AppendModifiers(@delegate.Accessibility, @delegate.Modifiers)
+            .Append("delegate ")
+            .Append(RefText(@delegate.RefKind, what))
+            .AppendType(@delegate.ReturnType, options)
             .Append(' ')
-            .AppendIdentifier(type.Name)
-            .AppendTypeParameters(type.TypeParameters, options)
+            .AppendIdentifier(@delegate.Name)
+            .AppendTypeParameters(@delegate.TypeParameters, options)
             .Append('(')
-            .AppendParameters(type.ParameterList, options, what)
+            .AppendParameters(@delegate.Parameters, options, what)
             .Append(')')
-            .AppendConstraints(type.TypeParameters, options, what)
+            .AppendConstraints(@delegate.TypeParameters, options, what)
             .Append(';');
         writer.EndLine();
     }

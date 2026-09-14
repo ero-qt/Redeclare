@@ -36,6 +36,11 @@ internal static class TypeReferenceExtensions
         {
             NamespaceDeclaration ns => GetTypeReferences(ns.Members),
             TypeDeclaration type => GetTypeReferences(type),
+            DelegateDeclaration @delegate => Concat(
+                [@delegate.ReturnType],
+                GetTypeReferences(@delegate.Parameters),
+                GetTypeReferences(@delegate.TypeParameters),
+                GetContainingTypeReferences(@delegate.ContainingType)),
             ExtensionDeclaration extension => Concat(
                 GetTypeReferences(extension.Receiver),
                 GetTypeReferences(extension.TypeParameters),
@@ -110,16 +115,22 @@ internal static class TypeReferenceExtensions
             GetTypeReferences(type.ParameterList),
             GetTypeReferences(type.TypeParameters),
             Optional(type.EnumUnderlyingType),
-            Optional(type.ReturnType),
-            GetTypeReferences(type.Members));
+            GetTypeReferences(type.Members),
+            GetContainingTypeReferences(type.ContainingType));
 
         foreach (var reference in own)
         {
             yield return reference;
         }
+    }
 
-        // The `partial` parts written around a nested type repeat their type parameters.
-        for (var outer = type.ContainingType; outer is not null; outer = outer.ContainingType)
+    /// <summary>
+    ///     Gets the type parameter references of each containing type. The `partial` parts written around a nested
+    ///     declaration repeat their type parameters.
+    /// </summary>
+    private static IEnumerable<TypeReference> GetContainingTypeReferences(TypeDeclaration? containingType)
+    {
+        for (var outer = containingType; outer is not null; outer = outer.ContainingType)
         {
             foreach (var reference in GetTypeReferences(outer.TypeParameters))
             {
