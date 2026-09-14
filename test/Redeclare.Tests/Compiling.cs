@@ -59,6 +59,8 @@ internal static class Compiling
     /// </summary>
     public static CompilationUnit ToFile(this INamedTypeSymbol type, ReadOptions? options = null)
     {
-        return new CompilationUnit(Members: [type.ContainingNamespace.ToDeclaration() with { Members = [type.ToDeclaration(options)] }]);
+        MemberDeclaration declaration = type.TypeKind == TypeKind.Delegate ? type.ToDelegateDeclaration(options) : type.ToDeclaration(options);
+
+        return new CompilationUnit(Members: [type.ContainingNamespace.ToDeclaration() with { Members = [declaration] }]);
     }
 }

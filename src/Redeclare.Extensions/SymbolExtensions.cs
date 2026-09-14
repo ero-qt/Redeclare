@@ -15,7 +15,7 @@ internal static class SymbolExtensions
     /// <returns>A declaration with <c>partial</c> and nothing of its own.</returns>
     public static TypeDeclaration ToPart(this INamedTypeSymbol type)
     {
-        var shape = type.ToDeclaration(ReadOptions.Shape);
+        var shape = type.ToTypeDeclaration(ReadOptions.Shape);
 
         return shape with { Modifiers = shape.Modifiers | Modifiers.Partial };
     }
