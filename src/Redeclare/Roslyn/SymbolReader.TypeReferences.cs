@@ -3,7 +3,7 @@ using System;
 
 namespace Redeclare;
 
-internal static partial class SymbolReader
+internal sealed partial class SymbolReader
 {
     private static readonly SymbolDisplayFormat _qualified = SymbolDisplayFormat.FullyQualifiedFormat
         .AddMiscellaneousOptions(SymbolDisplayMiscellaneousOptions.IncludeNullableReferenceTypeModifier);

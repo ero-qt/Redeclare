@@ -6,7 +6,7 @@ using System.Globalization;
 
 namespace Redeclare;
 
-internal static partial class SymbolReader
+internal sealed partial class SymbolReader
 {
     private static readonly HashSet<string> _compilerAttributes = new(StringComparer.Ordinal)
     {
