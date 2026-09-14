@@ -52,7 +52,7 @@ internal static partial class CSharpRenderer
             head.Append("scoped ");
         }
 
-        head.Append(ParameterRefText(receiver.RefKind, options, what)).AppendType(receiver.Type, options);
+        head.Append(ParameterRefText(receiver.RefKind, what)).AppendType(receiver.Type, options);
         if (receiver.Name.Length > 0)
         {
             head.Append(' ').AppendIdentifier(receiver.Name);
@@ -113,25 +113,39 @@ internal static partial class CSharpRenderer
 
         var head = writer.BeginLine()
             .AppendModifiers(method.Accessibility, method.Modifiers)
-            .Append(RefText(method.RefKind, options, what));
+            .Append(RefText(method.RefKind, what));
 
-        if (IsConversion(method))
+        switch (method.Name)
         {
-            AppendConversionHead(head, method, options);
-        }
-        else if (IsFinalizer(method))
-        {
-            head.Append(method.Name);
-        }
-        else
-        {
-            head.AppendType(method.ReturnType, options).Append(' ');
-            if (method.ExplicitInterfaceSpecifier is { } explicitInterface)
+            case MethodName.Conversion conversion:
             {
-                head.AppendType(explicitInterface, options).Append('.');
+                head.Append(conversion.IsImplicit ? "implicit " : "explicit ")
+                    .AppendExplicitInterface(method.ExplicitInterfaceSpecifier, options)
+                    .Append(conversion.IsChecked ? "operator checked " : "operator ")
+                    .AppendType(method.ReturnType, options);
+                break;
             }
-
-            head.AppendIdentifier(method.Name);
+            case MethodName.Destructor:
+            {
+                head.Append('~').AppendIdentifier(containing.Name);
+                break;
+            }
+            case MethodName.Operator @operator:
+            {
+                head.AppendType(method.ReturnType, options)
+                    .Append(' ')
+                    .AppendExplicitInterface(method.ExplicitInterfaceSpecifier, options)
+                    .Append(@operator.ToString());
+                break;
+            }
+            case MethodName.Ordinary ordinary:
+            {
+                head.AppendType(method.ReturnType, options)
+                    .Append(' ')
+                    .AppendExplicitInterface(method.ExplicitInterfaceSpecifier, options)
+                    .AppendIdentifier(ordinary.Name);
+                break;
+            }
         }
 
         head.AppendTypeParameters(method.TypeParameters, options)
@@ -140,36 +154,12 @@ internal static partial class CSharpRenderer
             .Append(')')
             .AppendConstraints(method.TypeParameters, options, what);
 
-        RenderBody(writer, method.Body, options.Methods, CSharpVersion.CSharp6, options, ReturnsValue(method), what);
+        RenderBody(writer, method.Body, BodyKind.Method, options, ReturnsValue(method), what);
     }
 
-    private static bool IsFinalizer(MethodDeclaration method)
+    private static StringBuilder AppendExplicitInterface(this StringBuilder text, TypeReference? explicitInterface, RenderOptions options)
     {
-        return method.Name.StartsWith("~", StringComparison.Ordinal);
-    }
-
-    private static bool IsConversion(MethodDeclaration method)
-    {
-        return method.Name is "implicit operator" or "explicit operator" or "explicit operator checked";
-    }
-
-    /// <summary>
-    ///     Appends <c>implicit IFoo.operator Target</c>: the keyword, the interface of an explicit implementation,
-    ///     then <c>operator</c> and the target type where a method has its name.
-    /// </summary>
-    private static void AppendConversionHead(StringBuilder head, MethodDeclaration method, RenderOptions options)
-    {
-        int split = method.Name.IndexOf(' ') + 1;
-        string keyword = method.Name.Substring(0, split);
-        string rest = method.Name.Substring(split);
-
-        head.Append(keyword);
-        if (method.ExplicitInterfaceSpecifier is { } explicitInterface)
-        {
-            head.AppendType(explicitInterface, options).Append('.');
-        }
-
-        head.Append(rest).Append(' ').AppendType(method.ReturnType, options);
+        return explicitInterface is null ? text : text.AppendType(explicitInterface, options).Append('.');
     }
 
     private static bool ReturnsValue(MethodDeclaration method)
@@ -198,7 +188,7 @@ internal static partial class CSharpRenderer
             head.Append(" : ").AppendSnippet(initializer, options);
         }
 
-        RenderBody(writer, constructor.Body, options.Constructors, CSharpVersion.CSharp7, options, returnsValue: false, what);
+        RenderBody(writer, constructor.Body, BodyKind.Constructor, options, returnsValue: false, what);
     }
 
     private static void RenderProperty(SourceWriter writer, PropertyDeclaration property, TypeDeclaration containing, RenderOptions options)
@@ -229,7 +219,7 @@ internal static partial class CSharpRenderer
 
         var head = writer.BeginLine()
             .AppendModifiers(property.Accessibility, property.Modifiers)
-            .Append(RefText(property.RefKind, options, what))
+            .Append(RefText(property.RefKind, what))
             .AppendType(property.Type, options)
             .Append(' ');
         if (property.ExplicitInterfaceSpecifier is { } explicitInterface)
@@ -246,8 +236,8 @@ internal static partial class CSharpRenderer
             head.AppendIdentifier(property.Name);
         }
 
-        var preference = property.IsIndexer ? options.Indexers : options.Properties;
-        if (setter is null && getter is { Body: { IsExpression: true } expression } && Arrow(expression, preference, CSharpVersion.CSharp6, options))
+        var kind = property.IsIndexer ? BodyKind.Indexer : BodyKind.Property;
+        if (setter is null && getter is { Body: { IsExpression: true } expression } && Arrow(expression, kind, options))
         {
             WriteArrow(writer, expression, options);
             return;
@@ -284,13 +274,13 @@ internal static partial class CSharpRenderer
             if (getter is not null)
             {
                 AppendAccessorHead(writer.BeginLine(), getter, "get", options);
-                RenderBody(writer, getter.Body, options.Accessors, CSharpVersion.CSharp7, options, returnsValue: true, what);
+                RenderBody(writer, getter.Body, BodyKind.Accessor, options, returnsValue: true, what);
             }
 
             if (setter is not null)
             {
                 AppendAccessorHead(writer.BeginLine(), setter, setter.IsInitOnly ? "init" : "set", options);
-                RenderBody(writer, setter.Body, options.Accessors, CSharpVersion.CSharp7, options, returnsValue: false, what);
+                RenderBody(writer, setter.Body, BodyKind.Accessor, options, returnsValue: false, what);
             }
         }
     }
@@ -304,7 +294,7 @@ internal static partial class CSharpRenderer
 
         var head = writer.BeginLine()
             .AppendModifiers(field.Accessibility, field.Modifiers)
-            .Append(RefText(field.RefKind, options, what));
+            .Append(RefText(field.RefKind, what));
         if (field.FixedSize > 0)
         {
             head.Append("fixed ");
@@ -332,13 +322,7 @@ internal static partial class CSharpRenderer
     {
         string what = $"Event '{containing.Name}.{@event.Name}'";
 
-        bool fieldLike = @event.Adder is null && @event.Remover is null;
-        if (!fieldLike && (@event.Adder is null || @event.Remover is null))
-        {
-            throw new RenderException($"{what} declares one accessor. C# requires an event with accessors to have both add and remove.");
-        }
-
-        if (fieldLike && @event.ExplicitInterfaceSpecifier is not null)
+        if (@event.Accessors is null && @event.ExplicitInterfaceSpecifier is not null)
         {
             throw new RenderException($"{what} is an explicit implementation. C# requires an explicit implementation to declare both accessors.");
         }
@@ -358,7 +342,7 @@ internal static partial class CSharpRenderer
 
         head.AppendIdentifier(@event.Name);
 
-        if (fieldLike)
+        if (@event.Accessors is not { } accessors)
         {
             head.Append(';');
             writer.EndLine();
@@ -368,10 +352,10 @@ internal static partial class CSharpRenderer
         writer.EndLine();
         using (writer.Block())
         {
-            AppendAccessorHead(writer.BeginLine(), @event.Adder!, "add", options);
-            RenderBody(writer, @event.Adder!.Body, options.Accessors, CSharpVersion.CSharp7, options, returnsValue: false, what);
-            AppendAccessorHead(writer.BeginLine(), @event.Remover!, "remove", options);
-            RenderBody(writer, @event.Remover!.Body, options.Accessors, CSharpVersion.CSharp7, options, returnsValue: false, what);
+            AppendAccessorHead(writer.BeginLine(), accessors.Add, "add", options);
+            RenderBody(writer, accessors.Add.Body, BodyKind.Accessor, options, returnsValue: false, what);
+            AppendAccessorHead(writer.BeginLine(), accessors.Remove, "remove", options);
+            RenderBody(writer, accessors.Remove.Body, BodyKind.Accessor, options, returnsValue: false, what);
         }
     }
 
@@ -397,17 +381,9 @@ internal static partial class CSharpRenderer
 
     /// <summary>
     ///     Finishes a declaration whose head has been begun on the current line with its body in whichever form
-    ///     the options pick. An arrow needs <paramref name="arrowSince"/>: C# 6 for methods and properties, C# 7
-    ///     for accessors and constructors.
+    ///     the options pick for <paramref name="kind"/>.
     /// </summary>
-    private static void RenderBody(
-        SourceWriter writer,
-        Snippet? body,
-        ExpressionBodyPreference preference,
-        CSharpVersion arrowSince,
-        RenderOptions options,
-        bool returnsValue,
-        string what)
+    private static void RenderBody(SourceWriter writer, Snippet? body, BodyKind kind, RenderOptions options, bool returnsValue, string what)
     {
         if (body is { IsExpression: true } expression)
         {
@@ -416,7 +392,7 @@ internal static partial class CSharpRenderer
                 throw new RenderException($"{what} has an expression body with no expression. Use Snippet.Empty as a block body for an empty one.");
             }
 
-            if (Arrow(expression, preference, arrowSince, options))
+            if (Arrow(expression, kind, options))
             {
                 WriteArrow(writer, expression, options);
                 return;
@@ -479,8 +455,34 @@ internal static partial class CSharpRenderer
         return first.StartsWith("throw ", StringComparison.Ordinal);
     }
 
-    private static bool Arrow(Snippet expression, ExpressionBodyPreference preference, CSharpVersion since, RenderOptions options)
+    /// <summary>
+    ///     The kinds of member a body belongs to. Each has its own expression body preference in the options and its
+    ///     own C# version for the arrow: 6 for methods and properties, 7 for constructors and accessors.
+    /// </summary>
+    private enum BodyKind
     {
+        Method,
+        Constructor,
+        Property,
+        Indexer,
+        Accessor,
+    }
+
+    private static (ExpressionBodyPreference Preference, CSharpVersion ArrowSince) ArrowRule(RenderOptions options, BodyKind kind)
+    {
+        return kind switch
+        {
+            BodyKind.Method => (options.Methods, CSharpVersion.CSharp6),
+            BodyKind.Constructor => (options.Constructors, CSharpVersion.CSharp7),
+            BodyKind.Property => (options.Properties, CSharpVersion.CSharp6),
+            BodyKind.Indexer => (options.Indexers, CSharpVersion.CSharp6),
+            _ => (options.Accessors, CSharpVersion.CSharp7),
+        };
+    }
+
+    private static bool Arrow(Snippet expression, BodyKind kind, RenderOptions options)
+    {
+        var (preference, since) = ArrowRule(options, kind);
         if (!options.Allows(since))
         {
             return false;

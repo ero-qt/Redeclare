@@ -28,29 +28,29 @@ internal static partial class SymbolReader
             throw new ArgumentException($"'{method.Name}' is not the metadata name of an operator.", nameof(method));
         }
 
+        var facts = Describe(method);
+
         return new MethodDeclaration(
             DocumentationComment: ReadDocumentation(method, options),
             Attributes: ReadAttributes(method, options),
-            Accessibility: ReadMemberAccessibility(method),
-            Modifiers: ReadMemberModifiers(method),
+            Accessibility: ReadMemberAccessibility(facts),
+            Modifiers: ReadMemberModifiers(facts),
             ReturnType: ReadTypeReference(method.ReturnType),
             RefKind: method.RefKind,
-            Name: ReadMethodName(method),
-            ExplicitInterfaceSpecifier: method.ExplicitInterfaceImplementations.Length > 0
-                ? ReadTypeReference(method.ExplicitInterfaceImplementations[0].ContainingType)
-                : null,
+            Name: ReadMethodName(facts),
+            ExplicitInterfaceSpecifier: ReadExplicitInterfaceSpecifier(facts),
             TypeParameters: ReadTypeParameters(method.TypeParameters, options),
             Parameters: ReadParameters(method.Parameters, method.IsExtensionMethod, options));
     }
 
-    private static string ReadMethodName(IMethodSymbol method)
+    private static MethodName ReadMethodName(MemberFacts facts)
     {
-        var declared = method.ExplicitInterfaceImplementations.Length > 0 ? method.ExplicitInterfaceImplementations[0] : method;
+        var declared = (IMethodSymbol)facts.Declared;
 
         return declared.MethodKind switch
         {
             MethodKind.UserDefinedOperator or MethodKind.Conversion => GetOperatorName(declared.Name)!,
-            MethodKind.Destructor => "~" + declared.ContainingType.Name,
+            MethodKind.Destructor => new MethodName.Destructor(),
             _ => declared.Name,
         };
     }
@@ -72,7 +72,7 @@ internal static partial class SymbolReader
             DocumentationComment: ReadDocumentation(constructor, options),
             Attributes: ReadAttributes(constructor, options),
             Accessibility: constructor.IsStatic ? Accessibility.NotApplicable : constructor.DeclaredAccessibility,
-            Modifiers: ReadMemberModifiers(constructor),
+            Modifiers: ReadMemberModifiers(Describe(constructor)),
             Parameters: ReadParameters(constructor.Parameters, isExtension: false, options),
             Body: constructor.IsPartialDefinition || constructor.IsExtern ? null : Snippet.Empty);
     }
@@ -84,8 +84,8 @@ internal static partial class SymbolReader
     {
         options ??= ReadOptions.Default;
 
-        var accessibility = ReadMemberAccessibility(property);
-        var modifiers = ReadMemberModifiers(property);
+        var facts = Describe(property);
+        var modifiers = ReadMemberModifiers(facts);
         if (property.IsRequired)
         {
             modifiers |= Modifiers.Required;
@@ -97,25 +97,18 @@ internal static partial class SymbolReader
             modifiers |= Modifiers.ReadOnly;
         }
 
-        var getter = property.GetMethod is { } get ? ReadAccessor(get, accessibility, propertyReadOnly, options) : null;
-        var setter = property.SetMethod is { } set ? ReadAccessor(set, accessibility, propertyReadOnly, options) : null;
+        var getter = property.GetMethod is { } get ? ReadAccessor(get, facts, propertyReadOnly, options) : null;
+        var setter = property.SetMethod is { } set ? ReadAccessor(set, facts, propertyReadOnly, options) : null;
 
         return new PropertyDeclaration(
             DocumentationComment: ReadDocumentation(property, options),
             Attributes: ReadAttributes(property, options),
-            Accessibility: accessibility,
+            Accessibility: ReadMemberAccessibility(facts),
             Modifiers: modifiers,
             Type: ReadTypeReference(property.Type),
             RefKind: property.RefKind,
-            Name: property switch
-            {
-                { IsIndexer: true } => "this",
-                { ExplicitInterfaceImplementations.Length: > 0 } => property.ExplicitInterfaceImplementations[0].Name,
-                _ => property.Name,
-            },
-            ExplicitInterfaceSpecifier: property.ExplicitInterfaceImplementations.Length > 0
-                ? ReadTypeReference(property.ExplicitInterfaceImplementations[0].ContainingType)
-                : null,
+            Name: property.IsIndexer ? "this" : facts.Declared.Name,
+            ExplicitInterfaceSpecifier: ReadExplicitInterfaceSpecifier(facts),
             Parameters: property.IsIndexer ? ReadParameters(property.Parameters, isExtension: false, options) : default,
             Getter: getter,
             Setter: setter);
@@ -202,18 +195,17 @@ internal static partial class SymbolReader
         options ??= ReadOptions.Default;
 
         bool hasAccessors = IsWrittenInSource(@event.AddMethod) || IsWrittenInSource(@event.RemoveMethod);
-        var explicitInterface = @event.ExplicitInterfaceImplementations.Length > 0 ? @event.ExplicitInterfaceImplementations[0] : null;
+        var facts = Describe(@event);
 
         return new EventDeclaration(
             DocumentationComment: ReadDocumentation(@event, options),
             Attributes: ReadAttributes(@event, options),
-            Accessibility: ReadMemberAccessibility(@event),
-            Modifiers: ReadMemberModifiers(@event),
+            Accessibility: ReadMemberAccessibility(facts),
+            Modifiers: ReadMemberModifiers(facts),
             Type: ReadTypeReference(@event.Type),
-            Name: explicitInterface?.Name ?? @event.Name,
-            Adder: hasAccessors ? new AccessorDeclaration() : null,
-            Remover: hasAccessors ? new AccessorDeclaration() : null,
-            ExplicitInterfaceSpecifier: explicitInterface is null ? null : ReadTypeReference(explicitInterface.ContainingType));
+            Name: facts.Declared.Name,
+            Accessors: hasAccessors ? EventAccessors.Auto : null,
+            ExplicitInterfaceSpecifier: ReadExplicitInterfaceSpecifier(facts));
     }
 
     /// <summary>
@@ -283,26 +275,51 @@ internal static partial class SymbolReader
     ///     Interface members are public by default, and writing it needs C# 8 for nothing. An explicit interface
     ///     implementation may carry no modifier at all, whatever Roslyn reports for it.
     /// </summary>
-    private static Accessibility ReadMemberAccessibility(ISymbol member)
+    /// <summary>
+    ///     The facts about a member that accessibility, modifiers and names all turn on, computed once.
+    /// </summary>
+    /// <param name="Member">The member.</param>
+    /// <param name="Declared">
+    ///     The member whose name and kind the declaration carries: the interface member for an explicit
+    ///     implementation, otherwise <paramref name="Member"/> itself.
+    /// </param>
+    /// <param name="InInterface">Whether the member is declared in an interface.</param>
+    /// <param name="IsDestructor">Whether the member is a destructor, which carries no accessibility or modifiers.</param>
+    private readonly record struct MemberFacts(ISymbol Member, ISymbol Declared, bool InInterface, bool IsDestructor)
     {
-        bool publicInInterface = member.ContainingType is { TypeKind: TypeKind.Interface } && member.DeclaredAccessibility == Accessibility.Public;
-        if (publicInInterface || member is IMethodSymbol { MethodKind: MethodKind.Destructor })
-        {
-            return Accessibility.NotApplicable;
-        }
-
-        return IsExplicitImplementation(member) ? Accessibility.NotApplicable : member.DeclaredAccessibility;
+        public bool IsExplicitImplementation => !ReferenceEquals(Member, Declared);
     }
 
-    private static bool IsExplicitImplementation(ISymbol member)
+    private static MemberFacts Describe(ISymbol member)
     {
-        return member switch
+        bool isDestructor = member is IMethodSymbol { MethodKind: MethodKind.Destructor };
+        var implemented = member switch
         {
-            IMethodSymbol method => method.ExplicitInterfaceImplementations.Length > 0,
-            IPropertySymbol property => property.ExplicitInterfaceImplementations.Length > 0,
-            IEventSymbol @event => @event.ExplicitInterfaceImplementations.Length > 0,
-            _ => false,
+            IMethodSymbol { ExplicitInterfaceImplementations.Length: > 0 } method => method.ExplicitInterfaceImplementations[0],
+            IPropertySymbol { ExplicitInterfaceImplementations.Length: > 0 } property => property.ExplicitInterfaceImplementations[0],
+            IEventSymbol { ExplicitInterfaceImplementations.Length: > 0 } @event => @event.ExplicitInterfaceImplementations[0],
+            _ => (ISymbol?)null,
         };
+
+        return new MemberFacts(
+            Member: member,
+            Declared: implemented ?? member,
+            InInterface: member.ContainingType is { TypeKind: TypeKind.Interface },
+            IsDestructor: isDestructor);
+    }
+
+    private static Accessibility ReadMemberAccessibility(MemberFacts facts)
+    {
+        bool publicInInterface = facts.InInterface && facts.Member.DeclaredAccessibility == Accessibility.Public;
+
+        return publicInInterface || facts.IsDestructor || facts.IsExplicitImplementation
+            ? Accessibility.NotApplicable
+            : facts.Member.DeclaredAccessibility;
+    }
+
+    private static TypeReference? ReadExplicitInterfaceSpecifier(MemberFacts facts)
+    {
+        return facts.IsExplicitImplementation ? ReadTypeReference(facts.Declared.ContainingType) : null;
     }
 
     /// <summary>
@@ -360,10 +377,10 @@ internal static partial class SymbolReader
         };
     }
 
-    private static AccessorDeclaration ReadAccessor(IMethodSymbol accessor, Accessibility propertyAccessibility, bool propertyReadOnly, ReadOptions options)
+    private static AccessorDeclaration ReadAccessor(IMethodSymbol accessor, MemberFacts property, bool propertyReadOnly, ReadOptions options)
     {
         return new AccessorDeclaration(
-            Accessibility: ReadAccessorAccessibility(accessor, propertyAccessibility),
+            Accessibility: ReadAccessorAccessibility(accessor, property),
             IsInitOnly: accessor.IsInitOnly,
             IsReadOnly: !propertyReadOnly && HasWrittenReadOnly(accessor),
             Attributes: ReadAttributes(accessor, options));
@@ -386,13 +403,11 @@ internal static partial class SymbolReader
         return false;
     }
 
-    private static Accessibility ReadAccessorAccessibility(IMethodSymbol accessor, Accessibility propertyAccessibility)
+    private static Accessibility ReadAccessorAccessibility(IMethodSymbol accessor, MemberFacts property)
     {
-        bool narrows = accessor.DeclaredAccessibility != propertyAccessibility;
-        bool explicitImplementation = propertyAccessibility == Accessibility.NotApplicable;
-        bool inInterface = accessor.ContainingType is { TypeKind: TypeKind.Interface };
+        bool narrows = accessor.DeclaredAccessibility != property.Member.DeclaredAccessibility;
 
-        return narrows && !explicitImplementation && !inInterface ? accessor.DeclaredAccessibility : Accessibility.NotApplicable;
+        return narrows && !property.IsExplicitImplementation && !property.InInterface ? accessor.DeclaredAccessibility : Accessibility.NotApplicable;
     }
 
     private static bool HasReadOnlyAccessors(IPropertySymbol property)
@@ -428,15 +443,16 @@ internal static partial class SymbolReader
         };
     }
 
-    private static Modifiers ReadMemberModifiers(ISymbol member)
+    private static Modifiers ReadMemberModifiers(MemberFacts facts)
     {
-        if (member is IMethodSymbol { MethodKind: MethodKind.Destructor })
+        if (facts.IsDestructor)
         {
             return Modifiers.None;
         }
 
+        var member = facts.Member;
         var modifiers = Modifiers.None;
-        bool inInterface = member.ContainingType is { TypeKind: TypeKind.Interface };
+        bool inInterface = facts.InInterface;
 
         if (member.IsStatic)
         {
@@ -458,7 +474,7 @@ internal static partial class SymbolReader
             modifiers |= Modifiers.Override;
         }
 
-        if (member.IsSealed || IsSealedInterfaceMember(member))
+        if (member.IsSealed || IsSealedInterfaceMember(facts))
         {
             modifiers |= Modifiers.Sealed;
         }
@@ -498,12 +514,12 @@ internal static partial class SymbolReader
     ///     Checks for <c>sealed</c> on an interface member. Roslyn reports <c>sealed void M() { }</c> in an interface
     ///     as neither virtual, abstract nor sealed, so the member is sealed when it is none of the three.
     /// </summary>
-    private static bool IsSealedInterfaceMember(ISymbol member)
+    private static bool IsSealedInterfaceMember(MemberFacts facts)
     {
-        return member.ContainingType is { TypeKind: TypeKind.Interface }
-            && !member.IsStatic
-            && !member.IsVirtual
-            && !member.IsAbstract
-            && !IsExplicitImplementation(member);
+        return facts.InInterface
+            && !facts.Member.IsStatic
+            && !facts.Member.IsVirtual
+            && !facts.Member.IsAbstract
+            && !facts.IsExplicitImplementation;
     }
 }

@@ -122,8 +122,9 @@ public sealed class CollectNamespacesTests
                 new EventDeclaration(
                     Type: Types.EventHandler,
                     Name: "Changed",
-                    Adder: new AccessorDeclaration(Body: Snippet.From($"_ = typeof({Types.Stream});")),
-                    Remover: new AccessorDeclaration(Body: hole)),
+                    Accessors: new EventAccessors(
+                        Add: new AccessorDeclaration(Body: Snippet.From($"_ = typeof({Types.Stream});")),
+                        Remove: new AccessorDeclaration(Body: hole))),
             ]));
 
         Assert.That(

@@ -3,7 +3,7 @@ using System;
 namespace Redeclare;
 
 /// <summary>
-///     Thrown when a declaration is not one C# can write: an event with one accessor, a namespace inside a type, an
+///     Thrown when a declaration is not one C# can write: a namespace inside a type, a ref property with a setter, an
 ///     expression body with no expression. These are mistakes in the code that built the model. A feature the
 ///     target language version lacks is not one, since the consumer's compiler reports that better than a
 ///     generator can, so the renderer writes it and lets the compiler say so.

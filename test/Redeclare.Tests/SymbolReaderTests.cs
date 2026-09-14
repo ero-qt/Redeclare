@@ -403,8 +403,8 @@ public sealed class SymbolReaderTests
         {
             Assert.That(methods.Count(m => m.Name == "OnLoaded"), Is.EqualTo(1), "a partial pair is one symbol");
             Assert.That(methods.Single(m => m.Name == "OnLoaded").Modifiers, Is.EqualTo(Modifiers.Partial));
-            Assert.That(methods.Single(m => m.Name == "operator +").Modifiers, Is.EqualTo(Modifiers.Static));
-            Assert.That(methods.Single(m => m.Name == "implicit operator").ReturnType, Is.EqualTo(Types.Int32));
+            Assert.That(methods.Single(m => m.Name == new MethodName.Operator("+")).Modifiers, Is.EqualTo(Modifiers.Static));
+            Assert.That(methods.Single(m => m.Name is MethodName.Conversion { IsImplicit: true }).ReturnType, Is.EqualTo(Types.Int32));
         }
     }
 
@@ -501,7 +501,7 @@ public sealed class SymbolReaderTests
 
         using (Assert.EnterMultipleScope())
         {
-            Assert.That(finalizer.Name, Is.EqualTo("~Handle"));
+            Assert.That(finalizer.Name, Is.EqualTo(new MethodName.Destructor()));
             Assert.That(finalizer.Accessibility, Is.EqualTo(Accessibility.NotApplicable));
             Assert.That(finalizer.Modifiers, Is.EqualTo(Modifiers.None));
             Assert.That(text, Does.Contain("    ~Handle();"));
@@ -728,7 +728,7 @@ public sealed class SymbolReaderTests
         using (Assert.EnterMultipleScope())
         {
             Assert.That(whole.Members.OfType<MethodDeclaration>(), Is.Empty, "a record's synthesized members are implicit");
-            Assert.That(withImplicit.Members.OfType<MethodDeclaration>().Select(m => m.Name), Does.Contain("ToString"));
+            Assert.That(withImplicit.Members.OfType<MethodDeclaration>().Select(m => m.Name), Does.Contain((MethodName)"ToString"));
             Assert.That(shape.Members.IsEmpty, Is.True);
             Assert.That(whole.DocumentationComment, Is.Null, "documentation is off unless asked for");
         }
@@ -859,13 +859,12 @@ public sealed class SymbolReaderTests
 
         using (Assert.EnterMultipleScope())
         {
-            Assert.That(events["Ticked"].Adder, Is.EqualTo(new AccessorDeclaration()));
-            Assert.That(events["Ticked"].Remover, Is.EqualTo(new AccessorDeclaration()));
+            Assert.That(events["Ticked"].Accessors, Is.EqualTo(EventAccessors.Auto));
             Assert.That(events["Ticked"].ExplicitInterfaceSpecifier, Is.Null);
             Assert.That(events["Changed"].Name, Is.EqualTo("Changed"), "the interface is not part of the name");
             Assert.That(events["Changed"].ExplicitInterfaceSpecifier?.ToString(), Is.EqualTo("global::Fixture.IWatched"));
             Assert.That(events["Changed"].Accessibility, Is.EqualTo(Accessibility.NotApplicable));
-            Assert.That(Repository.Members.OfType<EventDeclaration>().Single().Adder, Is.Null, "a field-like event has no accessors of its own");
+            Assert.That(Repository.Members.OfType<EventDeclaration>().Single().Accessors, Is.Null, "a field-like event has no accessors of its own");
         }
     }
 
@@ -890,8 +889,7 @@ public sealed class SymbolReaderTests
 
         using (Assert.EnterMultipleScope())
         {
-            Assert.That(changed.Adder, Is.Null, "metadata cannot say whether the accessors were written, and only a field-like event renders without bodies");
-            Assert.That(changed.Remover, Is.Null);
+            Assert.That(changed.Accessors, Is.Null, "metadata cannot say whether the accessors were written, and only a field-like event renders without bodies");
         }
     }
 
@@ -983,7 +981,7 @@ public sealed class SymbolReaderTests
         var withBodies = watched with
         {
             Members = [.. watched.Members.Select(m => m is EventDeclaration e
-                ? e with { Adder = new AccessorDeclaration(Body: Snippet.Empty), Remover = new AccessorDeclaration(Body: Snippet.Empty) }
+                ? e with { Accessors = new EventAccessors(new AccessorDeclaration(Body: Snippet.Empty), new AccessorDeclaration(Body: Snippet.Empty)) }
                 : m)],
         };
         var unit = new CompilationUnit(Members: [new NamespaceDeclaration(Name: "Fixture", Members: [withBodies])], Header: Header);

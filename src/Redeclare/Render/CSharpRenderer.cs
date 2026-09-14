@@ -383,7 +383,7 @@ internal static partial class CSharpRenderer
         }
 
         head.Append("delegate ")
-            .Append(RefText(type.RefKind, options, what))
+            .Append(RefText(type.RefKind, what))
             .AppendType(returnType, options)
             .Append(' ')
             .AppendIdentifier(type.Name)

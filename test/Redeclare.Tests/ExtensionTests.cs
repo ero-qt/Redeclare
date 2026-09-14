@@ -174,7 +174,7 @@ public sealed class ExtensionTests
             Assert.That(blocks[0].TypeParameters.Single().HasReferenceTypeConstraint, Is.True);
             Assert.That(blocks[0].Members.Select(m => m.GetType()), Is.EqualTo(new[] { typeof(PropertyDeclaration), typeof(MethodDeclaration) }));
             Assert.That(blocks[1].Receiver.Name, Is.Empty);
-            Assert.That(extensions.Members.OfType<MethodDeclaration>().Single().Name, Is.EqualTo("Plain"), "the implementation methods are the compiler's");
+            Assert.That(extensions.Members.OfType<MethodDeclaration>().Single().Name, Is.EqualTo((MethodName)"Plain"), "the implementation methods are the compiler's");
             Assert.That(text, Does.Contain("extension<T>(global::System.Collections.Generic.IEnumerable<T> source) where T : class"));
             Assert.That(text, Does.Contain("extension(string)"));
             Assert.That(text, Does.Contain("public static string Greeting { get; }"));

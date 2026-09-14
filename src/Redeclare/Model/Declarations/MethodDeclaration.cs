@@ -15,10 +15,8 @@ namespace Redeclare;
 /// </remarks>
 /// <param name="ReturnType">The return type. A reference to <c>System.Void</c> for none.</param>
 /// <param name="Name">
-///     The name. An operator is <c>operator +</c>, <c>operator checked +=</c> and the like. A conversion is
-///     <c>implicit operator</c>, <c>explicit operator</c> or <c>explicit operator checked</c>, and the renderer
-///     writes <paramref name="ReturnType"/> where the name would go. A finalizer is <c>~Name</c>, written without
-///     a return type.
+///     The name: an identifier, an operator, a conversion or a destructor. A string is an identifier. A conversion
+///     converts to <paramref name="ReturnType"/>, and a destructor is named after the containing type.
 /// </param>
 /// <param name="RefKind">
 ///     How the return is passed back: by value, <c>ref</c>, or <c>ref readonly</c>. <c>ref</c> needs C# 7 and
@@ -34,7 +32,7 @@ namespace Redeclare;
 /// <param name="Attributes">The attributes.</param>
 internal sealed record MethodDeclaration(
     TypeReference ReturnType,
-    string Name,
+    MethodName Name,
     RefKind RefKind = RefKind.None,
     Snippet? Body = null,
     EquatableArray<ParameterDeclaration> Parameters = default,

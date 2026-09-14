@@ -119,8 +119,8 @@ internal static partial class CSharpRenderer
                 case EventDeclaration @event:
                 {
                     Collect(@event.Type, namespaces, options);
-                    Collect(@event.Adder, namespaces, options);
-                    Collect(@event.Remover, namespaces, options);
+                    Collect(@event.Accessors?.Add, namespaces, options);
+                    Collect(@event.Accessors?.Remove, namespaces, options);
                     Collect(@event.ExplicitInterfaceSpecifier, namespaces, options);
                     break;
                 }

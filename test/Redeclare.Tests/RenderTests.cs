@@ -290,8 +290,9 @@ public sealed class RenderTests
                                 Accessibility: Accessibility.Public,
                                 Type: Types.Action,
                                 Name: "Changed",
-                                Adder: new AccessorDeclaration(Body: "_ = value;"),
-                                Remover: new AccessorDeclaration(Body: "_ = value;")),
+                                Accessors: new EventAccessors(
+                                    Add: new AccessorDeclaration(Body: "_ = value;"),
+                                    Remove: new AccessorDeclaration(Body: "_ = value;"))),
                         ]),
                 ]),
             ],
@@ -623,6 +624,6 @@ public sealed class RenderTests
         var @event = new EventDeclaration(Type: Types.EventHandler, Name: "Changed", ExplicitInterfaceSpecifier: Types.IDisposable);
         var unit = new CompilationUnit(Members: [new TypeDeclaration(Name: "C", Members: [@event])]);
 
-        Assert.That(() => unit.Render(), Throws.InstanceOf<RenderException>());
+        Assert.That(() => unit.Render(), Throws.TypeOf<RenderException>().With.Message.Contains("explicit implementation"));
     }
 }

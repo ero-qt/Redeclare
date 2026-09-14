@@ -5,80 +5,79 @@ namespace Redeclare;
 internal static partial class SymbolReader
 {
     /// <summary>
-    ///     The name a user-defined operator or conversion declares under, from its metadata name: <c>operator +</c>,
-    ///     <c>operator checked +=</c>, <c>implicit operator</c>. A conversion's name has no type in it; the renderer
-    ///     writes the return type there.
+    ///     The name a user-defined operator or conversion declares under, from its metadata name, or
+    ///     <see langword="null"/> for a name that is not an operator's.
     /// </summary>
-    private static string? GetOperatorName(string metadataName)
+    private static MethodName? GetOperatorName(string metadataName)
     {
         return metadataName switch
         {
-            WellKnownMemberNames.ImplicitConversionName => "implicit operator",
-            WellKnownMemberNames.ExplicitConversionName => "explicit operator",
-            WellKnownMemberNames.CheckedExplicitConversionName => "explicit operator checked",
-            _ => GetOperatorToken(metadataName) is { } token ? "operator " + token : null,
+            WellKnownMemberNames.ImplicitConversionName => new MethodName.Conversion(IsImplicit: true),
+            WellKnownMemberNames.ExplicitConversionName => new MethodName.Conversion(IsImplicit: false),
+            WellKnownMemberNames.CheckedExplicitConversionName => new MethodName.Conversion(IsImplicit: false, IsChecked: true),
+            _ => GetOperatorToken(metadataName) is var (token, isChecked) ? new MethodName.Operator(token, isChecked) : null,
         };
     }
 
     /// <summary>
-    ///     The C# token for a user-defined operator's metadata name, <c>checked</c> included, or
+    ///     The C# token for a user-defined operator's metadata name and whether it is the <c>checked</c> form, or
     ///     <see langword="null"/> for a name that is not an operator's.
     /// </summary>
-    private static string? GetOperatorToken(string metadataName)
+    private static (string Token, bool IsChecked)? GetOperatorToken(string metadataName)
     {
         return metadataName switch
         {
-            WellKnownMemberNames.AdditionOperatorName => "+",
-            WellKnownMemberNames.SubtractionOperatorName => "-",
-            WellKnownMemberNames.MultiplyOperatorName => "*",
-            WellKnownMemberNames.DivisionOperatorName => "/",
-            WellKnownMemberNames.ModulusOperatorName => "%",
-            WellKnownMemberNames.BitwiseAndOperatorName => "&",
-            WellKnownMemberNames.BitwiseOrOperatorName => "|",
-            WellKnownMemberNames.ExclusiveOrOperatorName => "^",
-            WellKnownMemberNames.LeftShiftOperatorName => "<<",
-            WellKnownMemberNames.RightShiftOperatorName => ">>",
-            WellKnownMemberNames.UnsignedRightShiftOperatorName => ">>>",
-            WellKnownMemberNames.EqualityOperatorName => "==",
-            WellKnownMemberNames.InequalityOperatorName => "!=",
-            WellKnownMemberNames.LessThanOperatorName => "<",
-            WellKnownMemberNames.GreaterThanOperatorName => ">",
-            WellKnownMemberNames.LessThanOrEqualOperatorName => "<=",
-            WellKnownMemberNames.GreaterThanOrEqualOperatorName => ">=",
-            WellKnownMemberNames.UnaryNegationOperatorName => "-",
-            WellKnownMemberNames.UnaryPlusOperatorName => "+",
-            WellKnownMemberNames.LogicalNotOperatorName => "!",
-            WellKnownMemberNames.OnesComplementOperatorName => "~",
-            WellKnownMemberNames.IncrementOperatorName => "++",
-            WellKnownMemberNames.DecrementOperatorName => "--",
-            WellKnownMemberNames.TrueOperatorName => "true",
-            WellKnownMemberNames.FalseOperatorName => "false",
-            WellKnownMemberNames.AdditionAssignmentOperatorName => "+=",
-            WellKnownMemberNames.SubtractionAssignmentOperatorName => "-=",
-            WellKnownMemberNames.MultiplicationAssignmentOperatorName => "*=",
-            WellKnownMemberNames.DivisionAssignmentOperatorName => "/=",
-            WellKnownMemberNames.ModulusAssignmentOperatorName => "%=",
-            WellKnownMemberNames.BitwiseAndAssignmentOperatorName => "&=",
-            WellKnownMemberNames.BitwiseOrAssignmentOperatorName => "|=",
-            WellKnownMemberNames.ExclusiveOrAssignmentOperatorName => "^=",
-            WellKnownMemberNames.LeftShiftAssignmentOperatorName => "<<=",
-            WellKnownMemberNames.RightShiftAssignmentOperatorName => ">>=",
-            WellKnownMemberNames.UnsignedRightShiftAssignmentOperatorName => ">>>=",
-            WellKnownMemberNames.IncrementAssignmentOperatorName => "++",
-            WellKnownMemberNames.DecrementAssignmentOperatorName => "--",
-            WellKnownMemberNames.CheckedAdditionOperatorName => "checked +",
-            WellKnownMemberNames.CheckedSubtractionOperatorName => "checked -",
-            WellKnownMemberNames.CheckedMultiplyOperatorName => "checked *",
-            WellKnownMemberNames.CheckedDivisionOperatorName => "checked /",
-            WellKnownMemberNames.CheckedUnaryNegationOperatorName => "checked -",
-            WellKnownMemberNames.CheckedIncrementOperatorName => "checked ++",
-            WellKnownMemberNames.CheckedDecrementOperatorName => "checked --",
-            WellKnownMemberNames.CheckedAdditionAssignmentOperatorName => "checked +=",
-            WellKnownMemberNames.CheckedSubtractionAssignmentOperatorName => "checked -=",
-            WellKnownMemberNames.CheckedMultiplicationAssignmentOperatorName => "checked *=",
-            WellKnownMemberNames.CheckedDivisionAssignmentOperatorName => "checked /=",
-            WellKnownMemberNames.CheckedIncrementAssignmentOperatorName => "checked ++",
-            WellKnownMemberNames.CheckedDecrementAssignmentOperatorName => "checked --",
+            WellKnownMemberNames.AdditionOperatorName => ("+", false),
+            WellKnownMemberNames.SubtractionOperatorName => ("-", false),
+            WellKnownMemberNames.MultiplyOperatorName => ("*", false),
+            WellKnownMemberNames.DivisionOperatorName => ("/", false),
+            WellKnownMemberNames.ModulusOperatorName => ("%", false),
+            WellKnownMemberNames.BitwiseAndOperatorName => ("&", false),
+            WellKnownMemberNames.BitwiseOrOperatorName => ("|", false),
+            WellKnownMemberNames.ExclusiveOrOperatorName => ("^", false),
+            WellKnownMemberNames.LeftShiftOperatorName => ("<<", false),
+            WellKnownMemberNames.RightShiftOperatorName => (">>", false),
+            WellKnownMemberNames.UnsignedRightShiftOperatorName => (">>>", false),
+            WellKnownMemberNames.EqualityOperatorName => ("==", false),
+            WellKnownMemberNames.InequalityOperatorName => ("!=", false),
+            WellKnownMemberNames.LessThanOperatorName => ("<", false),
+            WellKnownMemberNames.GreaterThanOperatorName => (">", false),
+            WellKnownMemberNames.LessThanOrEqualOperatorName => ("<=", false),
+            WellKnownMemberNames.GreaterThanOrEqualOperatorName => (">=", false),
+            WellKnownMemberNames.UnaryNegationOperatorName => ("-", false),
+            WellKnownMemberNames.UnaryPlusOperatorName => ("+", false),
+            WellKnownMemberNames.LogicalNotOperatorName => ("!", false),
+            WellKnownMemberNames.OnesComplementOperatorName => ("~", false),
+            WellKnownMemberNames.IncrementOperatorName => ("++", false),
+            WellKnownMemberNames.DecrementOperatorName => ("--", false),
+            WellKnownMemberNames.TrueOperatorName => ("true", false),
+            WellKnownMemberNames.FalseOperatorName => ("false", false),
+            WellKnownMemberNames.AdditionAssignmentOperatorName => ("+=", false),
+            WellKnownMemberNames.SubtractionAssignmentOperatorName => ("-=", false),
+            WellKnownMemberNames.MultiplicationAssignmentOperatorName => ("*=", false),
+            WellKnownMemberNames.DivisionAssignmentOperatorName => ("/=", false),
+            WellKnownMemberNames.ModulusAssignmentOperatorName => ("%=", false),
+            WellKnownMemberNames.BitwiseAndAssignmentOperatorName => ("&=", false),
+            WellKnownMemberNames.BitwiseOrAssignmentOperatorName => ("|=", false),
+            WellKnownMemberNames.ExclusiveOrAssignmentOperatorName => ("^=", false),
+            WellKnownMemberNames.LeftShiftAssignmentOperatorName => ("<<=", false),
+            WellKnownMemberNames.RightShiftAssignmentOperatorName => (">>=", false),
+            WellKnownMemberNames.UnsignedRightShiftAssignmentOperatorName => (">>>=", false),
+            WellKnownMemberNames.IncrementAssignmentOperatorName => ("++", false),
+            WellKnownMemberNames.DecrementAssignmentOperatorName => ("--", false),
+            WellKnownMemberNames.CheckedAdditionOperatorName => ("+", true),
+            WellKnownMemberNames.CheckedSubtractionOperatorName => ("-", true),
+            WellKnownMemberNames.CheckedMultiplyOperatorName => ("*", true),
+            WellKnownMemberNames.CheckedDivisionOperatorName => ("/", true),
+            WellKnownMemberNames.CheckedUnaryNegationOperatorName => ("-", true),
+            WellKnownMemberNames.CheckedIncrementOperatorName => ("++", true),
+            WellKnownMemberNames.CheckedDecrementOperatorName => ("--", true),
+            WellKnownMemberNames.CheckedAdditionAssignmentOperatorName => ("+=", true),
+            WellKnownMemberNames.CheckedSubtractionAssignmentOperatorName => ("-=", true),
+            WellKnownMemberNames.CheckedMultiplicationAssignmentOperatorName => ("*=", true),
+            WellKnownMemberNames.CheckedDivisionAssignmentOperatorName => ("/=", true),
+            WellKnownMemberNames.CheckedIncrementAssignmentOperatorName => ("++", true),
+            WellKnownMemberNames.CheckedDecrementAssignmentOperatorName => ("--", true),
             _ => null,
         };
     }
