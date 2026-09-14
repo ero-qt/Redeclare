@@ -41,7 +41,7 @@ Names follow Roslyn. `Accessibility`, `TypeKind`, `RefKind`, `NullableAnnotation
 
 ## Snippets
 
-A `Snippet` is text with typed holes. An interpolated type reference becomes a hole that renders under the options in force:
+A `Snippet` is text with typed holes. Interpolate a `TypeReference` and it becomes a hole that renders under the file's options:
 
 ```csharp
 var body = Snippet.From($$"""
@@ -54,7 +54,29 @@ var body = Snippet.From($$"""
     """);
 ```
 
-Format specifiers pin a hole's qualification: `{type:g}` writes `global::`, `{type:f}` the namespace, `{type:m}` the name alone, `{type:n}` the bare identifier. For strings, `{text:L}` writes an escaped literal and `{name:I}` an identifier with `@` when it is a keyword. Raw string literals dedent, and a spliced snippet keeps the indentation of the line it lands on.
+A format specifier pins how a hole spells its type. Two more cover strings:
+
+```csharp
+Snippet.From($"{list:g} x;");        // global::System.Collections.Generic.List<int> x;
+Snippet.From($"{list:f} x;");        // System.Collections.Generic.List<int> x;
+Snippet.From($"{list:m} x;");        // List<int> x;
+Snippet.From($"{list:n}Helper");     // ListHelper
+Snippet.From($"return {text:L};");   // return "a \"quoted\" string";
+Snippet.From($"var {name:I} = 1;");  // var @class = 1;
+```
+
+Raw string literals dedent. A snippet spliced into another keeps the indentation of the line it lands on, so arms and members line up:
+
+```csharp
+var arms = Snippet.Join("\n", members.Select(m => Snippet.From($"{{type}}.{m.Name} => \"{m.Name}\",")));
+var body = Snippet.From($$"""
+    return value switch
+    {
+        {{arms}}
+        _ => value.ToString(),
+    };
+    """);
+```
 
 ## Reading
 
@@ -92,7 +114,12 @@ Symbols also answer the questions a generator asks before it acts: `type.IsParti
 
 `RenderOptions` is one record per file: language version, indent, line ending, qualification, predefined type keywords, nullable annotations, namespace style, and expression body preferences per member kind.
 
-`RenderOptions.From(AnalyzerConfigOptions)` reads the consumer's editorconfig and `LanguageVersion.ToCSharpVersion()` their language version, both from providers the pipeline already has:
+```csharp
+var text = unit.Render(options);
+context.AddSource(unit.HintName, unit.ToSourceText(options));
+```
+
+The consumer's editorconfig and language version both come from providers the pipeline already has:
 
 ```csharp
 var options = RenderOptions.From(configOptions.GetOptions(tree)) with
@@ -101,9 +128,14 @@ var options = RenderOptions.From(configOptions.GetOptions(tree)) with
 };
 ```
 
-Below the version a feature needs, the renderer degrades where C# has an older spelling: a file-scoped namespace becomes a block, `nint` becomes `IntPtr`. Where it has none, such as a `record struct` under C# 9, the renderer writes it anyway and the consumer's compiler reports it, which it does better than a generator can.
+Below the version a feature needs, the renderer falls back where C# has an older spelling: a file-scoped namespace becomes a block, `nint` becomes `IntPtr`. Where it has none, such as a `record struct` under C# 9, the renderer writes it anyway and the consumer's compiler reports it.
 
-Under `Qualification.Minimal`, `CSharpRenderer.CollectNamespaces(unit, options)` returns the usings the file needs for `CompilationUnit.Usings`.
+Under `Qualification.Minimal` the file needs usings. The renderer knows which:
+
+```csharp
+var usings = CSharpRenderer.CollectNamespaces(unit, options);
+var text = (unit with { Usings = [.. usings] }).Render(options);
+```
 
 ## Usage
 
@@ -154,9 +186,22 @@ The transform is the last place a symbol appears, so an edit elsewhere in the co
 dotnet add package Redeclare.Extensions
 ```
 
-It holds the types C# has a keyword for, so `TypeReference.Int32` replaces constructing one. `ToPart()` reads a type as a new partial part of itself, and `WithCollectedUsings(options)` fills a file's usings for minimal qualification.
+It holds the types C# has a keyword for, a reader for partial parts, and the usings step from above as one call:
 
-`RenderOptions.From(parseOptions)` is the defaults at the consumer's language version, and `RenderOptions.From(config, parseOptions)` their editorconfig style at that version. `WithRenderOptions` meets each item with the style of the file it came from. Roslyn's `Combine` takes one provider and returns `(Left, Right)`, so this is the editorconfig and the language version reached by hand:
+```csharp
+var count = new FieldDeclaration(Type: TypeReference.Int32, Name: "_count");
+var part = symbol.ToPart();                    // a new partial part of the type, no members
+var file = unit.WithCollectedUsings(options);  // usings filled for minimal qualification
+```
+
+It also reads the consumer's language version straight from `ParseOptions`, alone or together with the editorconfig:
+
+```csharp
+var defaults = RenderOptions.From(parseOptions);
+var style = RenderOptions.From(configOptions.GetOptions(tree), parseOptions);
+```
+
+Roslyn's `Combine` takes one provider and returns `(Left, Right)`, so reaching both by hand looks like this:
 
 ```csharp
 var style = context.AnalyzerConfigOptionsProvider.Combine(context.ParseOptionsProvider);
@@ -170,7 +215,7 @@ var enums = context.SyntaxProvider
     });
 ```
 
-and this is the same thing:
+`WithRenderOptions` does the same and meets each item with the style of the file it came from:
 
 ```csharp
 var enums = context.SyntaxProvider
