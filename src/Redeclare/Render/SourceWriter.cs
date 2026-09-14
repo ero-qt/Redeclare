@@ -23,13 +23,19 @@ internal sealed class SourceWriter
     private bool _lastLineBlank = true;
 
     /// <summary>
-    ///     Initializes a writer using the indent and line ending of <paramref name="options"/>.
+    ///     Initializes a writer that renders under <paramref name="options"/>.
     /// </summary>
     public SourceWriter(RenderOptions options)
     {
+        Options = options;
         _indent = options.Indent;
         _newLine = options.NewLine;
     }
+
+    /// <summary>
+    ///     Gets the options the writer renders under.
+    /// </summary>
+    public RenderOptions Options { get; }
 
     /// <summary>
     ///     Initializes a writer with four-space indentation and <c>\n</c> line endings.
