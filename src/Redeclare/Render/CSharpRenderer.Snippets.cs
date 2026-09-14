@@ -14,6 +14,7 @@ internal static partial class CSharpRenderer
         var lines = snippet.Lines;
         int indentStart = lines.Length > 1 ? LineStart(text) : text.Length;
         int indentEnd = lines.Length > 1 ? IndentEnd(text, indentStart) : indentStart;
+        int hole = 0;
 
         for (int i = 0; i < lines.Length; i++)
         {
@@ -26,7 +27,7 @@ internal static partial class CSharpRenderer
                 }
             }
 
-            text.AppendSnippetLine(lines[i], snippet.Holes, options);
+            text.AppendSnippetLine(lines[i], snippet.Holes, ref hole, options);
         }
 
         return text;
@@ -76,11 +77,12 @@ internal static partial class CSharpRenderer
         var options = writer.Options;
 
         var lines = snippet.Lines;
+        int hole = 0;
         for (int i = 0; i < lines.Length; i++)
         {
             if (lines[i].Length > 0)
             {
-                writer.BeginLine().AppendSnippetLine(lines[i], snippet.Holes, options);
+                writer.BeginLine().AppendSnippetLine(lines[i], snippet.Holes, ref hole, options);
             }
 
             writer.EndLine();
@@ -96,6 +98,7 @@ internal static partial class CSharpRenderer
         var options = writer.Options;
 
         var lines = snippet.Lines;
+        int hole = 0;
         for (int i = 0; i < lines.Length; i++)
         {
             if (i > 0)
@@ -105,36 +108,30 @@ internal static partial class CSharpRenderer
 
             if (lines[i].Length > 0)
             {
-                writer.BeginLine().AppendSnippetLine(lines[i], snippet.Holes, options);
+                writer.BeginLine().AppendSnippetLine(lines[i], snippet.Holes, ref hole, options);
             }
         }
     }
 
+    /// <summary>
+    ///     Appends one line of a snippet, filling each mark with the hole at <paramref name="next"/> and moving
+    ///     <paramref name="next"/> past it. A mark with no hole left for it is written as-is.
+    /// </summary>
     private static StringBuilder AppendSnippetLine(
         this StringBuilder text,
         string line,
         EquatableArray<SnippetHole> holes,
+        ref int next,
         RenderOptions options)
     {
-        int start = line.IndexOf(Snippet.HoleStart);
-        if (start < 0)
-        {
-            return text.Append(line);
-        }
-
         int position = 0;
-        while (start >= 0)
+        int mark = line.IndexOf(Snippet.HoleMark);
+        while (mark >= 0 && next < holes.Length)
         {
-            int end = line.IndexOf(Snippet.HoleEnd, start);
-            if (end < 0)
-            {
-                break;
-            }
-
-            text.Append(line, position, start - position);
-            text.AppendHole(holes[Snippet.HoleIndex(line, start, end)], options);
-            position = end + 1;
-            start = line.IndexOf(Snippet.HoleStart, position);
+            text.Append(line, position, mark - position);
+            text.AppendHole(holes[next++], options);
+            position = mark + 1;
+            mark = line.IndexOf(Snippet.HoleMark, position);
         }
 
         return text.Append(line, position, line.Length - position);

@@ -180,7 +180,7 @@ public sealed class SnippetTests
     }
 
     [Test]
-    public void From_SnippetInterpolatedIntoSnippet_SplicesAndRenumbersHoles()
+    public void From_SnippetInterpolatedIntoSnippet_SplicesHolesInOrder()
     {
         var inner = Snippet.From($"({Types.String})x");
         var nullableObject = Types.Object with { NullableAnnotation = NullableAnnotation.Annotated };
@@ -189,6 +189,7 @@ public sealed class SnippetTests
         using (Assert.EnterMultipleScope())
         {
             Assert.That(outer.Holes, Has.Length.EqualTo(3));
+            Assert.That(outer.Lines, Is.EqualTo(new[] { $"{Snippet.HoleMark} y = ({Snippet.HoleMark})x;", $"return {Snippet.HoleMark};" }), "a hole is one mark, its place in the text is its index");
             Assert.That(outer.Render(_minimal), Is.EqualTo("List<int> y = (string)x;\nreturn object?;"));
         }
     }
@@ -264,10 +265,10 @@ public sealed class SnippetTests
     }
 
     [Test]
-    public void Render_UnterminatedHoleMarkerInText_WritesItAsIs()
+    public void Render_HoleMarkWithoutAHole_WritesItAsIs()
     {
-        var snippet = Snippet.From("a" + Snippet.HoleStart + "b");
+        var snippet = Snippet.From("a" + Snippet.HoleMark + "b");
 
-        Assert.That(snippet.Render(RenderOptions.Default), Is.EqualTo("a" + Snippet.HoleStart + "b"));
+        Assert.That(snippet.Render(RenderOptions.Default), Is.EqualTo("a" + Snippet.HoleMark + "b"));
     }
 }
