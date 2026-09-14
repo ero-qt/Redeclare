@@ -56,15 +56,14 @@ internal static partial class CSharpRenderer
 
     private static void RenderInside(SourceWriter writer, TypeDeclaration containing, TypeDeclaration type)
     {
-        var options = writer.Options;
-
+        var part = containing with { Members = [type] };
         if (containing.ContainingType is { } outer)
         {
-            RenderInside(writer, outer, PartOf(containing) with { Members = [type] });
+            RenderInside(writer, outer, part);
             return;
         }
 
-        RenderDeclaration(writer, PartOf(containing) with { Members = [type] });
+        RenderDeclaration(writer, part);
     }
 
     /// <summary>
@@ -407,26 +406,6 @@ internal static partial class CSharpRenderer
             .AppendConstraints(type.TypeParameters, options, what)
             .Append(';');
         writer.EndLine();
-    }
-
-    /// <summary>
-    ///     A partial part of a type that declares nothing of its own: what the renderer writes around a
-    ///     declaration that names its <see cref="TypeDeclaration.ContainingType"/>.
-    /// </summary>
-    private static TypeDeclaration PartOf(TypeDeclaration type)
-    {
-        return type with
-        {
-            Accessibility = Accessibility.NotApplicable,
-            Modifiers = Modifiers.Partial,
-            DocumentationComment = null,
-            Attributes = default,
-            ParameterList = default,
-            BaseType = null,
-            BaseArguments = null,
-            Interfaces = default,
-            EnumUnderlyingType = null,
-        };
     }
 
     private static void RenderDocumentation(SourceWriter writer, string? documentation)
