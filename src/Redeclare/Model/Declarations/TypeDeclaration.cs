@@ -37,9 +37,10 @@ namespace Redeclare;
 /// <param name="ReturnType">A delegate's return type. Required when <paramref name="TypeKind"/> is a delegate, and refused otherwise.</param>
 /// <param name="RefKind">How a delegate returns: by value, <c>ref</c>, or <c>ref readonly</c>.</param>
 /// <param name="ContainingType">
-///     The type this one is declared in, and only its shape: kind, name and type parameters. It says where this
-///     declaration goes, and the renderer writes the chain out as partial parts around it. The outer type does
-///     not hold this one, so a <c>with</c> on this one edits this one alone.
+///     The type this one is declared in, or <see langword="null"/> for a top-level type. A type rendered on its own
+///     is written inside that chain, each outer type as given with this one as its sole member, so a read type
+///     carries <c>partial</c> parts with nothing of their own. A type rendered as a member of another keeps this
+///     as a fact and is written where the member list puts it.
 /// </param>
 /// <param name="Members">The members, in render order. An enum holds only <see cref="EnumMemberDeclaration"/>.</param>
 /// <param name="DocumentationComment">The documentation comment.</param>

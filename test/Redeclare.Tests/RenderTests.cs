@@ -551,7 +551,7 @@ public sealed class RenderTests
     [Test]
     public void Render_TypeWithContainingType_WritesPartialPartsAroundIt()
     {
-        var outer = new TypeDeclaration(Name: "Outer", TypeParameters: [new TypeParameterDeclaration(Name: "T")]);
+        var outer = new TypeDeclaration(Name: "Outer", Modifiers: Modifiers.Partial, TypeParameters: [new TypeParameterDeclaration(Name: "T")]);
         var inner = new TypeDeclaration(
             Name: "Inner",
             Accessibility: Accessibility.Public,
