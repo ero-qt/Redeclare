@@ -190,8 +190,8 @@ It holds the types C# has a keyword for, a reader for partial parts, and the usi
 
 ```csharp
 var count = new FieldDeclaration(Type: TypeReference.Int32, Name: "_count");
-var part = symbol.ToPart();                                    // a new partial part of the type, no members
-var file = unit.WithCollectedUsings(options);                  // usings filled for minimal qualification
+var part = symbol.ToPart();                    // a new partial part of the type, no members
+var file = unit.WithCollectedUsings(options);  // usings filled for minimal qualification
 ```
 
 It also reads the consumer's language version straight from `ParseOptions`, alone or together with the editorconfig:

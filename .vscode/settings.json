@@ -1,4 +1,5 @@
 {
+  "dotnet.defaultSolution": "Redeclare.slnx",
   "editor.rulers": [
     120,
     150,
