@@ -58,13 +58,35 @@ Format specifiers pin a hole's qualification: `{type:g}` writes `global::`, `{ty
 
 ## Reading
 
-`ToDeclaration()` reads a type, method, property, field, event, parameter or namespace symbol into the shape the symbol knows, and a named type symbol comes back as whichever of `TypeDeclaration`, `DelegateDeclaration` or `ExtensionDeclaration` it is: methods without bodies, properties with auto accessors, `partial` only on a partial definition, no `public` on interface members. Operators, conversions and destructors read as methods whose `MethodName` says which they are, and a plain `string` is an identifier. `ToTypeDeclaration()`, `ToDelegateDeclaration()` and `ToExtensionDeclaration()` read a named type whose kind is known and keep the type, `ToConstructorDeclaration()` reads a constructor and `ToEnumMemberDeclaration()` an enum member. An enum default reads as the member that has the value, and `typeof(List<int>)` in an attribute reads with a hole for the type.
+Any symbol with a declaration behind it has `ToDeclaration()`: `INamedTypeSymbol`, `IMethodSymbol`, `IPropertySymbol`, `IFieldSymbol`, `IEventSymbol`, `IParameterSymbol` and `INamespaceSymbol`. Methods come back without bodies, properties with auto accessors, interface members without `public`, and `partial` only on the definition half of a partial member.
 
-`ReadOptions` decides whether members, attributes, documentation comments and implicitly declared members come along. `ReadOptions.Shape` reads the type alone, which is what a new partial part may repeat.
+```csharp
+var type = symbol.ToDeclaration();                         // TypeDeclaration, DelegateDeclaration or ExtensionDeclaration
+var method = methodSymbol.ToDeclaration();                 // MethodDeclaration, body left null
+var constructor = ctorSymbol.ToConstructorDeclaration();   // an IMethodSymbol, so it needs its own name
+var value = fieldSymbol.ToEnumMemberDeclaration();         // an IFieldSymbol, same reason
+```
 
-Attributes are found by class symbol. Resolve the class once with `GetTypeByMetadataName`, then call `GetAttribute` or `GetAttributes`. `GetArguments()` reads constructor and named arguments by name, falling back to a parameter's default when the argument was omitted. `ConstructorExpression` gives an argument back as C#.
+When you know what kind of named type you have, `symbol.ToTypeDeclaration()`, `symbol.ToDelegateDeclaration()` and `symbol.ToExtensionDeclaration()` give that record back.
 
-`Checks` answers what a generator asks before it acts: `IsPartial`, `IsPartialThroughout`, `Is`, `InheritsFrom`, `Implements`, `FullMetadataName`, and `IsValidOn` for whether an attribute may sit on a symbol.
+Operators, conversions and destructors are `MethodDeclaration`s too, and their `Name` is a `MethodName` that says which. An enum default reads as the member with that value. `typeof(List<int>)` in an attribute reads with a hole for the type.
+
+`ReadOptions` says what comes along: members, attributes, documentation comments, implicitly declared members. `ReadOptions.Shape` reads a type alone, for a new partial part. `ReadOptions.Signature` reads a member without attributes or documentation, for an implementing part.
+
+```csharp
+var part = symbol.ToTypeDeclaration(ReadOptions.Shape);
+var definition = propertySymbol.ToDeclaration(ReadOptions.Signature);
+```
+
+Attributes are found by class symbol. Resolve the class once, then ask a symbol for it:
+
+```csharp
+var attribute = compilation.GetTypeByMetadataName("My.MarkAttribute")!;
+var arguments = symbol.GetAttribute(attribute)?.GetArguments();   // by name, with the parameter's default when left out
+var name = arguments?.ConstructorExpression("name");               // the argument back as C#
+```
+
+Symbols also answer the questions a generator asks before it acts: `type.IsPartial()`, `type.IsPartialThroughout()`, `type.Is(other)`, `type.InheritsFrom(other)`, `type.Implements(other)`, `type.FullMetadataName()`, and `attribute.IsValidOn(symbol, compilation)`.
 
 ## Rendering
 
