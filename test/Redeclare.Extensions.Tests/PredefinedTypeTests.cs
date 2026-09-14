@@ -26,8 +26,8 @@ public sealed class PredefinedTypeTests
         ["double"] = TypeReference.Double,
         ["decimal"] = TypeReference.Decimal,
         ["void"] = TypeReference.Void,
-        ["nint"] = TypeReference.NativeInt,
-        ["nuint"] = TypeReference.NativeUInt,
+        ["nint"] = TypeReference.IntPtr,
+        ["nuint"] = TypeReference.UIntPtr,
     };
 
     [Test]
@@ -47,7 +47,7 @@ public sealed class PredefinedTypeTests
         {
             Assert.That(CSharpRenderer.RenderType(TypeReference.Int32, options), Is.EqualTo("global::System.Int32"));
             Assert.That(CSharpRenderer.RenderType(TypeReference.Void, options), Is.EqualTo("void"), "System.Void is not a type C# can write");
-            Assert.That(CSharpRenderer.RenderType(TypeReference.NativeInt, options), Is.EqualTo("global::System.IntPtr"));
+            Assert.That(CSharpRenderer.RenderType(TypeReference.IntPtr, options), Is.EqualTo("global::System.IntPtr"));
         }
     }
 
@@ -62,7 +62,7 @@ public sealed class PredefinedTypeTests
         {
             Assert.That(fields["i"].Type.ToTypeReference(), Is.EqualTo(TypeReference.Int32));
             Assert.That(fields["s"].Type.ToTypeReference(), Is.EqualTo(TypeReference.String));
-            Assert.That(fields["n"].Type.ToTypeReference(), Is.EqualTo(TypeReference.NativeInt));
+            Assert.That(fields["n"].Type.ToTypeReference(), Is.EqualTo(TypeReference.IntPtr));
         }
     }
 
