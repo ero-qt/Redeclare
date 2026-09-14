@@ -16,7 +16,7 @@ internal static class RoslynExtensions
     /// </summary>
     public static TypeDeclaration ToDeclaration(this INamedTypeSymbol type, ReadOptions? options = null)
     {
-        return SymbolReader.ReadType(type, options);
+        return SymbolReader.Create(options).ReadType(type);
     }
 
     /// <summary>
@@ -24,7 +24,7 @@ internal static class RoslynExtensions
     /// </summary>
     public static ExtensionDeclaration ToExtensionDeclaration(this INamedTypeSymbol extension, ReadOptions? options = null)
     {
-        return SymbolReader.ReadExtension(extension, options);
+        return SymbolReader.Create(options).ReadExtension(extension);
     }
 
     /// <summary>
@@ -43,7 +43,7 @@ internal static class RoslynExtensions
     /// </summary>
     public static MethodDeclaration ToDeclaration(this IMethodSymbol method, ReadOptions? options = null)
     {
-        return SymbolReader.ReadMethod(method, options);
+        return SymbolReader.Create(options).ReadMethod(method);
     }
 
     /// <summary>
@@ -51,7 +51,7 @@ internal static class RoslynExtensions
     /// </summary>
     public static ConstructorDeclaration ToConstructorDeclaration(this IMethodSymbol constructor, ReadOptions? options = null)
     {
-        return SymbolReader.ReadConstructor(constructor, options);
+        return SymbolReader.Create(options).ReadConstructor(constructor);
     }
 
     /// <summary>
@@ -59,7 +59,7 @@ internal static class RoslynExtensions
     /// </summary>
     public static PropertyDeclaration ToDeclaration(this IPropertySymbol property, ReadOptions? options = null)
     {
-        return SymbolReader.ReadProperty(property, options);
+        return SymbolReader.Create(options).ReadProperty(property);
     }
 
     /// <summary>
@@ -68,7 +68,7 @@ internal static class RoslynExtensions
     /// </summary>
     public static FieldDeclaration ToDeclaration(this IFieldSymbol field, ReadOptions? options = null)
     {
-        return SymbolReader.ReadField(field, options);
+        return SymbolReader.Create(options).ReadField(field);
     }
 
     /// <summary>
@@ -76,7 +76,7 @@ internal static class RoslynExtensions
     /// </summary>
     public static EnumMemberDeclaration ToEnumMemberDeclaration(this IFieldSymbol field, ReadOptions? options = null)
     {
-        return SymbolReader.ReadEnumMember(field, options);
+        return SymbolReader.Create(options).ReadEnumMember(field);
     }
 
     /// <summary>
@@ -84,7 +84,7 @@ internal static class RoslynExtensions
     /// </summary>
     public static ParameterDeclaration ToDeclaration(this IParameterSymbol parameter, ReadOptions? options = null)
     {
-        return SymbolReader.ReadParameter(parameter, isThis: false, options);
+        return SymbolReader.Create(options).ReadParameter(parameter, isThis: false);
     }
 
     /// <summary>
@@ -92,7 +92,7 @@ internal static class RoslynExtensions
     /// </summary>
     public static EventDeclaration ToDeclaration(this IEventSymbol @event, ReadOptions? options = null)
     {
-        return SymbolReader.ReadEvent(@event, options);
+        return SymbolReader.Create(options).ReadEvent(@event);
     }
 
     /// <summary>

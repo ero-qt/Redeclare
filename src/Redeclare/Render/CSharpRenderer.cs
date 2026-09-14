@@ -14,10 +14,10 @@ internal static partial class CSharpRenderer
 
         if (unit.Header is { } header)
         {
-            writer.WriteSnippet(header, options);
+            writer.WriteSnippet(header);
         }
 
-        RenderDirectives(writer, unit, options);
+        RenderDirectives(writer, unit);
 
         if (!unit.Usings.IsEmpty)
         {
@@ -31,7 +31,7 @@ internal static partial class CSharpRenderer
 
         writer.BlankLine();
 
-        RenderTopLevel(writer, unit.Members, options, fileScoped: CanBeFileScoped(unit, options));
+        RenderTopLevel(writer, unit.Members, fileScoped: CanBeFileScoped(unit, options));
 
         return writer.ToString();
     }
@@ -41,44 +41,50 @@ internal static partial class CSharpRenderer
     ///     inside one <c>partial</c> part per containing type, outermost first, so that a file holding one nested
     ///     type puts it back where it belongs.
     /// </summary>
-    public static void Render(SourceWriter writer, TypeDeclaration type, RenderOptions options)
+    public static void Render(SourceWriter writer, TypeDeclaration type)
     {
+        var options = writer.Options;
+
         if (type.ContainingType is { } containing)
         {
-            RenderInside(writer, containing, type, options);
+            RenderInside(writer, containing, type);
             return;
         }
 
-        RenderDeclaration(writer, type, options);
+        RenderDeclaration(writer, type);
     }
 
-    private static void RenderInside(SourceWriter writer, TypeDeclaration containing, TypeDeclaration type, RenderOptions options)
+    private static void RenderInside(SourceWriter writer, TypeDeclaration containing, TypeDeclaration type)
     {
+        var options = writer.Options;
+
         if (containing.ContainingType is { } outer)
         {
-            RenderInside(writer, outer, PartOf(containing) with { Members = [type] }, options);
+            RenderInside(writer, outer, PartOf(containing) with { Members = [type] });
             return;
         }
 
-        RenderDeclaration(writer, PartOf(containing) with { Members = [type] }, options);
+        RenderDeclaration(writer, PartOf(containing) with { Members = [type] });
     }
 
     /// <summary>
     ///     Renders the declaration itself. A member type keeps its <c>ContainingType</c> as a fact about where it
     ///     is declared, and its place in the member list decides where it is written.
     /// </summary>
-    private static void RenderDeclaration(SourceWriter writer, TypeDeclaration type, RenderOptions options)
+    private static void RenderDeclaration(SourceWriter writer, TypeDeclaration type)
     {
+        var options = writer.Options;
+
         string what = $"Type '{type.Name}'";
 
         RenderDocumentation(writer, type.DocumentationComment);
-        RenderAttributes(writer, type.Attributes, options);
+        RenderAttributes(writer, type.Attributes);
 
         var head = writer.BeginLine().AppendModifiers(type.Accessibility, type.Modifiers);
 
         if (type.TypeKind == TypeKind.Delegate)
         {
-            RenderDelegate(writer, head, type, options, what);
+            RenderDelegate(writer, head, type, what);
             return;
         }
 
@@ -169,11 +175,11 @@ internal static partial class CSharpRenderer
         {
             if (type.TypeKind == TypeKind.Enum)
             {
-                RenderEnumMembers(writer, type, options);
+                RenderEnumMembers(writer, type);
             }
             else
             {
-                RenderMembers(writer, type, options);
+                RenderMembers(writer, type);
             }
         }
     }
@@ -181,14 +187,15 @@ internal static partial class CSharpRenderer
     /// <summary>
     ///     Renders one member inside <paramref name="containing"/>.
     /// </summary>
-    public static void Render(SourceWriter writer, MemberDeclaration member, TypeDeclaration containing, RenderOptions options)
+    public static void Render(SourceWriter writer, MemberDeclaration member, TypeDeclaration containing)
     {
+        var options = writer.Options;
 
         switch (member)
         {
             case TypeDeclaration nested:
             {
-                RenderDeclaration(writer, nested, options);
+                RenderDeclaration(writer, nested);
                 break;
             }
             case NamespaceDeclaration ns:
@@ -197,44 +204,44 @@ internal static partial class CSharpRenderer
             }
             case ExtensionDeclaration extension:
             {
-                RenderExtension(writer, extension, containing, options);
+                RenderExtension(writer, extension, containing);
                 break;
             }
             case MethodDeclaration method:
             {
-                RenderMethod(writer, method, containing, options);
+                RenderMethod(writer, method, containing);
                 break;
             }
             case ConstructorDeclaration constructor:
             {
-                RenderConstructor(writer, constructor, containing, options);
+                RenderConstructor(writer, constructor, containing);
                 break;
             }
             case PropertyDeclaration property:
             {
-                RenderProperty(writer, property, containing, options);
+                RenderProperty(writer, property, containing);
                 break;
             }
             case FieldDeclaration field:
             {
-                RenderField(writer, field, containing, options);
+                RenderField(writer, field, containing);
                 break;
             }
             case EventDeclaration @event:
             {
-                RenderEvent(writer, @event, containing, options);
+                RenderEvent(writer, @event, containing);
                 break;
             }
             case EnumMemberDeclaration enumMember:
             {
-                RenderEnumMember(writer, enumMember, options);
+                RenderEnumMember(writer, enumMember);
                 break;
             }
             case RawMemberDeclaration raw:
             {
                 RenderDocumentation(writer, raw.DocumentationComment);
-                RenderAttributes(writer, raw.Attributes, options);
-                writer.WriteSnippet(raw.Text, options);
+                RenderAttributes(writer, raw.Attributes);
+                writer.WriteSnippet(raw.Text);
                 break;
             }
             default:
@@ -251,8 +258,10 @@ internal static partial class CSharpRenderer
     ///     Writes the <c>#nullable</c> and <c>#pragma warning disable</c> lines under the header. <c>#nullable</c> is
     ///     C# 8, and below that it is left out.
     /// </summary>
-    private static void RenderDirectives(SourceWriter writer, CompilationUnit unit, RenderOptions options)
+    private static void RenderDirectives(SourceWriter writer, CompilationUnit unit)
     {
+        var options = writer.Options;
+
         bool nullable = unit.NullableContext is { } context && options.Allows(CSharpVersion.CSharp8);
         if (!nullable && unit.DisabledWarnings.IsEmpty)
         {
@@ -311,8 +320,10 @@ internal static partial class CSharpRenderer
         return false;
     }
 
-    private static void RenderTopLevel(SourceWriter writer, EquatableArray<MemberDeclaration> members, RenderOptions options, bool fileScoped)
+    private static void RenderTopLevel(SourceWriter writer, EquatableArray<MemberDeclaration> members, bool fileScoped)
     {
+        var options = writer.Options;
+
         for (int i = 0; i < members.Length; i++)
         {
             if (i > 0)
@@ -325,7 +336,7 @@ internal static partial class CSharpRenderer
             {
                 case NamespaceDeclaration { Name.Length: 0 } global:
                 {
-                    RenderTopLevel(writer, global.Members, options, fileScoped: false);
+                    RenderTopLevel(writer, global.Members, fileScoped: false);
                     break;
                 }
                 case NamespaceDeclaration ns when fileScoped:
@@ -333,7 +344,7 @@ internal static partial class CSharpRenderer
                     writer.BeginLine().Append("namespace ").AppendQualifiedName(ns.Name).Append(';');
                     writer.EndLine();
                     writer.BlankLine();
-                    RenderTopLevel(writer, ns.Members, options, fileScoped: false);
+                    RenderTopLevel(writer, ns.Members, fileScoped: false);
                     break;
                 }
                 case NamespaceDeclaration ns:
@@ -342,14 +353,14 @@ internal static partial class CSharpRenderer
                     writer.EndLine();
                     using (writer.Block())
                     {
-                        RenderTopLevel(writer, ns.Members, options, fileScoped: false);
+                        RenderTopLevel(writer, ns.Members, fileScoped: false);
                     }
 
                     break;
                 }
                 case TypeDeclaration type:
                 {
-                    Render(writer, type, options);
+                    Render(writer, type);
                     break;
                 }
                 default:
@@ -365,8 +376,10 @@ internal static partial class CSharpRenderer
     ///     Renders a delegate, the one type declaration that is a signature and nothing else: it takes the return
     ///     type and parameter list and ends at a semicolon.
     /// </summary>
-    private static void RenderDelegate(SourceWriter writer, StringBuilder head, TypeDeclaration type, RenderOptions options, string what)
+    private static void RenderDelegate(SourceWriter writer, StringBuilder head, TypeDeclaration type, string what)
     {
+        var options = writer.Options;
+
         if (type.ReturnType is not { } returnType)
         {
             throw new RenderException($"{what} is a delegate without a return type. Set ReturnType, a reference to System.Void for none.");
@@ -429,8 +442,10 @@ internal static partial class CSharpRenderer
         }
     }
 
-    private static void RenderAttributes(SourceWriter writer, EquatableArray<AttributeSpecification> attributes, RenderOptions options)
+    private static void RenderAttributes(SourceWriter writer, EquatableArray<AttributeSpecification> attributes)
     {
+        var options = writer.Options;
+
         foreach (var attribute in attributes)
         {
             writer.BeginLine().Append('[').AppendAttribute(attribute, options).Append(']');

@@ -71,8 +71,10 @@ internal static partial class CSharpRenderer
     /// <summary>
     ///     Writes a snippet into the writer one line at a time, each at the current depth, holes filled.
     /// </summary>
-    private static void WriteSnippet(this SourceWriter writer, Snippet snippet, RenderOptions options)
+    private static void WriteSnippet(this SourceWriter writer, Snippet snippet)
     {
+        var options = writer.Options;
+
         var lines = snippet.Lines;
         for (int i = 0; i < lines.Length; i++)
         {
@@ -89,8 +91,10 @@ internal static partial class CSharpRenderer
     ///     Writes a snippet that continues the current line, such as an initializer. Its further lines start at the
     ///     writer's depth, so a multi-line value stays aligned under its member.
     /// </summary>
-    private static void WriteInline(this SourceWriter writer, Snippet snippet, RenderOptions options)
+    private static void WriteInline(this SourceWriter writer, Snippet snippet)
     {
+        var options = writer.Options;
+
         var lines = snippet.Lines;
         for (int i = 0; i < lines.Length; i++)
         {

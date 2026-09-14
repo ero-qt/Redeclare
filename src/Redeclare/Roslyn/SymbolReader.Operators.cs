@@ -2,7 +2,7 @@ using Microsoft.CodeAnalysis;
 
 namespace Redeclare;
 
-internal static partial class SymbolReader
+internal sealed partial class SymbolReader
 {
     /// <summary>
     ///     The name a user-defined operator or conversion declares under, from its metadata name, or

@@ -5,9 +5,9 @@ using System.Collections.Generic;
 namespace Redeclare;
 
 /// <summary>
-///     Provides methods that read Roslyn symbols into declarations and type references. This is the only code
-///     in the library that touches <c>ISymbol</c>, and everything it returns is a value the pipeline can cache on.
-///     The <c>ToDeclaration()</c> and <c>ToTypeReference()</c> extensions call into here.
+///     Reads Roslyn symbols into declarations and type references under one set of <see cref="ReadOptions"/>. This
+///     is the only code in the library that touches <c>ISymbol</c>, and everything it returns is a value the
+///     pipeline can cache on. The <c>ToDeclaration()</c> and <c>ToTypeReference()</c> extensions call into here.
 /// </summary>
 /// <remarks>
 ///     <para>
@@ -21,15 +21,36 @@ namespace Redeclare;
 ///         comes back with a hole for the type, so both qualify at render time.
 ///     </para>
 /// </remarks>
-internal static partial class SymbolReader
+internal sealed partial class SymbolReader
 {
+    private readonly ReadOptions _options;
+
+    /// <summary>
+    ///     Initializes a reader that reads under <paramref name="options"/>.
+    /// </summary>
+    public SymbolReader(ReadOptions options)
+    {
+        _options = options;
+    }
+
+    /// <summary>
+    ///     Gets the reader for <see cref="ReadOptions.Default"/>.
+    /// </summary>
+    public static SymbolReader Default { get; } = new(ReadOptions.Default);
+
+    /// <summary>
+    ///     Gets a reader for <paramref name="options"/>, the default one when they are <see langword="null"/>.
+    /// </summary>
+    public static SymbolReader Create(ReadOptions? options)
+    {
+        return options is null ? Default : new SymbolReader(options);
+    }
+
     /// <summary>
     ///     Reads a class, struct, interface, enum, record or delegate.
     /// </summary>
-    public static TypeDeclaration ReadType(INamedTypeSymbol type, ReadOptions? options = null)
+    public TypeDeclaration ReadType(INamedTypeSymbol type)
     {
-        options ??= ReadOptions.Default;
-
         if (type.IsExtension)
         {
             throw new ArgumentException($"'{type.Name}' is an extension block. Use ToExtensionDeclaration.", nameof(type));
@@ -100,8 +121,8 @@ internal static partial class SymbolReader
         }
 
         return new TypeDeclaration(
-            DocumentationComment: ReadDocumentation(type, options),
-            Attributes: ReadAttributes(type, options),
+            DocumentationComment: ReadDocumentation(type),
+            Attributes: ReadAttributes(type),
             // `file` reports as `internal`.
             Accessibility: type.IsFileLocal ? Accessibility.NotApplicable : type.DeclaredAccessibility,
             Modifiers: modifiers,
@@ -109,32 +130,30 @@ internal static partial class SymbolReader
             IsRecord: type.IsRecord,
             Name: type.Name,
             ContainingType: type.ContainingType is { } outer ? ReadShape(outer) : null,
-            TypeParameters: ReadTypeParameters(type.TypeParameters, options),
-            ParameterList: invoke is null ? default : ReadParameters(invoke.Parameters, isExtension: false, options),
+            TypeParameters: ReadTypeParameters(type.TypeParameters),
+            ParameterList: invoke is null ? default : ReadParameters(invoke.Parameters, isExtension: false),
             BaseType: invoke is null ? baseType : null,
             Interfaces: invoke is null ? interfaces.ToEquatableArray() : default,
             EnumUnderlyingType: underlying,
             ReturnType: invoke is null ? null : ReadTypeReference(invoke.ReturnType),
             RefKind: invoke?.RefKind ?? RefKind.None,
-            Members: options.IncludeMembers && invoke is null ? ReadMembers(type, options) : default);
+            Members: _options.IncludeMembers && invoke is null ? ReadMembers(type) : default);
     }
 
     /// <summary>
     ///     Reads an extension block: its receiver, its type parameters and its members.
     /// </summary>
-    public static ExtensionDeclaration ReadExtension(INamedTypeSymbol extension, ReadOptions? options = null)
+    public ExtensionDeclaration ReadExtension(INamedTypeSymbol extension)
     {
-        options ??= ReadOptions.Default;
-
         if (!extension.IsExtension || extension.ExtensionParameter is not { } receiver)
         {
             throw new ArgumentException($"'{extension.Name}' is not an extension block.", nameof(extension));
         }
 
         return new ExtensionDeclaration(
-            Receiver: ReadParameter(receiver, isThis: false, options),
-            TypeParameters: ReadTypeParameters(extension.TypeParameters, options),
-            Members: options.IncludeMembers ? ReadMembers(extension, options) : default);
+            Receiver: ReadParameter(receiver, isThis: false),
+            TypeParameters: ReadTypeParameters(extension.TypeParameters),
+            Members: _options.IncludeMembers ? ReadMembers(extension) : default);
     }
 
     /// <summary>
@@ -167,12 +186,12 @@ internal static partial class SymbolReader
             ContainingType: type.ContainingType is { } outer ? ReadShape(outer) : null);
     }
 
-    private static EquatableArray<MemberDeclaration> ReadMembers(INamedTypeSymbol type, ReadOptions options)
+    private EquatableArray<MemberDeclaration> ReadMembers(INamedTypeSymbol type)
     {
         List<MemberDeclaration> members = [];
         foreach (var member in type.GetMembers())
         {
-            if (member.IsImplicitlyDeclared && !options.IncludeImplicitlyDeclared)
+            if (member.IsImplicitlyDeclared && !_options.IncludeImplicitlyDeclared)
             {
                 continue;
             }
@@ -181,7 +200,7 @@ internal static partial class SymbolReader
             {
                 case INamedTypeSymbol { IsExtension: true } extension:
                 {
-                    members.Add(ReadExtension(extension, options));
+                    members.Add(ReadExtension(extension));
                     break;
                 }
                 case INamedTypeSymbol
@@ -189,7 +208,7 @@ internal static partial class SymbolReader
                     TypeKind: TypeKind.Class or TypeKind.Struct or TypeKind.Interface or TypeKind.Enum or TypeKind.Delegate,
                 } nested:
                 {
-                    members.Add(ReadType(nested, options));
+                    members.Add(ReadType(nested));
                     break;
                 }
                 case IMethodSymbol { AssociatedSymbol: not null }:
@@ -198,22 +217,22 @@ internal static partial class SymbolReader
                 }
                 case IMethodSymbol { MethodKind: MethodKind.Constructor or MethodKind.StaticConstructor } constructor:
                 {
-                    members.Add(ReadConstructor(constructor, options));
+                    members.Add(ReadConstructor(constructor));
                     break;
                 }
                 case IMethodSymbol { MethodKind: MethodKind.Ordinary or MethodKind.ExplicitInterfaceImplementation or MethodKind.Destructor } method:
                 {
-                    members.Add(ReadMethod(method, options));
+                    members.Add(ReadMethod(method));
                     break;
                 }
                 case IMethodSymbol { MethodKind: MethodKind.UserDefinedOperator or MethodKind.Conversion } @operator:
                 {
-                    members.Add(ReadMethod(@operator, options));
+                    members.Add(ReadMethod(@operator));
                     break;
                 }
                 case IPropertySymbol property:
                 {
-                    members.Add(ReadProperty(property, options));
+                    members.Add(ReadProperty(property));
                     break;
                 }
                 case IFieldSymbol { AssociatedSymbol: not null }:
@@ -222,17 +241,17 @@ internal static partial class SymbolReader
                 }
                 case IFieldSymbol field when type.TypeKind == TypeKind.Enum:
                 {
-                    members.Add(ReadEnumMember(field, options));
+                    members.Add(ReadEnumMember(field));
                     break;
                 }
                 case IFieldSymbol field:
                 {
-                    members.Add(ReadField(field, options));
+                    members.Add(ReadField(field));
                     break;
                 }
                 case IEventSymbol @event:
                 {
-                    members.Add(ReadEvent(@event, options));
+                    members.Add(ReadEvent(@event));
                     break;
                 }
                 default:
@@ -245,9 +264,9 @@ internal static partial class SymbolReader
         return members.ToEquatableArray();
     }
 
-    private static EquatableArray<AttributeSpecification> ReadAttributes(ISymbol symbol, ReadOptions options)
+    private EquatableArray<AttributeSpecification> ReadAttributes(ISymbol symbol)
     {
-        if (!options.IncludeAttributes)
+        if (!_options.IncludeAttributes)
         {
             return default;
         }
@@ -275,9 +294,9 @@ internal static partial class SymbolReader
         return attributes.ToEquatableArray();
     }
 
-    private static string? ReadDocumentation(ISymbol symbol, ReadOptions options)
+    private string? ReadDocumentation(ISymbol symbol)
     {
-        if (!options.IncludeDocumentationComments)
+        if (!_options.IncludeDocumentationComments)
         {
             return null;
         }

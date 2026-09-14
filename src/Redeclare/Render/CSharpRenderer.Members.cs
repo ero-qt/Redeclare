@@ -7,8 +7,10 @@ namespace Redeclare;
 
 internal static partial class CSharpRenderer
 {
-    private static void RenderMembers(SourceWriter writer, TypeDeclaration type, RenderOptions options)
+    private static void RenderMembers(SourceWriter writer, TypeDeclaration type)
     {
+        var options = writer.Options;
+
         for (int i = 0; i < type.Members.Length; i++)
         {
             if (i > 0 && options.BlankLineBetweenMembers)
@@ -16,7 +18,7 @@ internal static partial class CSharpRenderer
                 writer.BlankLine();
             }
 
-            Render(writer, type.Members[i], type, options);
+            Render(writer, type.Members[i], type);
         }
     }
 
@@ -24,8 +26,10 @@ internal static partial class CSharpRenderer
     ///     Renders an extension block: <c>extension&lt;T&gt;(Receiver receiver) where ... { members }</c>. Only a
     ///     non-generic static class may hold one, and it holds methods, operators, properties and raw text.
     /// </summary>
-    private static void RenderExtension(SourceWriter writer, ExtensionDeclaration extension, TypeDeclaration containing, RenderOptions options)
+    private static void RenderExtension(SourceWriter writer, ExtensionDeclaration extension, TypeDeclaration containing)
     {
+        var options = writer.Options;
+
         string what = $"Extension block for '{RenderType(extension.Receiver.Type, options)}' in '{containing.Name}'";
         if (containing.TypeKind != TypeKind.Class || (containing.Modifiers & Modifiers.Static) == 0 || !containing.TypeParameters.IsEmpty)
         {
@@ -70,13 +74,15 @@ internal static partial class CSharpRenderer
                     writer.BlankLine();
                 }
 
-                Render(writer, extension.Members[i], containing, options);
+                Render(writer, extension.Members[i], containing);
             }
         }
     }
 
-    private static void RenderEnumMembers(SourceWriter writer, TypeDeclaration type, RenderOptions options)
+    private static void RenderEnumMembers(SourceWriter writer, TypeDeclaration type)
     {
+        var options = writer.Options;
+
         foreach (var member in type.Members)
         {
             if (member is not EnumMemberDeclaration enumMember)
@@ -84,32 +90,36 @@ internal static partial class CSharpRenderer
                 throw new RenderException($"Enum '{type.Name}' holds a {member.GetType().Name}. An enum may only hold enum members.");
             }
 
-            RenderEnumMember(writer, enumMember, options);
+            RenderEnumMember(writer, enumMember);
         }
     }
 
-    private static void RenderEnumMember(SourceWriter writer, EnumMemberDeclaration member, RenderOptions options)
+    private static void RenderEnumMember(SourceWriter writer, EnumMemberDeclaration member)
     {
+        var options = writer.Options;
+
         RenderDocumentation(writer, member.DocumentationComment);
-        RenderAttributes(writer, member.Attributes, options);
+        RenderAttributes(writer, member.Attributes);
 
         writer.BeginLine().AppendIdentifier(member.Name);
         if (member.Value is { } value)
         {
             writer.BeginLine().Append(" = ");
-            writer.WriteInline(value, options);
+            writer.WriteInline(value);
         }
 
         writer.BeginLine().Append(',');
         writer.EndLine();
     }
 
-    private static void RenderMethod(SourceWriter writer, MethodDeclaration method, TypeDeclaration containing, RenderOptions options)
+    private static void RenderMethod(SourceWriter writer, MethodDeclaration method, TypeDeclaration containing)
     {
+        var options = writer.Options;
+
         string what = $"Method '{containing.Name}.{method.Name}'";
 
         RenderDocumentation(writer, method.DocumentationComment);
-        RenderAttributes(writer, method.Attributes, options);
+        RenderAttributes(writer, method.Attributes);
 
         var head = writer.BeginLine()
             .AppendModifiers(method.Accessibility, method.Modifiers)
@@ -154,7 +164,7 @@ internal static partial class CSharpRenderer
             .Append(')')
             .AppendConstraints(method.TypeParameters, options, what);
 
-        RenderBody(writer, method.Body, BodyKind.Method, options, ReturnsValue(method), what);
+        RenderBody(writer, method.Body, BodyKind.Method, ReturnsValue(method), what);
     }
 
     private static StringBuilder AppendExplicitInterface(this StringBuilder text, TypeReference? explicitInterface, RenderOptions options)
@@ -170,12 +180,14 @@ internal static partial class CSharpRenderer
         return !isVoid && !isAsyncTask;
     }
 
-    private static void RenderConstructor(SourceWriter writer, ConstructorDeclaration constructor, TypeDeclaration containing, RenderOptions options)
+    private static void RenderConstructor(SourceWriter writer, ConstructorDeclaration constructor, TypeDeclaration containing)
     {
+        var options = writer.Options;
+
         string what = $"Constructor of '{containing.Name}'";
 
         RenderDocumentation(writer, constructor.DocumentationComment);
-        RenderAttributes(writer, constructor.Attributes, options);
+        RenderAttributes(writer, constructor.Attributes);
 
         var head = writer.BeginLine()
             .AppendModifiers(constructor.Accessibility, constructor.Modifiers)
@@ -188,11 +200,13 @@ internal static partial class CSharpRenderer
             head.Append(" : ").AppendSnippet(initializer, options);
         }
 
-        RenderBody(writer, constructor.Body, BodyKind.Constructor, options, returnsValue: false, what);
+        RenderBody(writer, constructor.Body, BodyKind.Constructor, returnsValue: false, what);
     }
 
-    private static void RenderProperty(SourceWriter writer, PropertyDeclaration property, TypeDeclaration containing, RenderOptions options)
+    private static void RenderProperty(SourceWriter writer, PropertyDeclaration property, TypeDeclaration containing)
     {
+        var options = writer.Options;
+
         string what = $"Property '{containing.Name}.{property.Name}'";
         var getter = property.Getter;
         var setter = property.Setter;
@@ -215,7 +229,7 @@ internal static partial class CSharpRenderer
         }
 
         RenderDocumentation(writer, property.DocumentationComment);
-        RenderAttributes(writer, property.Attributes, options);
+        RenderAttributes(writer, property.Attributes);
 
         var head = writer.BeginLine()
             .AppendModifiers(property.Accessibility, property.Modifiers)
@@ -239,7 +253,7 @@ internal static partial class CSharpRenderer
         var kind = property.IsIndexer ? BodyKind.Indexer : BodyKind.Property;
         if (setter is null && getter is { Body: { IsExpression: true } expression } && Arrow(expression, kind, options))
         {
-            WriteArrow(writer, expression, options);
+            WriteArrow(writer, expression);
             return;
         }
 
@@ -260,7 +274,7 @@ internal static partial class CSharpRenderer
             if (property.Initializer is { } initializer)
             {
                 head.Append(" = ");
-                writer.WriteInline(initializer, options);
+                writer.WriteInline(initializer);
                 writer.BeginLine().Append(';');
             }
 
@@ -274,23 +288,25 @@ internal static partial class CSharpRenderer
             if (getter is not null)
             {
                 AppendAccessorHead(writer.BeginLine(), getter, "get", options);
-                RenderBody(writer, getter.Body, BodyKind.Accessor, options, returnsValue: true, what);
+                RenderBody(writer, getter.Body, BodyKind.Accessor, returnsValue: true, what);
             }
 
             if (setter is not null)
             {
                 AppendAccessorHead(writer.BeginLine(), setter, setter.IsInitOnly ? "init" : "set", options);
-                RenderBody(writer, setter.Body, BodyKind.Accessor, options, returnsValue: false, what);
+                RenderBody(writer, setter.Body, BodyKind.Accessor, returnsValue: false, what);
             }
         }
     }
 
-    private static void RenderField(SourceWriter writer, FieldDeclaration field, TypeDeclaration containing, RenderOptions options)
+    private static void RenderField(SourceWriter writer, FieldDeclaration field, TypeDeclaration containing)
     {
+        var options = writer.Options;
+
         string what = $"Field '{containing.Name}.{field.Name}'";
 
         RenderDocumentation(writer, field.DocumentationComment);
-        RenderAttributes(writer, field.Attributes, options);
+        RenderAttributes(writer, field.Attributes);
 
         var head = writer.BeginLine()
             .AppendModifiers(field.Accessibility, field.Modifiers)
@@ -311,15 +327,17 @@ internal static partial class CSharpRenderer
         if (field.Initializer is { } initializer)
         {
             writer.BeginLine().Append(" = ");
-            writer.WriteInline(initializer, options);
+            writer.WriteInline(initializer);
         }
 
         writer.BeginLine().Append(';');
         writer.EndLine();
     }
 
-    private static void RenderEvent(SourceWriter writer, EventDeclaration @event, TypeDeclaration containing, RenderOptions options)
+    private static void RenderEvent(SourceWriter writer, EventDeclaration @event, TypeDeclaration containing)
     {
+        var options = writer.Options;
+
         string what = $"Event '{containing.Name}.{@event.Name}'";
 
         if (@event.Accessors is null && @event.ExplicitInterfaceSpecifier is not null)
@@ -328,7 +346,7 @@ internal static partial class CSharpRenderer
         }
 
         RenderDocumentation(writer, @event.DocumentationComment);
-        RenderAttributes(writer, @event.Attributes, options);
+        RenderAttributes(writer, @event.Attributes);
 
         var head = writer.BeginLine()
             .AppendModifiers(@event.Accessibility, @event.Modifiers)
@@ -353,9 +371,9 @@ internal static partial class CSharpRenderer
         using (writer.Block())
         {
             AppendAccessorHead(writer.BeginLine(), accessors.Add, "add", options);
-            RenderBody(writer, accessors.Add.Body, BodyKind.Accessor, options, returnsValue: false, what);
+            RenderBody(writer, accessors.Add.Body, BodyKind.Accessor, returnsValue: false, what);
             AppendAccessorHead(writer.BeginLine(), accessors.Remove, "remove", options);
-            RenderBody(writer, accessors.Remove.Body, BodyKind.Accessor, options, returnsValue: false, what);
+            RenderBody(writer, accessors.Remove.Body, BodyKind.Accessor, returnsValue: false, what);
         }
     }
 
@@ -383,8 +401,10 @@ internal static partial class CSharpRenderer
     ///     Finishes a declaration whose head has been begun on the current line with its body in whichever form
     ///     the options pick for <paramref name="kind"/>.
     /// </summary>
-    private static void RenderBody(SourceWriter writer, Snippet? body, BodyKind kind, RenderOptions options, bool returnsValue, string what)
+    private static void RenderBody(SourceWriter writer, Snippet? body, BodyKind kind, bool returnsValue, string what)
     {
+        var options = writer.Options;
+
         if (body is { IsExpression: true } expression)
         {
             if (expression.IsEmpty)
@@ -394,7 +414,7 @@ internal static partial class CSharpRenderer
 
             if (Arrow(expression, kind, options))
             {
-                WriteArrow(writer, expression, options);
+                WriteArrow(writer, expression);
                 return;
             }
 
@@ -435,7 +455,7 @@ internal static partial class CSharpRenderer
             writer.EndLine();
             using (writer.Block())
             {
-                writer.WriteSnippet(body, options);
+                writer.WriteSnippet(body);
             }
 
             return;
@@ -500,8 +520,10 @@ internal static partial class CSharpRenderer
     ///     Finishes the current line with <c>=&gt; expression;</c>. A multi-line expression continues indented one
     ///     level under the head.
     /// </summary>
-    private static void WriteArrow(SourceWriter writer, Snippet expression, RenderOptions options)
+    private static void WriteArrow(SourceWriter writer, Snippet expression)
     {
+        var options = writer.Options;
+
         var lines = expression.Lines;
         if (lines.Length == 1)
         {

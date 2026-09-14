@@ -7,17 +7,15 @@ using System.Globalization;
 
 namespace Redeclare;
 
-internal static partial class SymbolReader
+internal sealed partial class SymbolReader
 {
     /// <summary>
     ///     Reads an ordinary method, an explicit implementation, a user-defined operator, a conversion or a finalizer.
     ///     The body is left null. <c>[return: ...]</c> attributes come along with <c>Target</c> set. A finalizer is
     ///     named <c>~Name</c>.
     /// </summary>
-    public static MethodDeclaration ReadMethod(IMethodSymbol method, ReadOptions? options = null)
+    public MethodDeclaration ReadMethod(IMethodSymbol method)
     {
-        options ??= ReadOptions.Default;
-
         if (method.MethodKind is MethodKind.Constructor or MethodKind.StaticConstructor)
         {
             throw new ArgumentException($"'{method.Name}' is a constructor. Use ToConstructorDeclaration.", nameof(method));
@@ -31,16 +29,16 @@ internal static partial class SymbolReader
         var facts = Describe(method);
 
         return new MethodDeclaration(
-            DocumentationComment: ReadDocumentation(method, options),
-            Attributes: ReadAttributes(method, options),
+            DocumentationComment: ReadDocumentation(method),
+            Attributes: ReadAttributes(method),
             Accessibility: ReadMemberAccessibility(facts),
             Modifiers: ReadMemberModifiers(facts),
             ReturnType: ReadTypeReference(method.ReturnType),
             RefKind: method.RefKind,
             Name: ReadMethodName(facts),
             ExplicitInterfaceSpecifier: ReadExplicitInterfaceSpecifier(facts),
-            TypeParameters: ReadTypeParameters(method.TypeParameters, options),
-            Parameters: ReadParameters(method.Parameters, method.IsExtensionMethod, options));
+            TypeParameters: ReadTypeParameters(method.TypeParameters),
+            Parameters: ReadParameters(method.Parameters, method.IsExtensionMethod));
     }
 
     private static MethodName ReadMethodName(MemberFacts facts)
@@ -59,31 +57,27 @@ internal static partial class SymbolReader
     ///     Reads a constructor. The body is an empty block, or none for a <c>partial</c> definition or an <c>extern</c>
     ///     constructor.
     /// </summary>
-    public static ConstructorDeclaration ReadConstructor(IMethodSymbol constructor, ReadOptions? options = null)
+    public ConstructorDeclaration ReadConstructor(IMethodSymbol constructor)
     {
-        options ??= ReadOptions.Default;
-
         if (constructor.MethodKind is not (MethodKind.Constructor or MethodKind.StaticConstructor))
         {
             throw new ArgumentException($"'{constructor.Name}' is not a constructor.", nameof(constructor));
         }
 
         return new ConstructorDeclaration(
-            DocumentationComment: ReadDocumentation(constructor, options),
-            Attributes: ReadAttributes(constructor, options),
+            DocumentationComment: ReadDocumentation(constructor),
+            Attributes: ReadAttributes(constructor),
             Accessibility: constructor.IsStatic ? Accessibility.NotApplicable : constructor.DeclaredAccessibility,
             Modifiers: ReadMemberModifiers(Describe(constructor)),
-            Parameters: ReadParameters(constructor.Parameters, isExtension: false, options),
+            Parameters: ReadParameters(constructor.Parameters, isExtension: false),
             Body: constructor.IsPartialDefinition || constructor.IsExtern ? null : Snippet.Empty);
     }
 
     /// <summary>
     ///     Reads a property or indexer, with auto accessors.
     /// </summary>
-    public static PropertyDeclaration ReadProperty(IPropertySymbol property, ReadOptions? options = null)
+    public PropertyDeclaration ReadProperty(IPropertySymbol property)
     {
-        options ??= ReadOptions.Default;
-
         var facts = Describe(property);
         var modifiers = ReadMemberModifiers(facts);
         if (property.IsRequired)
@@ -97,19 +91,19 @@ internal static partial class SymbolReader
             modifiers |= Modifiers.ReadOnly;
         }
 
-        var getter = property.GetMethod is { } get ? ReadAccessor(get, facts, propertyReadOnly, options) : null;
-        var setter = property.SetMethod is { } set ? ReadAccessor(set, facts, propertyReadOnly, options) : null;
+        var getter = property.GetMethod is { } get ? ReadAccessor(get, facts, propertyReadOnly) : null;
+        var setter = property.SetMethod is { } set ? ReadAccessor(set, facts, propertyReadOnly) : null;
 
         return new PropertyDeclaration(
-            DocumentationComment: ReadDocumentation(property, options),
-            Attributes: ReadAttributes(property, options),
+            DocumentationComment: ReadDocumentation(property),
+            Attributes: ReadAttributes(property),
             Accessibility: ReadMemberAccessibility(facts),
             Modifiers: modifiers,
             Type: ReadTypeReference(property.Type),
             RefKind: property.RefKind,
             Name: property.IsIndexer ? "this" : facts.Declared.Name,
             ExplicitInterfaceSpecifier: ReadExplicitInterfaceSpecifier(facts),
-            Parameters: property.IsIndexer ? ReadParameters(property.Parameters, isExtension: false, options) : default,
+            Parameters: property.IsIndexer ? ReadParameters(property.Parameters, isExtension: false) : default,
             Getter: getter,
             Setter: setter);
     }
@@ -117,10 +111,8 @@ internal static partial class SymbolReader
     /// <summary>
     ///     Reads a field. A constant keeps its value as the initializer.
     /// </summary>
-    public static FieldDeclaration ReadField(IFieldSymbol field, ReadOptions? options = null)
+    public FieldDeclaration ReadField(IFieldSymbol field)
     {
-        options ??= ReadOptions.Default;
-
         if (field.ContainingType is { TypeKind: TypeKind.Enum })
         {
             throw new ArgumentException($"'{field.Name}' is an enum member. Use ToEnumMemberDeclaration.", nameof(field));
@@ -159,8 +151,8 @@ internal static partial class SymbolReader
         var type = field.IsFixedSizeBuffer && field.Type is IPointerTypeSymbol pointer ? pointer.PointedAtType : field.Type;
 
         return new FieldDeclaration(
-            DocumentationComment: ReadDocumentation(field, options),
-            Attributes: ReadAttributes(field, options),
+            DocumentationComment: ReadDocumentation(field),
+            Attributes: ReadAttributes(field),
             Accessibility: field.DeclaredAccessibility,
             Modifiers: modifiers,
             Type: ReadTypeReference(type),
@@ -173,13 +165,11 @@ internal static partial class SymbolReader
     /// <summary>
     ///     Reads an enum member with its value.
     /// </summary>
-    public static EnumMemberDeclaration ReadEnumMember(IFieldSymbol field, ReadOptions? options = null)
+    public EnumMemberDeclaration ReadEnumMember(IFieldSymbol field)
     {
-        options ??= ReadOptions.Default;
-
         return new EnumMemberDeclaration(
-            DocumentationComment: ReadDocumentation(field, options),
-            Attributes: ReadAttributes(field, options),
+            DocumentationComment: ReadDocumentation(field),
+            Attributes: ReadAttributes(field),
             Name: field.Name,
             Value: field.HasConstantValue && field.ConstantValue is { } value
                 ? Snippet.From(Convert.ToString(value, CultureInfo.InvariantCulture) ?? "0")
@@ -190,16 +180,14 @@ internal static partial class SymbolReader
     ///     Reads an event. One with its own accessors comes back with both as shape and no bodies, and an explicit
     ///     interface implementation carries the interface and the bare name.
     /// </summary>
-    public static EventDeclaration ReadEvent(IEventSymbol @event, ReadOptions? options = null)
+    public EventDeclaration ReadEvent(IEventSymbol @event)
     {
-        options ??= ReadOptions.Default;
-
         bool hasAccessors = IsWrittenInSource(@event.AddMethod) || IsWrittenInSource(@event.RemoveMethod);
         var facts = Describe(@event);
 
         return new EventDeclaration(
-            DocumentationComment: ReadDocumentation(@event, options),
-            Attributes: ReadAttributes(@event, options),
+            DocumentationComment: ReadDocumentation(@event),
+            Attributes: ReadAttributes(@event),
             Accessibility: ReadMemberAccessibility(facts),
             Modifiers: ReadMemberModifiers(facts),
             Type: ReadTypeReference(@event.Type),
@@ -211,12 +199,10 @@ internal static partial class SymbolReader
     /// <summary>
     ///     Reads a parameter. <paramref name="isThis"/> marks the receiver of an extension method.
     /// </summary>
-    public static ParameterDeclaration ReadParameter(IParameterSymbol parameter, bool isThis = false, ReadOptions? options = null)
+    public ParameterDeclaration ReadParameter(IParameterSymbol parameter, bool isThis = false)
     {
-        options ??= ReadOptions.Default;
-
         return new ParameterDeclaration(
-            Attributes: ReadAttributes(parameter, options),
+            Attributes: ReadAttributes(parameter),
             RefKind: parameter.RefKind,
             IsParams: parameter.IsParams,
             IsThis: isThis,
@@ -226,23 +212,21 @@ internal static partial class SymbolReader
             Default: parameter.HasExplicitDefaultValue ? FormatConstant(parameter.ExplicitDefaultValue, parameter.Type) : null);
     }
 
-    private static EquatableArray<ParameterDeclaration> ReadParameters(
+    private EquatableArray<ParameterDeclaration> ReadParameters(
         ImmutableArray<IParameterSymbol> parameters,
-        bool isExtension,
-        ReadOptions options)
+        bool isExtension)
     {
         var result = new ParameterDeclaration[parameters.Length];
         for (int i = 0; i < result.Length; i++)
         {
-            result[i] = ReadParameter(parameters[i], isThis: isExtension && i == 0, options);
+            result[i] = ReadParameter(parameters[i], isThis: isExtension && i == 0);
         }
 
         return result;
     }
 
-    private static EquatableArray<TypeParameterDeclaration> ReadTypeParameters(
-        ImmutableArray<ITypeParameterSymbol> typeParameters,
-        ReadOptions options)
+    private EquatableArray<TypeParameterDeclaration> ReadTypeParameters(
+        ImmutableArray<ITypeParameterSymbol> typeParameters)
     {
         var result = new TypeParameterDeclaration[typeParameters.Length];
         for (int i = 0; i < result.Length; i++)
@@ -265,7 +249,7 @@ internal static partial class SymbolReader
                 HasConstructorConstraint: parameter.HasConstructorConstraint,
                 AllowsRefLikeType: parameter.AllowsRefLikeType,
                 ConstraintTypes: constraintTypes,
-                Attributes: ReadAttributes(parameter, options));
+                Attributes: ReadAttributes(parameter));
         }
 
         return result;
@@ -377,13 +361,13 @@ internal static partial class SymbolReader
         };
     }
 
-    private static AccessorDeclaration ReadAccessor(IMethodSymbol accessor, MemberFacts property, bool propertyReadOnly, ReadOptions options)
+    private AccessorDeclaration ReadAccessor(IMethodSymbol accessor, MemberFacts property, bool propertyReadOnly)
     {
         return new AccessorDeclaration(
             Accessibility: ReadAccessorAccessibility(accessor, property),
             IsInitOnly: accessor.IsInitOnly,
             IsReadOnly: !propertyReadOnly && HasWrittenReadOnly(accessor),
-            Attributes: ReadAttributes(accessor, options));
+            Attributes: ReadAttributes(accessor));
     }
 
     /// <summary>
