@@ -186,12 +186,13 @@ The transform is the last place a symbol appears, so an edit elsewhere in the co
 dotnet add package Redeclare.Extensions
 ```
 
-It holds the types C# has a keyword for, a reader for partial parts, and the usings step from above as one call:
+It holds the types C# has a keyword for, a reader for partial parts, the usings step from above as one call, and the argument list that forwards a call:
 
 ```csharp
 var count = new FieldDeclaration(Type: TypeReference.Int32, Name: "_count");
 var part = symbol.ToPart();                    // a new partial part of the type, no members
 var file = unit.WithCollectedUsings(options);  // usings filled for minimal qualification
+var call = Snippet.From($"Inner({method.Parameters.ToArguments()});");  // Inner(ref a, out b, c)
 ```
 
 It also reads the consumer's language version straight from `ParseOptions`, alone or together with the editorconfig:
