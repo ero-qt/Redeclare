@@ -403,8 +403,8 @@ public sealed class SymbolReaderTests
         {
             Assert.That(methods.Count(m => m.Name == "OnLoaded"), Is.EqualTo(1), "a partial pair is one symbol");
             Assert.That(methods.Single(m => m.Name == "OnLoaded").Modifiers, Is.EqualTo(Modifiers.Partial));
-            Assert.That(methods.Single(m => m.Name == "operator +").Modifiers, Is.EqualTo(Modifiers.Static));
-            Assert.That(methods.Single(m => m.Name == "implicit operator").ReturnType, Is.EqualTo(Types.Int32));
+            Assert.That(methods.Single(m => m.Name == new MethodName.Operator("+")).Modifiers, Is.EqualTo(Modifiers.Static));
+            Assert.That(methods.Single(m => m.Name is MethodName.Conversion { IsImplicit: true }).ReturnType, Is.EqualTo(Types.Int32));
         }
     }
 
@@ -501,7 +501,7 @@ public sealed class SymbolReaderTests
 
         using (Assert.EnterMultipleScope())
         {
-            Assert.That(finalizer.Name, Is.EqualTo("~Handle"));
+            Assert.That(finalizer.Name, Is.EqualTo(new MethodName.Destructor()));
             Assert.That(finalizer.Accessibility, Is.EqualTo(Accessibility.NotApplicable));
             Assert.That(finalizer.Modifiers, Is.EqualTo(Modifiers.None));
             Assert.That(text, Does.Contain("    ~Handle();"));
@@ -728,7 +728,7 @@ public sealed class SymbolReaderTests
         using (Assert.EnterMultipleScope())
         {
             Assert.That(whole.Members.OfType<MethodDeclaration>(), Is.Empty, "a record's synthesized members are implicit");
-            Assert.That(withImplicit.Members.OfType<MethodDeclaration>().Select(m => m.Name), Does.Contain("ToString"));
+            Assert.That(withImplicit.Members.OfType<MethodDeclaration>().Select(m => m.Name), Does.Contain((MethodName)"ToString"));
             Assert.That(shape.Members.IsEmpty, Is.True);
             Assert.That(whole.DocumentationComment, Is.Null, "documentation is off unless asked for");
         }

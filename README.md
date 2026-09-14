@@ -57,7 +57,7 @@ Format specifiers pin a hole's qualification: `{type:g}` writes `global::`, `{ty
 
 ## Reading
 
-`ToDeclaration()` reads a type, method, property, field, event, parameter or namespace symbol into the shape the symbol knows: methods without bodies, properties with auto accessors, `partial` only on a partial definition, no `public` on interface members. Operators and conversions read as methods named `operator +` and `implicit operator`. `ToExtensionDeclaration()` reads a C# 14 extension block, `ToConstructorDeclaration()` a constructor and `ToEnumMemberDeclaration()` an enum member. An enum default reads as the member that has the value, and `typeof(List<int>)` in an attribute reads with a hole for the type.
+`ToDeclaration()` reads a type, method, property, field, event, parameter or namespace symbol into the shape the symbol knows: methods without bodies, properties with auto accessors, `partial` only on a partial definition, no `public` on interface members. Operators, conversions and destructors read as methods whose `MethodName` says which they are, and a plain `string` is an identifier. `ToExtensionDeclaration()` reads a C# 14 extension block, `ToConstructorDeclaration()` a constructor and `ToEnumMemberDeclaration()` an enum member. An enum default reads as the member that has the value, and `typeof(List<int>)` in an attribute reads with a hole for the type.
 
 `ReadOptions` decides whether members, attributes, documentation comments and implicitly declared members come along. `ReadOptions.Shape` reads the type alone, which is what a new partial part may repeat.
 

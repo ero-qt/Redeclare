@@ -43,14 +43,14 @@ internal static partial class SymbolReader
             Parameters: ReadParameters(method.Parameters, method.IsExtensionMethod, options));
     }
 
-    private static string ReadMethodName(IMethodSymbol method)
+    private static MethodName ReadMethodName(IMethodSymbol method)
     {
         var declared = method.ExplicitInterfaceImplementations.Length > 0 ? method.ExplicitInterfaceImplementations[0] : method;
 
         return declared.MethodKind switch
         {
             MethodKind.UserDefinedOperator or MethodKind.Conversion => GetOperatorName(declared.Name)!,
-            MethodKind.Destructor => "~" + declared.ContainingType.Name,
+            MethodKind.Destructor => new MethodName.Destructor(),
             _ => declared.Name,
         };
     }

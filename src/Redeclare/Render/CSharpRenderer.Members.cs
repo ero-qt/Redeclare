@@ -115,23 +115,37 @@ internal static partial class CSharpRenderer
             .AppendModifiers(method.Accessibility, method.Modifiers)
             .Append(RefText(method.RefKind, options, what));
 
-        if (IsConversion(method))
+        switch (method.Name)
         {
-            AppendConversionHead(head, method, options);
-        }
-        else if (IsFinalizer(method))
-        {
-            head.Append(method.Name);
-        }
-        else
-        {
-            head.AppendType(method.ReturnType, options).Append(' ');
-            if (method.ExplicitInterfaceSpecifier is { } explicitInterface)
+            case MethodName.Conversion conversion:
             {
-                head.AppendType(explicitInterface, options).Append('.');
+                head.Append(conversion.IsImplicit ? "implicit " : "explicit ")
+                    .AppendExplicitInterface(method.ExplicitInterfaceSpecifier, options)
+                    .Append(conversion.IsChecked ? "operator checked " : "operator ")
+                    .AppendType(method.ReturnType, options);
+                break;
             }
-
-            head.AppendIdentifier(method.Name);
+            case MethodName.Destructor:
+            {
+                head.Append('~').AppendIdentifier(containing.Name);
+                break;
+            }
+            case MethodName.Operator @operator:
+            {
+                head.AppendType(method.ReturnType, options)
+                    .Append(' ')
+                    .AppendExplicitInterface(method.ExplicitInterfaceSpecifier, options)
+                    .Append(@operator.ToString());
+                break;
+            }
+            case MethodName.Ordinary ordinary:
+            {
+                head.AppendType(method.ReturnType, options)
+                    .Append(' ')
+                    .AppendExplicitInterface(method.ExplicitInterfaceSpecifier, options)
+                    .AppendIdentifier(ordinary.Name);
+                break;
+            }
         }
 
         head.AppendTypeParameters(method.TypeParameters, options)
@@ -143,33 +157,9 @@ internal static partial class CSharpRenderer
         RenderBody(writer, method.Body, options.Methods, CSharpVersion.CSharp6, options, ReturnsValue(method), what);
     }
 
-    private static bool IsFinalizer(MethodDeclaration method)
+    private static StringBuilder AppendExplicitInterface(this StringBuilder text, TypeReference? explicitInterface, RenderOptions options)
     {
-        return method.Name.StartsWith("~", StringComparison.Ordinal);
-    }
-
-    private static bool IsConversion(MethodDeclaration method)
-    {
-        return method.Name is "implicit operator" or "explicit operator" or "explicit operator checked";
-    }
-
-    /// <summary>
-    ///     Appends <c>implicit IFoo.operator Target</c>: the keyword, the interface of an explicit implementation,
-    ///     then <c>operator</c> and the target type where a method has its name.
-    /// </summary>
-    private static void AppendConversionHead(StringBuilder head, MethodDeclaration method, RenderOptions options)
-    {
-        int split = method.Name.IndexOf(' ') + 1;
-        string keyword = method.Name.Substring(0, split);
-        string rest = method.Name.Substring(split);
-
-        head.Append(keyword);
-        if (method.ExplicitInterfaceSpecifier is { } explicitInterface)
-        {
-            head.AppendType(explicitInterface, options).Append('.');
-        }
-
-        head.Append(rest).Append(' ').AppendType(method.ReturnType, options);
+        return explicitInterface is null ? text : text.AppendType(explicitInterface, options).Append('.');
     }
 
     private static bool ReturnsValue(MethodDeclaration method)
