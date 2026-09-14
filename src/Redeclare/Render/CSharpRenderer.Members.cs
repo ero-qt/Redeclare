@@ -423,6 +423,7 @@ internal static partial class CSharpRenderer
             using (writer.Block())
             {
                 var lines = expression.Lines;
+                int hole = 0;
                 for (int i = 0; i < lines.Length; i++)
                 {
                     if (lines[i].Length == 0)
@@ -437,7 +438,7 @@ internal static partial class CSharpRenderer
                         text.Append("return ");
                     }
 
-                    text.AppendSnippetLine(lines[i], expression.Holes, options);
+                    text.AppendSnippetLine(lines[i], expression.Holes, ref hole, options);
                     if (i == lines.Length - 1)
                     {
                         text.Append(';');
@@ -525,9 +526,10 @@ internal static partial class CSharpRenderer
         var options = writer.Options;
 
         var lines = expression.Lines;
+        int hole = 0;
         if (lines.Length == 1)
         {
-            writer.BeginLine().Append(" => ").AppendSnippetLine(lines[0], expression.Holes, options).Append(';');
+            writer.BeginLine().Append(" => ").AppendSnippetLine(lines[0], expression.Holes, ref hole, options).Append(';');
             writer.EndLine();
             return;
         }
@@ -543,7 +545,7 @@ internal static partial class CSharpRenderer
                 continue;
             }
 
-            var text = writer.BeginLine().AppendSnippetLine(lines[i], expression.Holes, options);
+            var text = writer.BeginLine().AppendSnippetLine(lines[i], expression.Holes, ref hole, options);
             if (i == lines.Length - 1)
             {
                 text.Append(';');

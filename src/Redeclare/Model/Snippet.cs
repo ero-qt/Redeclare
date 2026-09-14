@@ -1,6 +1,5 @@
 using System;
 using System.Collections.Generic;
-using System.Globalization;
 using System.Text;
 
 namespace Redeclare;
@@ -30,15 +29,10 @@ namespace Redeclare;
 internal sealed record Snippet
 {
     /// <summary>
-    ///     Marks the start of a hole in a line. The hole's index follows, then <see cref="HoleEnd"/>. Both are
-    ///     control characters, which no C# source contains.
+    ///     Marks a hole in a line. The n-th mark in the text is <c>Holes[n]</c>. It is a control character, which
+    ///     no C# source contains.
     /// </summary>
-    internal const char HoleStart = '\u0001';
-
-    /// <summary>
-    ///     Marks the end of a hole.
-    /// </summary>
-    internal const char HoleEnd = '\u0002';
+    internal const char HoleMark = '\u0001';
 
     private Snippet(EquatableArray<string> lines, EquatableArray<SnippetHole> holes, bool isExpression = false)
     {
@@ -101,7 +95,7 @@ internal sealed record Snippet
     /// </summary>
     public static Snippet From(TypeReference type, HoleFormat format = HoleFormat.Inherit)
     {
-        return new([HoleText(0)], [new SnippetHole(Type: type, Format: format)]);
+        return new([HoleMark.ToString()], [new SnippetHole(Type: type, Format: format)]);
     }
 
     /// <summary>
@@ -164,7 +158,7 @@ internal sealed record Snippet
     }
 
     /// <summary>
-    ///     Concatenates snippets line-wise, renumbering holes. The result is statements.
+    ///     Concatenates snippets line-wise. The result is statements.
     /// </summary>
     public static Snippet Concat(IEnumerable<Snippet> parts)
     {
@@ -172,12 +166,7 @@ internal sealed record Snippet
         List<SnippetHole> holes = [];
         foreach (var part in parts)
         {
-            int offset = holes.Count;
-            foreach (var line in part.Lines)
-            {
-                lines.Add(offset == 0 ? line : Renumber(line, offset));
-            }
-
+            lines.AddRange(part.Lines);
             holes.AddRange(part.Holes);
         }
 
@@ -228,61 +217,6 @@ internal sealed record Snippet
     internal static Snippet Build(string text, List<SnippetHole> holes)
     {
         return new(Dedent(text), holes.ToEquatableArray());
-    }
-
-    /// <summary>
-    ///     Encodes a hole reference for the given index.
-    /// </summary>
-    internal static string HoleText(int index)
-    {
-        return HoleStart + index.ToString(CultureInfo.InvariantCulture) + HoleEnd;
-    }
-
-    /// <summary>
-    ///     Reads the index between a <see cref="HoleStart"/> at <paramref name="start"/> and the
-    ///     <see cref="HoleEnd"/> at <paramref name="end"/>.
-    /// </summary>
-    internal static int HoleIndex(string line, int start, int end)
-    {
-        int index = 0;
-        for (int i = start + 1; i < end; i++)
-        {
-            index = (index * 10) + (line[i] - '0');
-        }
-
-        return index;
-    }
-
-    /// <summary>
-    ///     Shifts every hole index in a line by <paramref name="offset"/>, for splicing.
-    /// </summary>
-    internal static string Renumber(string line, int offset)
-    {
-        int start = line.IndexOf(HoleStart);
-        if (start < 0)
-        {
-            return line;
-        }
-
-        StringBuilder text = new(line.Length + 4);
-        int position = 0;
-        while (start >= 0)
-        {
-            int end = line.IndexOf(HoleEnd, start);
-            if (end < 0)
-            {
-                break;
-            }
-
-            text.Append(line, position, start - position)
-                .Append(HoleStart)
-                .Append(HoleIndex(line, start, end) + offset)
-                .Append(HoleEnd);
-            position = end + 1;
-            start = line.IndexOf(HoleStart, position);
-        }
-
-        return text.Append(line, position, line.Length - position).ToString();
     }
 
     /// <summary>

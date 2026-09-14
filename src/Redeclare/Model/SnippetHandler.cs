@@ -57,7 +57,7 @@ internal readonly ref struct SnippetHandler
             _ => HoleFormat.Inherit,
         };
 
-        _text.Append(Snippet.HoleText(_holes.Count));
+        _text.Append(Snippet.HoleMark);
         _holes.Add(new SnippetHole(Type: type, Format: holeFormat));
     }
 
@@ -68,7 +68,6 @@ internal readonly ref struct SnippetHandler
     public void AppendFormatted(Snippet snippet)
     {
         var lines = snippet.Lines;
-        int offset = _holes.Count;
         var indent = lines.Length > 1 ? CurrentIndent() : "";
 
         for (int i = 0; i < lines.Length; i++)
@@ -82,7 +81,7 @@ internal readonly ref struct SnippetHandler
                 }
             }
 
-            _text.Append(offset == 0 ? lines[i] : Snippet.Renumber(lines[i], offset));
+            _text.Append(lines[i]);
         }
 
         _holes.AddRange(snippet.Holes);
