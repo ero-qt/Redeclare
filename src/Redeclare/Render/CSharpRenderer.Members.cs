@@ -154,7 +154,7 @@ internal static partial class CSharpRenderer
             .Append(')')
             .AppendConstraints(method.TypeParameters, options, what);
 
-        RenderBody(writer, method.Body, options.Methods, CSharpVersion.CSharp6, options, ReturnsValue(method), what);
+        RenderBody(writer, method.Body, BodyKind.Method, options, ReturnsValue(method), what);
     }
 
     private static StringBuilder AppendExplicitInterface(this StringBuilder text, TypeReference? explicitInterface, RenderOptions options)
@@ -188,7 +188,7 @@ internal static partial class CSharpRenderer
             head.Append(" : ").AppendSnippet(initializer, options);
         }
 
-        RenderBody(writer, constructor.Body, options.Constructors, CSharpVersion.CSharp7, options, returnsValue: false, what);
+        RenderBody(writer, constructor.Body, BodyKind.Constructor, options, returnsValue: false, what);
     }
 
     private static void RenderProperty(SourceWriter writer, PropertyDeclaration property, TypeDeclaration containing, RenderOptions options)
@@ -236,8 +236,8 @@ internal static partial class CSharpRenderer
             head.AppendIdentifier(property.Name);
         }
 
-        var preference = property.IsIndexer ? options.Indexers : options.Properties;
-        if (setter is null && getter is { Body: { IsExpression: true } expression } && Arrow(expression, preference, CSharpVersion.CSharp6, options))
+        var kind = property.IsIndexer ? BodyKind.Indexer : BodyKind.Property;
+        if (setter is null && getter is { Body: { IsExpression: true } expression } && Arrow(expression, kind, options))
         {
             WriteArrow(writer, expression, options);
             return;
@@ -274,13 +274,13 @@ internal static partial class CSharpRenderer
             if (getter is not null)
             {
                 AppendAccessorHead(writer.BeginLine(), getter, "get", options);
-                RenderBody(writer, getter.Body, options.Accessors, CSharpVersion.CSharp7, options, returnsValue: true, what);
+                RenderBody(writer, getter.Body, BodyKind.Accessor, options, returnsValue: true, what);
             }
 
             if (setter is not null)
             {
                 AppendAccessorHead(writer.BeginLine(), setter, setter.IsInitOnly ? "init" : "set", options);
-                RenderBody(writer, setter.Body, options.Accessors, CSharpVersion.CSharp7, options, returnsValue: false, what);
+                RenderBody(writer, setter.Body, BodyKind.Accessor, options, returnsValue: false, what);
             }
         }
     }
@@ -353,9 +353,9 @@ internal static partial class CSharpRenderer
         using (writer.Block())
         {
             AppendAccessorHead(writer.BeginLine(), accessors.Add, "add", options);
-            RenderBody(writer, accessors.Add.Body, options.Accessors, CSharpVersion.CSharp7, options, returnsValue: false, what);
+            RenderBody(writer, accessors.Add.Body, BodyKind.Accessor, options, returnsValue: false, what);
             AppendAccessorHead(writer.BeginLine(), accessors.Remove, "remove", options);
-            RenderBody(writer, accessors.Remove.Body, options.Accessors, CSharpVersion.CSharp7, options, returnsValue: false, what);
+            RenderBody(writer, accessors.Remove.Body, BodyKind.Accessor, options, returnsValue: false, what);
         }
     }
 
@@ -381,17 +381,9 @@ internal static partial class CSharpRenderer
 
     /// <summary>
     ///     Finishes a declaration whose head has been begun on the current line with its body in whichever form
-    ///     the options pick. An arrow needs <paramref name="arrowSince"/>: C# 6 for methods and properties, C# 7
-    ///     for accessors and constructors.
+    ///     the options pick for <paramref name="kind"/>.
     /// </summary>
-    private static void RenderBody(
-        SourceWriter writer,
-        Snippet? body,
-        ExpressionBodyPreference preference,
-        CSharpVersion arrowSince,
-        RenderOptions options,
-        bool returnsValue,
-        string what)
+    private static void RenderBody(SourceWriter writer, Snippet? body, BodyKind kind, RenderOptions options, bool returnsValue, string what)
     {
         if (body is { IsExpression: true } expression)
         {
@@ -400,7 +392,7 @@ internal static partial class CSharpRenderer
                 throw new RenderException($"{what} has an expression body with no expression. Use Snippet.Empty as a block body for an empty one.");
             }
 
-            if (Arrow(expression, preference, arrowSince, options))
+            if (Arrow(expression, kind, options))
             {
                 WriteArrow(writer, expression, options);
                 return;
@@ -463,8 +455,34 @@ internal static partial class CSharpRenderer
         return first.StartsWith("throw ", StringComparison.Ordinal);
     }
 
-    private static bool Arrow(Snippet expression, ExpressionBodyPreference preference, CSharpVersion since, RenderOptions options)
+    /// <summary>
+    ///     The kinds of member a body belongs to. Each has its own expression body preference in the options and its
+    ///     own C# version for the arrow: 6 for methods and properties, 7 for constructors and accessors.
+    /// </summary>
+    private enum BodyKind
     {
+        Method,
+        Constructor,
+        Property,
+        Indexer,
+        Accessor,
+    }
+
+    private static (ExpressionBodyPreference Preference, CSharpVersion ArrowSince) ArrowRule(RenderOptions options, BodyKind kind)
+    {
+        return kind switch
+        {
+            BodyKind.Method => (options.Methods, CSharpVersion.CSharp6),
+            BodyKind.Constructor => (options.Constructors, CSharpVersion.CSharp7),
+            BodyKind.Property => (options.Properties, CSharpVersion.CSharp6),
+            BodyKind.Indexer => (options.Indexers, CSharpVersion.CSharp6),
+            _ => (options.Accessors, CSharpVersion.CSharp7),
+        };
+    }
+
+    private static bool Arrow(Snippet expression, BodyKind kind, RenderOptions options)
+    {
+        var (preference, since) = ArrowRule(options, kind);
         if (!options.Allows(since))
         {
             return false;
