@@ -109,7 +109,7 @@ internal static partial class CSharpRenderer
     ///     <c>RefKind.RefReadOnly</c> and <c>RefKind.In</c> are the same value. On a return it means
     ///     <c>ref readonly</c>.
     /// </summary>
-    private static string RefText(RefKind refKind, RenderOptions options, string what)
+    private static string RefText(RefKind refKind, string what)
     {
         switch (refKind)
         {
@@ -135,7 +135,7 @@ internal static partial class CSharpRenderer
     /// <summary>
     ///     The <c>ref</c>, <c>out</c>, <c>in</c> or <c>ref readonly</c> a parameter carries, with its space.
     /// </summary>
-    private static string ParameterRefText(RefKind refKind, RenderOptions options, string what)
+    private static string ParameterRefText(RefKind refKind, string what)
     {
         switch (refKind)
         {
@@ -217,7 +217,7 @@ internal static partial class CSharpRenderer
                 text.Append("scoped ");
             }
 
-            text.Append(ParameterRefText(parameter.RefKind, options, what));
+            text.Append(ParameterRefText(parameter.RefKind, what));
 
             if (parameter.IsParams)
             {

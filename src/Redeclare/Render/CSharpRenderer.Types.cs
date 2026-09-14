@@ -225,12 +225,12 @@ internal static partial class CSharpRenderer
         text.Append('<');
         foreach (var parameter in type.Parameters)
         {
-            text.Append(ParameterRefText(parameter.RefKind, options, "A function pointer parameter"))
+            text.Append(ParameterRefText(parameter.RefKind, "A function pointer parameter"))
                 .AppendType(parameter.Type, options)
                 .Append(", ");
         }
 
-        return text.Append(RefText(type.RefKind, options, "A function pointer return"))
+        return text.Append(RefText(type.RefKind, "A function pointer return"))
             .AppendType(type.ReturnType, options)
             .Append('>');
     }

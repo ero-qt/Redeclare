@@ -52,7 +52,7 @@ internal static partial class CSharpRenderer
             head.Append("scoped ");
         }
 
-        head.Append(ParameterRefText(receiver.RefKind, options, what)).AppendType(receiver.Type, options);
+        head.Append(ParameterRefText(receiver.RefKind, what)).AppendType(receiver.Type, options);
         if (receiver.Name.Length > 0)
         {
             head.Append(' ').AppendIdentifier(receiver.Name);
@@ -113,7 +113,7 @@ internal static partial class CSharpRenderer
 
         var head = writer.BeginLine()
             .AppendModifiers(method.Accessibility, method.Modifiers)
-            .Append(RefText(method.RefKind, options, what));
+            .Append(RefText(method.RefKind, what));
 
         switch (method.Name)
         {
@@ -219,7 +219,7 @@ internal static partial class CSharpRenderer
 
         var head = writer.BeginLine()
             .AppendModifiers(property.Accessibility, property.Modifiers)
-            .Append(RefText(property.RefKind, options, what))
+            .Append(RefText(property.RefKind, what))
             .AppendType(property.Type, options)
             .Append(' ');
         if (property.ExplicitInterfaceSpecifier is { } explicitInterface)
@@ -294,7 +294,7 @@ internal static partial class CSharpRenderer
 
         var head = writer.BeginLine()
             .AppendModifiers(field.Accessibility, field.Modifiers)
-            .Append(RefText(field.RefKind, options, what));
+            .Append(RefText(field.RefKind, what));
         if (field.FixedSize > 0)
         {
             head.Append("fixed ");
