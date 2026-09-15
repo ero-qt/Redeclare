@@ -66,7 +66,7 @@ public sealed class ConfigOptionsTests
     }
 
     [Test]
-    public void MsBuildProperty_Forwarded_ReadsWithThePrefix()
+    public void MSBuildProperty_Forwarded_ReadsWithThePrefix()
     {
         var config = new FakeConfig
         {
@@ -77,15 +77,15 @@ public sealed class ConfigOptionsTests
 
         using (Assert.EnterMultipleScope())
         {
-            Assert.That(config.MsBuildProperty("RootNamespace"), Is.EqualTo("Acme"));
-            Assert.That(config.MsBuildProperty("Empty"), Is.Null, "an empty property reads as absent");
-            Assert.That(config.MsBuildProperty("Missing"), Is.Null);
-            Assert.That(config.MsBuildMetadata("AdditionalFiles", "Kind"), Is.EqualTo("schema"));
+            Assert.That(config.MSBuildProperty("RootNamespace"), Is.EqualTo("Acme"));
+            Assert.That(config.MSBuildProperty("Empty"), Is.Null, "an empty property reads as absent");
+            Assert.That(config.MSBuildProperty("Missing"), Is.Null);
+            Assert.That(config.MSBuildMetadata("AdditionalFiles", "Kind"), Is.EqualTo("schema"));
         }
     }
 
     [Test]
-    public void MsBuildTyped_Forwarded_ConvertsAsMsBuildDoes()
+    public void MSBuildTyped_Forwarded_ConvertsAsMSBuildDoes()
     {
         var config = new FakeConfig
         {
@@ -98,14 +98,14 @@ public sealed class ConfigOptionsTests
 
         using (Assert.EnterMultipleScope())
         {
-            Assert.That(config.MsBuildBoolean("Enabled"), Is.True);
-            Assert.That(config.MsBuildBoolean("Bad"), Is.Null);
-            Assert.That(config.MsBuildInt32("Count"), Is.EqualTo(12));
-            Assert.That(config.MsBuildInt32("Bad"), Is.Null);
-            Assert.That(config.MsBuildEnum<Level>("Level"), Is.EqualTo(Level.High));
-            Assert.That(config.MsBuildEnum<Level>("Bad"), Is.Null);
-            Assert.That(config.MsBuildList("Names"), Is.EqualTo((EquatableArray<string>)["a", "b", "c"]));
-            Assert.That(config.MsBuildList("Missing").IsEmpty, Is.True);
+            Assert.That(config.MSBuildBoolean("Enabled"), Is.True);
+            Assert.That(config.MSBuildBoolean("Bad"), Is.Null);
+            Assert.That(config.MSBuildInt32("Count"), Is.EqualTo(12));
+            Assert.That(config.MSBuildInt32("Bad"), Is.Null);
+            Assert.That(config.MSBuildEnum<Level>("Level"), Is.EqualTo(Level.High));
+            Assert.That(config.MSBuildEnum<Level>("Bad"), Is.Null);
+            Assert.That(config.MSBuildList("Names"), Is.EqualTo((EquatableArray<string>)["a", "b", "c"]));
+            Assert.That(config.MSBuildList("Missing").IsEmpty, Is.True);
         }
     }
 

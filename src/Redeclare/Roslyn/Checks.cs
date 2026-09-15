@@ -126,7 +126,7 @@ internal static class Checks
     ///     suffixes, nested ones after <c>+</c>. What <c>GetTypeByMetadataName</c> takes. For messages and lookups,
     ///     not for comparison.
     /// </summary>
-    public static string FullMetadataName(this INamedTypeSymbol type)
+    public static string GetFullMetadataName(this INamedTypeSymbol type)
     {
         List<string> parts = [];
         var outermost = type;
@@ -147,7 +147,7 @@ internal static class Checks
     ///     The targets an attribute class allows, from its <c>[AttributeUsage]</c>, inherited ones included.
     ///     <c>AttributeTargets.All</c> when it declares none.
     /// </summary>
-    public static AttributeTargets ValidTargets(this INamedTypeSymbol attributeClass, Compilation compilation)
+    public static AttributeTargets GetValidTargets(this INamedTypeSymbol attributeClass, Compilation compilation)
     {
         var usage = Usage(attributeClass, compilation);
 
@@ -181,7 +181,7 @@ internal static class Checks
     ///     The <c>AttributeTargets</c> flag a symbol counts as, or <see langword="null"/> for a symbol no attribute
     ///     targets.
     /// </summary>
-    public static AttributeTargets? AttributeTarget(this ISymbol symbol)
+    public static AttributeTargets? GetAttributeTarget(this ISymbol symbol)
     {
         return symbol switch
         {
@@ -208,12 +208,12 @@ internal static class Checks
     /// </summary>
     public static bool IsValidOn(this AttributeData attribute, ISymbol target, Compilation compilation)
     {
-        if (attribute.AttributeClass is not { } attributeClass || target.AttributeTarget() is not { } kind)
+        if (attribute.AttributeClass is not { } attributeClass || target.GetAttributeTarget() is not { } kind)
         {
             return false;
         }
 
-        return (attributeClass.ValidTargets(compilation) & kind) == kind;
+        return (attributeClass.GetValidTargets(compilation) & kind) == kind;
     }
 
     /// <summary>

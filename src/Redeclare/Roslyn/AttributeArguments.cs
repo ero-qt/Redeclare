@@ -104,7 +104,7 @@ internal readonly struct AttributeArguments
     /// <summary>
     ///     The constructor argument for <paramref name="parameterName"/>, or <paramref name="fallback"/>.
     /// </summary>
-    public T ConstructorArgument<T>(string parameterName, T fallback = default!)
+    public T GetConstructorArgument<T>(string parameterName, T fallback = default!)
     {
         return TryGetConstructorArgument<T>(parameterName, out var value) ? value : fallback;
     }
@@ -112,7 +112,7 @@ internal readonly struct AttributeArguments
     /// <summary>
     ///     The constructor argument at <paramref name="position"/>, or <paramref name="fallback"/>.
     /// </summary>
-    public T ConstructorArgument<T>(int position, T fallback = default!)
+    public T GetConstructorArgument<T>(int position, T fallback = default!)
     {
         var arguments = Data.ConstructorArguments;
         if (position < 0 || position >= arguments.Length)
@@ -128,7 +128,7 @@ internal readonly struct AttributeArguments
     /// <summary>
     ///     The named argument for <paramref name="propertyName"/>, or <paramref name="fallback"/>.
     /// </summary>
-    public T NamedArgument<T>(string propertyName, T fallback = default!)
+    public T GetNamedArgument<T>(string propertyName, T fallback = default!)
     {
         return TryGetNamedArgument<T>(propertyName, out var value) ? value : fallback;
     }
@@ -136,7 +136,7 @@ internal readonly struct AttributeArguments
     /// <summary>
     ///     A constructor argument that is an array, element by element. Empty when absent or not an array.
     /// </summary>
-    public EquatableArray<T> ConstructorArray<T>(string parameterName)
+    public EquatableArray<T> GetConstructorArray<T>(string parameterName)
     {
         return TryFindConstructorConstant(parameterName, out var constant) ? ConvertElements<T>(constant) : default;
     }
@@ -144,7 +144,7 @@ internal readonly struct AttributeArguments
     /// <summary>
     ///     A named argument that is an array, element by element. Empty when absent or not an array.
     /// </summary>
-    public EquatableArray<T> NamedArray<T>(string propertyName)
+    public EquatableArray<T> GetNamedArray<T>(string propertyName)
     {
         return TryFindNamed(propertyName, out var constant) ? ConvertElements<T>(constant) : default;
     }
@@ -152,7 +152,7 @@ internal readonly struct AttributeArguments
     /// <summary>
     ///     The constructor argument as a C# expression, for passing through into generated code.
     /// </summary>
-    public Snippet? ConstructorExpression(string parameterName)
+    public Snippet? GetConstructorExpression(string parameterName)
     {
         if (TryFindConstructorConstant(parameterName, out var constant))
         {
@@ -167,7 +167,7 @@ internal readonly struct AttributeArguments
     /// <summary>
     ///     The named argument as a C# expression, for passing through into generated code.
     /// </summary>
-    public Snippet? NamedExpression(string propertyName)
+    public Snippet? GetNamedExpression(string propertyName)
     {
         return TryFindNamed(propertyName, out var constant) ? SymbolReader.FormatConstant(constant) : null;
     }

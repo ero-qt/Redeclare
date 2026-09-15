@@ -87,6 +87,7 @@ var type = symbol.ToDeclaration();                         // TypeDeclaration, D
 var method = methodSymbol.ToDeclaration();                 // MethodDeclaration, body left null
 var constructor = ctorSymbol.ToConstructorDeclaration();   // an IMethodSymbol, so it needs its own name
 var value = fieldSymbol.ToEnumMemberDeclaration();         // an IFieldSymbol, same reason
+var member = ((ISymbol)ctorSymbol).ToDeclaration();        // MemberDeclaration, picked by kind: here a ConstructorDeclaration
 ```
 
 When you know what kind of named type you have, `symbol.ToTypeDeclaration()`, `symbol.ToDelegateDeclaration()` and `symbol.ToExtensionDeclaration()` give that record back.
@@ -105,10 +106,10 @@ Attributes are found by class symbol. Resolve the class once, then ask a symbol 
 ```csharp
 var attribute = compilation.GetTypeByMetadataName("My.MarkAttribute")!;
 var arguments = symbol.GetAttribute(attribute)?.GetArguments();   // by name, with the parameter's default when left out
-var name = arguments?.ConstructorExpression("name");               // the argument back as C#
+var name = arguments?.GetConstructorExpression("name");           // the argument back as C#
 ```
 
-Symbols also answer the questions a generator asks before it acts: `type.IsPartial()`, `type.IsPartialThroughout()`, `type.Is(other)`, `type.InheritsFrom(other)`, `type.Implements(other)`, `type.FullMetadataName()`, and `attribute.IsValidOn(symbol, compilation)`.
+Symbols also answer the questions a generator asks before it acts: `type.IsPartial()`, `type.IsPartialThroughout()`, `type.Is(other)`, `type.InheritsFrom(other)`, `type.Implements(other)`, `type.GetFullMetadataName()`, and `attribute.IsValidOn(symbol, compilation)`.
 
 ## Rendering
 

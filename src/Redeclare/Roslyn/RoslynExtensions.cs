@@ -1,6 +1,7 @@
 using Microsoft.CodeAnalysis;
 using Microsoft.CodeAnalysis.CSharp;
 using Microsoft.CodeAnalysis.Text;
+using System;
 using System.Text;
 
 namespace Redeclare;
@@ -11,6 +12,18 @@ namespace Redeclare;
 /// </summary>
 internal static class RoslynExtensions
 {
+    /// <summary>
+    ///     Reads any symbol that declares a member into whichever declaration it is, the way
+    ///     <see cref="TypeDeclaration.Members"/> is read: a type, delegate, extension block, method, constructor,
+    ///     operator, property, field, enum member or event. A symbol with no declaration of its own, such as a
+    ///     property's getter or a parameter, is an <see cref="ArgumentException"/>.
+    /// </summary>
+    public static MemberDeclaration ToDeclaration(this ISymbol symbol, ReadOptions? options = null)
+    {
+        return SymbolReader.Create(options).ReadMember(symbol)
+            ?? throw new ArgumentException($"'{symbol.Name}' is not a member declaration.", nameof(symbol));
+    }
+
     /// <summary>
     ///     Reads a named type symbol into whichever declaration it is: a <see cref="TypeDeclaration"/>, a
     ///     <see cref="DelegateDeclaration"/> or an <see cref="ExtensionDeclaration"/>. The three <c>To*Declaration</c>
