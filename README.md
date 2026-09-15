@@ -106,10 +106,10 @@ Attributes are found by class symbol. Resolve the class once, then ask a symbol 
 ```csharp
 var attribute = compilation.GetTypeByMetadataName("My.MarkAttribute")!;
 var arguments = symbol.GetAttribute(attribute)?.GetArguments();   // by name, with the parameter's default when left out
-var name = arguments?.ConstructorExpression("name");               // the argument back as C#
+var name = arguments?.GetConstructorExpression("name");           // the argument back as C#
 ```
 
-Symbols also answer the questions a generator asks before it acts: `type.IsPartial()`, `type.IsPartialThroughout()`, `type.Is(other)`, `type.InheritsFrom(other)`, `type.Implements(other)`, `type.FullMetadataName()`, and `attribute.IsValidOn(symbol, compilation)`.
+Symbols also answer the questions a generator asks before it acts: `type.IsPartial()`, `type.IsPartialThroughout()`, `type.Is(other)`, `type.InheritsFrom(other)`, `type.Implements(other)`, `type.GetFullMetadataName()`, and `attribute.IsValidOn(symbol, compilation)`.
 
 ## Rendering
 

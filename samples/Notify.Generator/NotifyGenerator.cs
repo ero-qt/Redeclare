@@ -126,7 +126,7 @@ public sealed class NotifyGenerator : IIncrementalGenerator
                 HasEvent: type.GetMembers("PropertyChanged").Length > 0,
                 HasRaiseMethod: type.GetMembers("OnPropertyChanged").Length > 0),
             Field: declaration,
-            PropertyName: context.Attributes[0].GetArguments().NamedArgument<string>("PropertyName") ?? PropertyNameFor(declaration.Name));
+            PropertyName: context.Attributes[0].GetArguments().GetNamedArgument<string>("PropertyName") ?? PropertyNameFor(declaration.Name));
     }
 
     private static string PropertyNameFor(string fieldName)

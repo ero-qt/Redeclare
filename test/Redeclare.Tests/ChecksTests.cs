@@ -124,8 +124,8 @@ public sealed class ChecksTests
 
         using (Assert.EnterMultipleScope())
         {
-            Assert.That(nested.FullMetadataName(), Is.EqualTo("Fixture.Derived+Nested`1"));
-            Assert.That(Compilation.GetTypeByMetadataName(nested.FullMetadataName()), Is.SameAs(nested));
+            Assert.That(nested.GetFullMetadataName(), Is.EqualTo("Fixture.Derived+Nested`1"));
+            Assert.That(Compilation.GetTypeByMetadataName(nested.GetFullMetadataName()), Is.SameAs(nested));
         }
     }
 
@@ -139,11 +139,11 @@ public sealed class ChecksTests
 
         using (Assert.EnterMultipleScope())
         {
-            Assert.That(onTypesClass.ValidTargets(Compilation), Is.EqualTo(AttributeTargets.Class | AttributeTargets.Struct));
+            Assert.That(onTypesClass.GetValidTargets(Compilation), Is.EqualTo(AttributeTargets.Class | AttributeTargets.Struct));
             Assert.That(onTypes.IsValidOn(whole, Compilation), Is.True);
             Assert.That(onTypes.IsValidOn(method, Compilation), Is.False);
-            Assert.That(Compilation.Type("Fixture.OnMethodsAttribute").ValidTargets(Compilation), Is.EqualTo(AttributeTargets.Method));
-            Assert.That(Compilation.Type("Fixture.AnywhereAttribute").ValidTargets(Compilation), Is.EqualTo(AttributeTargets.All), "no usage means all");
+            Assert.That(Compilation.Type("Fixture.OnMethodsAttribute").GetValidTargets(Compilation), Is.EqualTo(AttributeTargets.Method));
+            Assert.That(Compilation.Type("Fixture.AnywhereAttribute").GetValidTargets(Compilation), Is.EqualTo(AttributeTargets.All), "no usage means all");
         }
     }
 
@@ -164,8 +164,8 @@ public sealed class ChecksTests
 
         using (Assert.EnterMultipleScope())
         {
-            Assert.That(whole.AttributeTarget(), Is.EqualTo(AttributeTargets.Class));
-            Assert.That(whole.GetMembers("Full").Single().AttributeTarget(), Is.EqualTo(AttributeTargets.Method));
+            Assert.That(whole.GetAttributeTarget(), Is.EqualTo(AttributeTargets.Class));
+            Assert.That(whole.GetMembers("Full").Single().GetAttributeTarget(), Is.EqualTo(AttributeTargets.Method));
         }
     }
 }

@@ -93,7 +93,7 @@ public sealed class EnumHelpersGenerator : IIncrementalGenerator
             Enum: symbol.ToTypeDeclaration(new ReadOptions(IncludeAttributes: false)),
             Namespace: symbol.ContainingNamespace.ToDeclaration(),
             Type: symbol.ToTypeReference(),
-            ClassName: context.Attributes[0].GetArguments().NamedArgument<string>("ClassName") ?? (symbol.Name + "Extensions"));
+            ClassName: context.Attributes[0].GetArguments().GetNamedArgument<string>("ClassName") ?? (symbol.Name + "Extensions"));
     }
 
     private static CompilationUnit Render(EnumInfo info)

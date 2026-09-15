@@ -115,12 +115,12 @@ public sealed class ImplementGenerator : IIncrementalGenerator
         var arguments = ctx.Attributes[0].GetArguments();
 
         // The name is only ever written back out, so it comes through as the literal the consumer wrote.
-        var variable = arguments.ConstructorExpression("name") ?? Snippet.From($"{symbol.Name:L}");
+        var variable = arguments.GetConstructorExpression("name") ?? Snippet.From($"{symbol.Name:L}");
 
         var implementation = symbol.ToDeclaration(ReadOptions.Signature)
             .WithBodies(
                 getter: Snippet.Expression($"{_environment}.GetEnvironmentVariable({variable})"),
-                setter: arguments.NamedArgument<bool>("Settable")
+                setter: arguments.GetNamedArgument<bool>("Settable")
                     ? Snippet.Expression($"{_environment}.SetEnvironmentVariable({variable}, value)")
                     : null);
 
