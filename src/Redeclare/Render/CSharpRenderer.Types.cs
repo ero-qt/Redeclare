@@ -105,8 +105,8 @@ internal static partial class CSharpRenderer
     }
 
     /// <summary>
-    ///     Whether the type is written as its keyword. <c>nint</c> and <c>nuint</c> are C# 9. Below that, we need
-    ///     to use <c>IntPtr</c> and <c>UIntPtr</c> explicitly.
+    ///     Checks whether the type is written as its keyword. <c>nint</c> and <c>nuint</c> need C# 9. Below that, the
+    ///     renderer writes <c>IntPtr</c> and <c>UIntPtr</c>.
     /// </summary>
     private static bool WritesKeyword(NamedTypeReference type, RenderOptions options)
     {
@@ -236,7 +236,7 @@ internal static partial class CSharpRenderer
     }
 
     /// <summary>
-    ///     The name C# puts inside <c>unmanaged[...]</c> for a convention the metadata names by enum.
+    ///     Gets the name C# puts inside <c>unmanaged[...]</c> for a calling convention the metadata names by enum.
     /// </summary>
     private static string CallingConventionName(SignatureCallingConvention convention)
     {

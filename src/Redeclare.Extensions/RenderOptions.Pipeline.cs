@@ -12,8 +12,9 @@ namespace Redeclare;
 internal static class RenderOptionsPipeline
 {
     /// <summary>
-    ///     Each item with the options its own file is rendered under, folded together by <paramref name="select"/>.
-    ///     Editorconfig values are per file, which is why the items carry the tree they were read from.
+    ///     Pairs each item with the options its own file is rendered under, folded together by
+    ///     <paramref name="select"/>. Editorconfig values are per file, which is why the items carry the tree they were
+    ///     read from.
     /// </summary>
     /// <typeparam name="TSource">The item the transform produced.</typeparam>
     /// <typeparam name="TResult">What <paramref name="select"/> returns.</typeparam>

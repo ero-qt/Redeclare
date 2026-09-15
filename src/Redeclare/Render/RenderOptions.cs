@@ -103,7 +103,7 @@ internal enum CSharpVersion
 }
 
 /// <summary>
-///     How type references are qualified: with namespace and <c>global::</c> prefix, with namespace alone, or
+///     Specifies how type references are qualified: with namespace and <c>global::</c> prefix, with namespace alone, or
 ///     with neither.
 /// </summary>
 internal enum Qualification
@@ -164,9 +164,8 @@ internal enum NamespaceDeclarationPreference
 }
 
 /// <summary>
-///     Everything the renderer needs to decide, with a value for every field: the language version that
-///     gates syntax, indentation and line endings, how types are spelled, and when members use expression
-///     bodies.
+///     Holds everything the renderer needs to decide, with a value for every field: the language version that gates
+///     syntax, indentation and line endings, how types are spelled, and when members use expression bodies.
 /// </summary>
 /// <remarks>
 ///     <para>

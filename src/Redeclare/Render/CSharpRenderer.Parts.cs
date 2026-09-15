@@ -10,8 +10,8 @@ namespace Redeclare;
 internal static partial class CSharpRenderer
 {
     /// <summary>
-    ///     An identifier as C# must spell it. A symbol's name is bare text, so a type, member or parameter
-    ///     called <c>class</c> or <c>event</c> takes the <c>@</c> that makes it an identifier again.
+    ///     Writes a name as C# must spell it. A symbol's name is bare text, so a type, member or parameter called
+    ///     <c>class</c> or <c>event</c> takes the <c>@</c> that makes it an identifier again.
     /// </summary>
     public static string Identifier(string name)
     {
@@ -105,7 +105,7 @@ internal static partial class CSharpRenderer
     }
 
     /// <summary>
-    ///     The <c>ref</c> or <c>ref readonly</c> a return, property or field carries, with the space after it.
+    ///     Gets the <c>ref</c> or <c>ref readonly</c> a return, property or field carries, with the space after it.
     ///     <c>RefKind.RefReadOnly</c> and <c>RefKind.In</c> are the same value. On a return it means
     ///     <c>ref readonly</c>.
     /// </summary>
@@ -133,7 +133,8 @@ internal static partial class CSharpRenderer
     }
 
     /// <summary>
-    ///     The <c>ref</c>, <c>out</c>, <c>in</c> or <c>ref readonly</c> a parameter carries, with its space.
+    ///     Gets the <c>ref</c>, <c>out</c>, <c>in</c> or <c>ref readonly</c> a parameter carries, with the space after
+    ///     it.
     /// </summary>
     private static string ParameterRefText(RefKind refKind, string what)
     {

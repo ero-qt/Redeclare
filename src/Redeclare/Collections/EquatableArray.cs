@@ -6,7 +6,7 @@ using System.Runtime.CompilerServices;
 namespace Redeclare;
 
 /// <summary>
-///     An immutable array compared by its contents, so a record holding one compares by value and an
+///     Represents an immutable array that compares by its contents. A record that holds one compares by value, so an
 ///     incremental generator's cache can hit on it.
 /// </summary>
 /// <remarks>
@@ -82,7 +82,7 @@ internal readonly struct EquatableArray<T> : IEquatable<EquatableArray<T>>, IRea
     }
 
     /// <summary>
-    ///     The elements as a span, without copying.
+    ///     Gets the elements as a span, without copying.
     /// </summary>
     public ReadOnlySpan<T> AsSpan()
     {
@@ -248,7 +248,7 @@ internal readonly struct EquatableArray<T> : IEquatable<EquatableArray<T>>, IRea
 internal static class EquatableArray
 {
     /// <summary>
-    ///     The collection-expression builder: <c>EquatableArray&lt;int&gt; xs = [1, 2];</c>.
+    ///     Builds an array from a collection expression: <c>EquatableArray&lt;int&gt; xs = [1, 2];</c>.
     /// </summary>
     public static EquatableArray<T> Create<T>(ReadOnlySpan<T> items)
     {

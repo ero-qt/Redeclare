@@ -8,8 +8,8 @@ namespace Redeclare;
 internal static class SymbolExtensions
 {
     /// <summary>
-    ///     The type as a new partial part of itself: its shape, none of the members or attributes a second part may
-    ///     not repeat, and the containing types it is nested in. Add members to the result and render it.
+    ///     Reads the type as a new partial part of itself: its shape, none of the members or attributes a second part
+    ///     may not repeat, and the containing types it is nested in. Add members to the result and render it.
     /// </summary>
     /// <param name="type">The type to write another part of.</param>
     /// <returns>A declaration with <c>partial</c> and nothing of its own.</returns>

@@ -5,7 +5,7 @@ namespace Redeclare;
 internal sealed partial class SymbolReader
 {
     /// <summary>
-    ///     The name a user-defined operator or conversion declares under, from its metadata name, or
+    ///     Gets the name a user-defined operator or conversion declares under, from its metadata name, or
     ///     <see langword="null"/> for a name that is not an operator's.
     /// </summary>
     private static MethodName? GetOperatorName(string metadataName)
@@ -20,7 +20,7 @@ internal sealed partial class SymbolReader
     }
 
     /// <summary>
-    ///     The C# token for a user-defined operator's metadata name and whether it is the <c>checked</c> form, or
+    ///     Gets the C# token for a user-defined operator's metadata name and whether it is the <c>checked</c> form, or
     ///     <see langword="null"/> for a name that is not an operator's.
     /// </summary>
     private static (string Token, bool IsChecked)? GetOperatorToken(string metadataName)

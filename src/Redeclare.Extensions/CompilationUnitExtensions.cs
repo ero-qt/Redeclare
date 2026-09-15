@@ -7,8 +7,9 @@ namespace Redeclare;
 internal static class CompilationUnitExtensions
 {
     /// <summary>
-    ///     The file with the usings its own declarations need, replacing whatever it carried. Minimal qualification
-    ///     writes short names, so a namespace the walk misses is a name the consumer's compiler cannot resolve.
+    ///     Returns the file with the usings its own declarations need, replacing whatever it carried. Minimal
+    ///     qualification writes short names, so a namespace the collection misses is a name the consumer's compiler
+    ///     cannot resolve.
     /// </summary>
     /// <param name="unit">The file to collect over.</param>
     /// <param name="options">The options the file renders under, which decide which types are keywords.</param>

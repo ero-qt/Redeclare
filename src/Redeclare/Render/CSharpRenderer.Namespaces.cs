@@ -6,8 +6,8 @@ namespace Redeclare;
 internal static partial class CSharpRenderer
 {
     /// <summary>
-    ///     The namespaces every type reference in the file, holes in snippets included, would need as usings
-    ///     under <see cref="Qualification.Minimal"/>, sorted. Types the options write as a keyword are left out.
+    ///     Collects the namespaces the file would need as usings under <see cref="Qualification.Minimal"/>, sorted.
+    ///     Every type reference counts, holes in snippets included. Types the options write as a keyword are left out.
     ///     The file's own namespace is left in.
     /// </summary>
     public static SortedSet<string> CollectNamespaces(CompilationUnit unit, RenderOptions options)

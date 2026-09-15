@@ -122,9 +122,9 @@ internal static class Checks
     }
 
     /// <summary>
-    ///     The full metadata name of a named type: namespace, then the type and its containing types with arity
-    ///     suffixes, nested ones after <c>+</c>. What <c>GetTypeByMetadataName</c> takes. For messages and lookups,
-    ///     not for comparison.
+    ///     Gets the full metadata name of a named type: namespace, then the type and its containing types with arity
+    ///     suffixes, nested ones after <c>+</c>. This is what <c>GetTypeByMetadataName</c> takes. Use it for messages
+    ///     and lookups, not for comparison.
     /// </summary>
     public static string GetFullMetadataName(this INamedTypeSymbol type)
     {
@@ -144,8 +144,8 @@ internal static class Checks
     }
 
     /// <summary>
-    ///     The targets an attribute class allows, from its <c>[AttributeUsage]</c>, inherited ones included.
-    ///     <c>AttributeTargets.All</c> when it declares none.
+    ///     Gets the targets an attribute class allows, from its <c>[AttributeUsage]</c>, inherited ones included.
+    ///     <c>AttributeTargets.All</c> when the class declares none.
     /// </summary>
     public static AttributeTargets GetValidTargets(this INamedTypeSymbol attributeClass, Compilation compilation)
     {
@@ -178,8 +178,8 @@ internal static class Checks
     }
 
     /// <summary>
-    ///     The <c>AttributeTargets</c> flag a symbol counts as, or <see langword="null"/> for a symbol no attribute
-    ///     targets.
+    ///     Gets the <c>AttributeTargets</c> flag a symbol counts as, or <see langword="null"/> for a symbol no
+    ///     attribute targets.
     /// </summary>
     public static AttributeTargets? GetAttributeTarget(this ISymbol symbol)
     {
@@ -217,7 +217,7 @@ internal static class Checks
     }
 
     /// <summary>
-    ///     The <c>[AttributeUsage]</c> on the class or the nearest base that has one.
+    ///     Finds the <c>[AttributeUsage]</c> on the class or on the nearest base class that has one.
     /// </summary>
     private static AttributeData? Usage(INamedTypeSymbol attributeClass, Compilation compilation)
     {
