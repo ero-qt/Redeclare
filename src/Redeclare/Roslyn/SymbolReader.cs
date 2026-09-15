@@ -192,6 +192,30 @@ internal sealed partial class SymbolReader
     }
 
     /// <summary>
+    ///     Reads a member of a type into whichever declaration it is. Returns <see langword="null"/> for a symbol
+    ///     that has no declaration of its own: an accessor, a backing field, a lambda, a local function.
+    /// </summary>
+    public MemberDeclaration? ReadMember(ISymbol member)
+    {
+        return member switch
+        {
+            INamedTypeSymbol { IsExtension: true } extension => ReadExtension(extension),
+            INamedTypeSymbol { TypeKind: TypeKind.Delegate } nested => ReadDelegate(nested),
+            INamedTypeSymbol { TypeKind: TypeKind.Class or TypeKind.Struct or TypeKind.Interface or TypeKind.Enum } nested => ReadType(nested),
+            IMethodSymbol { AssociatedSymbol: not null } => null,
+            IMethodSymbol { MethodKind: MethodKind.Constructor or MethodKind.StaticConstructor } constructor => ReadConstructor(constructor),
+            IMethodSymbol { MethodKind: MethodKind.Ordinary or MethodKind.ExplicitInterfaceImplementation or MethodKind.Destructor } method => ReadMethod(method),
+            IMethodSymbol { MethodKind: MethodKind.UserDefinedOperator or MethodKind.Conversion } @operator => ReadMethod(@operator),
+            IPropertySymbol property => ReadProperty(property),
+            IFieldSymbol { AssociatedSymbol: not null } => null,
+            IFieldSymbol { ContainingType.TypeKind: TypeKind.Enum } field => ReadEnumMember(field),
+            IFieldSymbol field => ReadField(field),
+            IEventSymbol @event => ReadEvent(@event),
+            _ => null,
+        };
+    }
+
+    /// <summary>
     ///     Reads a namespace as a declaration with nothing in it, the way a file names the namespace a type lives
     ///     in. The global namespace reads as one with no name, which writes no <c>namespace</c> line.
     /// </summary>
@@ -231,70 +255,9 @@ internal sealed partial class SymbolReader
                 continue;
             }
 
-            switch (member)
+            if (ReadMember(member) is { } declaration)
             {
-                case INamedTypeSymbol { IsExtension: true } extension:
-                {
-                    members.Add(ReadExtension(extension));
-                    break;
-                }
-                case INamedTypeSymbol { TypeKind: TypeKind.Delegate } nested:
-                {
-                    members.Add(ReadDelegate(nested));
-                    break;
-                }
-                case INamedTypeSymbol { TypeKind: TypeKind.Class or TypeKind.Struct or TypeKind.Interface or TypeKind.Enum } nested:
-                {
-                    members.Add(ReadType(nested));
-                    break;
-                }
-                case IMethodSymbol { AssociatedSymbol: not null }:
-                {
-                    break;
-                }
-                case IMethodSymbol { MethodKind: MethodKind.Constructor or MethodKind.StaticConstructor } constructor:
-                {
-                    members.Add(ReadConstructor(constructor));
-                    break;
-                }
-                case IMethodSymbol { MethodKind: MethodKind.Ordinary or MethodKind.ExplicitInterfaceImplementation or MethodKind.Destructor } method:
-                {
-                    members.Add(ReadMethod(method));
-                    break;
-                }
-                case IMethodSymbol { MethodKind: MethodKind.UserDefinedOperator or MethodKind.Conversion } @operator:
-                {
-                    members.Add(ReadMethod(@operator));
-                    break;
-                }
-                case IPropertySymbol property:
-                {
-                    members.Add(ReadProperty(property));
-                    break;
-                }
-                case IFieldSymbol { AssociatedSymbol: not null }:
-                {
-                    break;
-                }
-                case IFieldSymbol field when type.TypeKind == TypeKind.Enum:
-                {
-                    members.Add(ReadEnumMember(field));
-                    break;
-                }
-                case IFieldSymbol field:
-                {
-                    members.Add(ReadField(field));
-                    break;
-                }
-                case IEventSymbol @event:
-                {
-                    members.Add(ReadEvent(@event));
-                    break;
-                }
-                default:
-                {
-                    break;
-                }
+                members.Add(declaration);
             }
         }
 

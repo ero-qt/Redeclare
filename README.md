@@ -87,6 +87,7 @@ var type = symbol.ToDeclaration();                         // TypeDeclaration, D
 var method = methodSymbol.ToDeclaration();                 // MethodDeclaration, body left null
 var constructor = ctorSymbol.ToConstructorDeclaration();   // an IMethodSymbol, so it needs its own name
 var value = fieldSymbol.ToEnumMemberDeclaration();         // an IFieldSymbol, same reason
+var member = ((ISymbol)ctorSymbol).ToDeclaration();        // MemberDeclaration, picked by kind: here a ConstructorDeclaration
 ```
 
 When you know what kind of named type you have, `symbol.ToTypeDeclaration()`, `symbol.ToDelegateDeclaration()` and `symbol.ToExtensionDeclaration()` give that record back.

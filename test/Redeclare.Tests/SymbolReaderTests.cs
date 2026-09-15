@@ -210,6 +210,30 @@ public sealed class SymbolReaderTests
     private static TypeDeclaration Repository => Compilation.Type("Fixture.Repository`1").ToTypeDeclaration(_withDocs);
 
     [Test]
+    public void ToDeclaration_AnySymbol_ReadsByKind()
+    {
+        var repository = Compilation.Type("Fixture.Repository`1");
+        var members = repository.GetMembers();
+        ISymbol level = Compilation.Type("Fixture.Level");
+        ISymbol high = Compilation.Type("Fixture.Level").GetMembers("High").Single();
+        ISymbol constructor = members.OfType<IMethodSymbol>().Single(m => m.MethodKind == MethodKind.Constructor);
+        ISymbol getter = members.OfType<IPropertySymbol>().First(p => p.Name == "Count").GetMethod!;
+        ISymbol parameter = members.OfType<IMethodSymbol>().Single(m => m.Name == "TryParse").Parameters[0];
+
+        using (Assert.EnterMultipleScope())
+        {
+            Assert.That(level.ToDeclaration(), Is.InstanceOf<TypeDeclaration>());
+            Assert.That(high.ToDeclaration(), Is.InstanceOf<EnumMemberDeclaration>());
+            Assert.That(constructor.ToDeclaration(), Is.InstanceOf<ConstructorDeclaration>());
+            Assert.That(members.Single(m => m.Name == "Changed").ToDeclaration(), Is.InstanceOf<EventDeclaration>());
+            Assert.That(members.Single(m => m.Name == "Limit").ToDeclaration(), Is.InstanceOf<FieldDeclaration>());
+            Assert.That(members.Single(m => m.Name == "TryParse").ToDeclaration(ReadOptions.Signature), Is.InstanceOf<MethodDeclaration>());
+            Assert.That(() => getter.ToDeclaration(), Throws.ArgumentException.With.Message.Contains("get_Count"), "an accessor is part of its property");
+            Assert.That(() => parameter.ToDeclaration(), Throws.ArgumentException, "a parameter is not a member");
+        }
+    }
+
+    [Test]
     public void ToDeclaration_Class_ReadsShapeWithoutPartial()
     {
         var declaration = Repository;
