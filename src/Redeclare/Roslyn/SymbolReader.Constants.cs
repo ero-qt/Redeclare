@@ -139,8 +139,8 @@ internal sealed partial class SymbolReader
     }
 
     /// <summary>
-    ///     A primitive as a C# literal. Every numeric type but <c>int</c> takes its suffix, so that the literal keeps
-    ///     the type it had where an <c>object</c> would box it.
+    ///     Formats a primitive as a C# literal. Every numeric type but <c>int</c> takes its suffix, so that the literal
+    ///     keeps the type it had where an <c>object</c> would box it.
     /// </summary>
     private static string FormatPrimitive(object value)
     {

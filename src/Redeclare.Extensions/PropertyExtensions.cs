@@ -6,8 +6,8 @@ namespace Redeclare;
 internal static class PropertyExtensions
 {
     /// <summary>
-    ///     The property with bodies on the accessors it has. Each accessor keeps its accessibility and <c>init</c>,
-    ///     and only gains the body. A body for an accessor the property does not have is ignored.
+    ///     Returns the property with bodies on the accessors it has. Each accessor keeps its accessibility and
+    ///     <c>init</c>, and only gains the body. A body for an accessor the property does not have is ignored.
     /// </summary>
     /// <param name="property">The property, as read from its definition.</param>
     /// <param name="getter">The getter's body, or <see langword="null"/> to leave it as it is.</param>

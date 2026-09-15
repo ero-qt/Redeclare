@@ -225,8 +225,8 @@ internal sealed partial class SymbolReader
     }
 
     /// <summary>
-    ///     The shape of a containing type: kind, name and the names of its type parameters, which is all a part of
-    ///     it has to repeat.
+    ///     Reads the shape of a containing type: kind, name and the names of its type parameters. That is all a part of
+    ///     the type has to repeat.
     /// </summary>
     private static TypeDeclaration ReadShape(INamedTypeSymbol type)
     {

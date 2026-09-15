@@ -7,8 +7,8 @@ namespace Redeclare;
 internal sealed partial record RenderOptions
 {
     /// <summary>
-    ///     The defaults at the language version <paramref name="parseOptions"/> sets, for a generator that renders
-    ///     one style everywhere and only needs the version to be right.
+    ///     Reads the defaults at the language version <paramref name="parseOptions"/> sets, for a generator that
+    ///     renders one style everywhere and only needs the version to be right.
     /// </summary>
     /// <param name="parseOptions">The parse options, from <c>ParseOptionsProvider</c>.</param>
     /// <returns>The options to render under.</returns>
@@ -18,7 +18,7 @@ internal sealed partial record RenderOptions
     }
 
     /// <summary>
-    ///     The style <paramref name="config"/> describes, at the language version <paramref name="parseOptions"/>
+    ///     Reads the style <paramref name="config"/> describes, at the language version <paramref name="parseOptions"/>
     ///     sets. Editorconfig values are per file, so pass the options for the file being generated for.
     /// </summary>
     /// <param name="config">The options for one file, from <c>AnalyzerConfigOptionsProvider.GetOptions</c>.</param>
@@ -30,8 +30,8 @@ internal sealed partial record RenderOptions
     }
 
     /// <summary>
-    ///     The language version <paramref name="parseOptions"/> sets, as the renderer's version. A project that is
-    ///     not C# renders at the newest, since nothing it parses with says otherwise.
+    ///     Reads the language version <paramref name="parseOptions"/> sets, as the renderer's version. A project that
+    ///     is not C# renders at the newest, since nothing it parses with says otherwise.
     /// </summary>
     private static CSharpVersion ToCSharpVersion(ParseOptions parseOptions)
     {

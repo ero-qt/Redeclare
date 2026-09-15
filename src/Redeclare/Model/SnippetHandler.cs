@@ -173,7 +173,7 @@ internal readonly ref struct SnippetHandler
     }
 
     /// <summary>
-    ///     The whitespace the line being written starts with, which the further lines of a spliced snippet repeat.
+    ///     Gets the whitespace the line being written starts with. The further lines of a spliced snippet repeat it.
     /// </summary>
     private string CurrentIndent()
     {

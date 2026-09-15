@@ -3,8 +3,9 @@ using Microsoft.CodeAnalysis;
 namespace Redeclare;
 
 /// <summary>
-///     The types C# has a keyword for, so a generator that names one does not construct it by hand. Every other type
-///     comes from a symbol, through <c>ToTypeReference()</c> or a reference built where the compilation is in reach.
+///     Provides the types C# has a keyword for, so a generator that names one does not construct it by hand. Every
+///     other type comes from a symbol, through <c>ToTypeReference()</c> or a reference built where the compilation is
+///     in reach.
 /// </summary>
 /// <remarks>
 ///     Each one renders as its keyword under <see cref="RenderOptions.PredefinedTypeKeywords"/>, and as its framework

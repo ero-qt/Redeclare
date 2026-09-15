@@ -477,8 +477,9 @@ internal static partial class CSharpRenderer
     }
 
     /// <summary>
-    ///     The kinds of member a body belongs to. Each has its own expression body preference in the options and its
-    ///     own C# version for the arrow: 6 for methods and properties, 7 for constructors and accessors.
+    ///     Specifies the kind of member a body belongs to. Each kind has its own expression body preference in the
+    ///     options and its own C# version for the arrow: 6 for methods and properties, 7 for constructors and
+    ///     accessors.
     /// </summary>
     private enum BodyKind
     {

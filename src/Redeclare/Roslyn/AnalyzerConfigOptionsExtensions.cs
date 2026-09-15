@@ -19,8 +19,8 @@ namespace Redeclare;
 internal static class AnalyzerConfigOptionsExtensions
 {
     /// <summary>
-    ///     The value of <c>build_property.<paramref name="name"/></c>, or <see langword="null"/> when absent or
-    ///     empty.
+    ///     Gets the value of <c>build_property.<paramref name="name"/></c>, or <see langword="null"/> when it is absent
+    ///     or empty.
     /// </summary>
     public static string? MSBuildProperty(this AnalyzerConfigOptions options, string name)
     {
@@ -30,7 +30,7 @@ internal static class AnalyzerConfigOptionsExtensions
     }
 
     /// <summary>
-    ///     The value of <c>build_metadata.<paramref name="itemType"/>.<paramref name="name"/></c>, or
+    ///     Gets the value of <c>build_metadata.<paramref name="itemType"/>.<paramref name="name"/></c>, or
     ///     <see langword="null"/>.
     /// </summary>
     public static string? MSBuildMetadata(this AnalyzerConfigOptions options, string itemType, string name)
@@ -41,8 +41,8 @@ internal static class AnalyzerConfigOptionsExtensions
     }
 
     /// <summary>
-    ///     A property as MSBuild reads booleans, <c>true</c> or <c>false</c> in any casing, or <see langword="null"/>
-    ///     otherwise.
+    ///     Gets a property as MSBuild reads booleans: <c>true</c> or <c>false</c> in any casing, or
+    ///     <see langword="null"/> otherwise.
     /// </summary>
     public static bool? MSBuildBoolean(this AnalyzerConfigOptions options, string name)
     {
@@ -50,7 +50,7 @@ internal static class AnalyzerConfigOptionsExtensions
     }
 
     /// <summary>
-    ///     A property as an integer, or <see langword="null"/> when absent or not a number.
+    ///     Gets a property as an integer, or <see langword="null"/> when it is absent or not a number.
     /// </summary>
     public static int? MSBuildInt32(this AnalyzerConfigOptions options, string name)
     {
@@ -61,7 +61,7 @@ internal static class AnalyzerConfigOptionsExtensions
     }
 
     /// <summary>
-    ///     A property as an enum member by name, any casing, or <see langword="null"/>.
+    ///     Gets a property as an enum member by name, in any casing, or <see langword="null"/>.
     /// </summary>
     public static TEnum? MSBuildEnum<TEnum>(this AnalyzerConfigOptions options, string name)
         where TEnum : struct, Enum
@@ -70,8 +70,8 @@ internal static class AnalyzerConfigOptionsExtensions
     }
 
     /// <summary>
-    ///     A property that is an MSBuild list, split on <c>;</c> with blanks dropped and entries trimmed. Empty
-    ///     when absent.
+    ///     Gets a property that is an MSBuild list, split on <c>;</c> with blanks dropped and entries trimmed. The list
+    ///     is empty when the property is absent.
     /// </summary>
     public static EquatableArray<string> MSBuildList(this AnalyzerConfigOptions options, string name)
     {

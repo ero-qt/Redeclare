@@ -10,7 +10,7 @@ namespace Redeclare;
 internal static class AttributeExtensions
 {
     /// <summary>
-    ///     A typed view over the attribute's arguments.
+    ///     Gets a typed view over the attribute's arguments.
     /// </summary>
     public static AttributeArguments GetArguments(this AttributeData attribute)
     {
@@ -27,7 +27,7 @@ internal static class AttributeExtensions
     }
 
     /// <summary>
-    ///     The first attribute of this class on the symbol, or <see langword="null"/>.
+    ///     Gets the first attribute of this class on the symbol, or <see langword="null"/>.
     /// </summary>
     public static AttributeData? GetAttribute(this ISymbol symbol, INamedTypeSymbol attributeClass)
     {
@@ -43,7 +43,7 @@ internal static class AttributeExtensions
     }
 
     /// <summary>
-    ///     Every attribute of this class on the symbol.
+    ///     Gets every attribute of this class on the symbol.
     /// </summary>
     public static IEnumerable<AttributeData> GetAttributes(this ISymbol symbol, INamedTypeSymbol attributeClass)
     {

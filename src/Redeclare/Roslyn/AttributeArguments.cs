@@ -71,7 +71,7 @@ internal readonly struct AttributeArguments
     }
 
     /// <summary>
-    ///     The constructor argument for <paramref name="parameterName"/> as <typeparamref name="T"/>: a
+    ///     Tries to get the constructor argument for <paramref name="parameterName"/> as <typeparamref name="T"/>: a
     ///     primitive, a <see cref="string"/>, an enum (converted from the constant's underlying value), a
     ///     <see cref="TypeReference"/> from <c>typeof</c>, or the raw <c>ITypeSymbol</c>.
     /// </summary>
@@ -87,8 +87,8 @@ internal readonly struct AttributeArguments
     }
 
     /// <summary>
-    ///     The named argument for <paramref name="propertyName"/> as <typeparamref name="T"/>, converted as
-    ///     constructor arguments are.
+    ///     Tries to get the named argument for <paramref name="propertyName"/> as <typeparamref name="T"/>, converted
+    ///     as constructor arguments are.
     /// </summary>
     public bool TryGetNamedArgument<T>(string propertyName, out T value)
     {
@@ -102,7 +102,7 @@ internal readonly struct AttributeArguments
     }
 
     /// <summary>
-    ///     The constructor argument for <paramref name="parameterName"/>, or <paramref name="fallback"/>.
+    ///     Gets the constructor argument for <paramref name="parameterName"/>, or <paramref name="fallback"/>.
     /// </summary>
     public T GetConstructorArgument<T>(string parameterName, T fallback = default!)
     {
@@ -110,7 +110,7 @@ internal readonly struct AttributeArguments
     }
 
     /// <summary>
-    ///     The constructor argument at <paramref name="position"/>, or <paramref name="fallback"/>.
+    ///     Gets the constructor argument at <paramref name="position"/>, or <paramref name="fallback"/>.
     /// </summary>
     public T GetConstructorArgument<T>(int position, T fallback = default!)
     {
@@ -126,7 +126,7 @@ internal readonly struct AttributeArguments
     }
 
     /// <summary>
-    ///     The named argument for <paramref name="propertyName"/>, or <paramref name="fallback"/>.
+    ///     Gets the named argument for <paramref name="propertyName"/>, or <paramref name="fallback"/>.
     /// </summary>
     public T GetNamedArgument<T>(string propertyName, T fallback = default!)
     {
@@ -134,7 +134,8 @@ internal readonly struct AttributeArguments
     }
 
     /// <summary>
-    ///     A constructor argument that is an array, element by element. Empty when absent or not an array.
+    ///     Gets a constructor argument that is an array, element by element. The array is empty when the argument is
+    ///     absent or not an array.
     /// </summary>
     public EquatableArray<T> GetConstructorArray<T>(string parameterName)
     {
@@ -142,7 +143,8 @@ internal readonly struct AttributeArguments
     }
 
     /// <summary>
-    ///     A named argument that is an array, element by element. Empty when absent or not an array.
+    ///     Gets a named argument that is an array, element by element. The array is empty when the argument is absent
+    ///     or not an array.
     /// </summary>
     public EquatableArray<T> GetNamedArray<T>(string propertyName)
     {
@@ -150,7 +152,7 @@ internal readonly struct AttributeArguments
     }
 
     /// <summary>
-    ///     The constructor argument as a C# expression, for passing through into generated code.
+    ///     Gets the constructor argument as a C# expression, for passing it through into generated code.
     /// </summary>
     public Snippet? GetConstructorExpression(string parameterName)
     {
@@ -165,7 +167,7 @@ internal readonly struct AttributeArguments
     }
 
     /// <summary>
-    ///     The named argument as a C# expression, for passing through into generated code.
+    ///     Gets the named argument as a C# expression, for passing it through into generated code.
     /// </summary>
     public Snippet? GetNamedExpression(string propertyName)
     {
@@ -271,7 +273,7 @@ internal readonly struct AttributeArguments
     }
 
     /// <summary>
-    ///     A constructor argument's value, falling back to the parameter's default when it was omitted.
+    ///     Finds a constructor argument's value, falling back to the parameter's default when the argument was omitted.
     /// </summary>
     private bool TryFindConstructor(string parameterName, out object? value, out ITypeSymbol? type)
     {

@@ -6,10 +6,10 @@ namespace Redeclare;
 internal sealed partial record RenderOptions
 {
     /// <summary>
-    ///     The style an editorconfig describes, as options: indentation, line ending, namespace style, expression
-    ///     body preferences, predefined type keywords. Keys it does not set keep the value they have in
-    ///     <see cref="Default"/>, and anything else is a <c>with</c> on the result. Pass the options for the syntax
-    ///     tree being generated for, since editorconfig values are per file.
+    ///     Reads the style an editorconfig describes into options: indentation, line ending, namespace style,
+    ///     expression body preferences, predefined type keywords. A key the editorconfig does not set keeps the value
+    ///     it has in <see cref="Default"/>. Anything else is a <c>with</c> on the result. Pass the options for the
+    ///     syntax tree being generated for, since editorconfig values are per file.
     /// </summary>
     /// <param name="config">The options for one file, from <c>AnalyzerConfigOptionsProvider.GetOptions</c>.</param>
     /// <returns>The options the editorconfig describes.</returns>
@@ -83,7 +83,7 @@ internal sealed partial record RenderOptions
     }
 
     /// <summary>
-    ///     The value before any <c>:severity</c> suffix, upper-cased, or <see langword="null"/>.
+    ///     Gets the value before any <c>:severity</c> suffix, upper-cased, or <see langword="null"/>.
     /// </summary>
     private static string? GetValue(AnalyzerConfigOptions config, string key)
     {

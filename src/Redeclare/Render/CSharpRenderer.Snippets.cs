@@ -42,7 +42,7 @@ internal static partial class CSharpRenderer
     }
 
     /// <summary>
-    ///     The index where the last line of the buffer begins.
+    ///     Finds the index where the last line of the buffer begins.
     /// </summary>
     private static int LineStart(StringBuilder text)
     {
@@ -56,7 +56,7 @@ internal static partial class CSharpRenderer
     }
 
     /// <summary>
-    ///     The index just past the leading whitespace of the line beginning at <paramref name="start"/>.
+    ///     Finds the index just past the leading whitespace of the line that begins at <paramref name="start"/>.
     /// </summary>
     private static int IndentEnd(StringBuilder text, int start)
     {
@@ -151,7 +151,7 @@ internal static partial class CSharpRenderer
     }
 
     /// <summary>
-    ///     The bare name a <c>{type:n}</c> hole writes, for the kinds that have one.
+    ///     Gets the bare name a <c>{type:n}</c> hole writes, for the kinds of type that have one.
     /// </summary>
     private static string SimpleName(TypeReference type)
     {

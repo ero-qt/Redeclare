@@ -256,11 +256,7 @@ internal sealed partial class SymbolReader
     }
 
     /// <summary>
-    ///     Interface members are public by default, and writing it needs C# 8 for nothing. An explicit interface
-    ///     implementation may carry no modifier at all, whatever Roslyn reports for it.
-    /// </summary>
-    /// <summary>
-    ///     The facts about a member that accessibility, modifiers and names all turn on, computed once.
+    ///     Holds the facts about a member that accessibility, modifiers and names all turn on, computed once.
     /// </summary>
     /// <param name="Member">The member.</param>
     /// <param name="Declared">
@@ -292,6 +288,11 @@ internal sealed partial class SymbolReader
             IsDestructor: isDestructor);
     }
 
+    /// <summary>
+    ///     Reads the accessibility a member is written with. An interface member is public by default, and writing
+    ///     <c>public</c> needs C# 8 for nothing. An explicit interface implementation carries no accessibility at all,
+    ///     whatever Roslyn reports for it.
+    /// </summary>
     private static Accessibility ReadMemberAccessibility(MemberFacts facts)
     {
         bool publicInInterface = facts.InInterface && facts.Member.DeclaredAccessibility == Accessibility.Public;
@@ -307,7 +308,7 @@ internal sealed partial class SymbolReader
     }
 
     /// <summary>
-    ///     Whether the member's signature names a pointer, which is what <c>unsafe</c> is required for. A symbol
+    ///     Checks whether the member's signature names a pointer, which is what <c>unsafe</c> is required for. A symbol
     ///     does not report the keyword, so it is read back from the types the member mentions.
     /// </summary>
     private static bool MentionsPointer(ISymbol member)
