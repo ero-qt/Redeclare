@@ -166,6 +166,7 @@ public sealed class SymbolReaderTests
                 static virtual T Zero => default!;
                 sealed void Seal() { }
                 void Loose() { }
+                private void Hide() { }
             }
 
             public static class Holder<T> where T : allows ref struct { }
@@ -512,6 +513,7 @@ public sealed class SymbolReaderTests
             Assert.That(members["Zero"].Modifiers, Is.EqualTo(Modifiers.Static | Modifiers.Virtual), "without virtual a static interface member cannot be overridden");
             Assert.That(members["Seal"].Modifiers, Is.EqualTo(Modifiers.Sealed), "without sealed a bodiless interface method is abstract");
             Assert.That(members["Loose"].Modifiers, Is.EqualTo(Modifiers.None), "virtual is implied on an instance member with a body");
+            Assert.That(members["Hide"].Modifiers, Is.EqualTo(Modifiers.None), "a private interface member cannot be overridden, so sealed is an error on it");
         }
     }
 

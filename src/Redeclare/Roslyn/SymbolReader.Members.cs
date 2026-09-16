@@ -497,11 +497,13 @@ internal sealed partial class SymbolReader
 
     /// <summary>
     ///     Checks for <c>sealed</c> on an interface member. Roslyn reports <c>sealed void M() { }</c> in an interface
-    ///     as neither virtual, abstract nor sealed, so the member is sealed when it is none of the three.
+    ///     as neither virtual, abstract nor sealed, so the member is sealed when it is none of the three. A private
+    ///     member cannot be overridden and takes no <c>sealed</c>.
     /// </summary>
     private static bool IsSealedInterfaceMember(MemberFacts facts)
     {
         return facts.InInterface
+            && facts.Member.DeclaredAccessibility != Accessibility.Private
             && !facts.Member.IsStatic
             && !facts.Member.IsVirtual
             && !facts.Member.IsAbstract
