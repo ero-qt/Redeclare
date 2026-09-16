@@ -21,6 +21,11 @@ internal sealed partial class SymbolReader
             throw new ArgumentException($"'{method.Name}' is a constructor. Use ToConstructorDeclaration.", nameof(method));
         }
 
+        if (!IsDeclaredMethodKind(method.MethodKind))
+        {
+            throw new ArgumentException($"'{method.Name}' is a {method.MethodKind}, which has no declaration of its own.", nameof(method));
+        }
+
         if (method.MethodKind is MethodKind.UserDefinedOperator or MethodKind.Conversion && GetOperatorName(method.Name) is null)
         {
             throw new ArgumentException($"'{method.Name}' is not the metadata name of an operator.", nameof(method));
@@ -38,7 +43,7 @@ internal sealed partial class SymbolReader
             Name: ReadMethodName(facts),
             ExplicitInterfaceSpecifier: ReadExplicitInterfaceSpecifier(facts),
             TypeParameters: ReadTypeParameters(method.TypeParameters),
-            Parameters: ReadParameters(method.Parameters, method.IsExtensionMethod));
+            Parameters: ReadParameters(method.Parameters));
     }
 
     private static MethodName ReadMethodName(MemberFacts facts)
@@ -51,6 +56,19 @@ internal sealed partial class SymbolReader
             MethodKind.Destructor => new MethodName.Destructor(),
             _ => declared.Name,
         };
+    }
+
+    /// <summary>
+    ///     Checks whether a method kind is one C# writes as a method: an ordinary method, an explicit interface
+    ///     implementation, a destructor, an operator or a conversion. Accessors, lambdas and local functions are not.
+    /// </summary>
+    private static bool IsDeclaredMethodKind(MethodKind kind)
+    {
+        return kind is MethodKind.Ordinary
+            or MethodKind.ExplicitInterfaceImplementation
+            or MethodKind.Destructor
+            or MethodKind.UserDefinedOperator
+            or MethodKind.Conversion;
     }
 
     /// <summary>
@@ -69,7 +87,7 @@ internal sealed partial class SymbolReader
             Attributes: ReadAttributes(constructor),
             Accessibility: constructor.IsStatic ? Accessibility.NotApplicable : constructor.DeclaredAccessibility,
             Modifiers: ReadMemberModifiers(Describe(constructor)),
-            Parameters: ReadParameters(constructor.Parameters, isExtension: false),
+            Parameters: ReadParameters(constructor.Parameters),
             Body: constructor.IsPartialDefinition || constructor.IsExtern ? null : Snippet.Empty);
     }
 
@@ -103,7 +121,7 @@ internal sealed partial class SymbolReader
             RefKind: property.RefKind,
             Name: property.IsIndexer ? "this" : facts.Declared.Name,
             ExplicitInterfaceSpecifier: ReadExplicitInterfaceSpecifier(facts),
-            Parameters: property.IsIndexer ? ReadParameters(property.Parameters, isExtension: false) : default,
+            Parameters: property.IsIndexer ? ReadParameters(property.Parameters) : default,
             Getter: getter,
             Setter: setter);
     }
@@ -167,6 +185,11 @@ internal sealed partial class SymbolReader
     /// </summary>
     public EnumMemberDeclaration ReadEnumMember(IFieldSymbol field)
     {
+        if (field.ContainingType is not { TypeKind: TypeKind.Enum })
+        {
+            throw new ArgumentException($"'{field.Name}' is not an enum member. Use ToDeclaration.", nameof(field));
+        }
+
         return new EnumMemberDeclaration(
             DocumentationComment: ReadDocumentation(field),
             Attributes: ReadAttributes(field),
@@ -197,29 +220,28 @@ internal sealed partial class SymbolReader
     }
 
     /// <summary>
-    ///     Reads a parameter. <paramref name="isThis"/> marks the receiver of an extension method.
+    ///     Reads a parameter. The first parameter of an extension method is its receiver, which the symbol knows
+    ///     from its position and its method.
     /// </summary>
-    public ParameterDeclaration ReadParameter(IParameterSymbol parameter, bool isThis = false)
+    public ParameterDeclaration ReadParameter(IParameterSymbol parameter)
     {
         return new ParameterDeclaration(
             Attributes: ReadAttributes(parameter),
             RefKind: parameter.RefKind,
             IsParams: parameter.IsParams,
-            IsExtensionReceiver: isThis,
+            IsExtensionReceiver: parameter is { Ordinal: 0, ContainingSymbol: IMethodSymbol { IsExtensionMethod: true } },
             IsScoped: HasExplicitScoped(parameter),
             Type: ReadTypeReference(parameter.Type),
             Name: parameter.Name,
             Default: parameter.HasExplicitDefaultValue ? FormatConstant(parameter.ExplicitDefaultValue, parameter.Type) : null);
     }
 
-    private EquatableArray<ParameterDeclaration> ReadParameters(
-        ImmutableArray<IParameterSymbol> parameters,
-        bool isExtension)
+    private EquatableArray<ParameterDeclaration> ReadParameters(ImmutableArray<IParameterSymbol> parameters)
     {
         var result = new ParameterDeclaration[parameters.Length];
         for (int i = 0; i < result.Length; i++)
         {
-            result[i] = ReadParameter(parameters[i], isThis: isExtension && i == 0);
+            result[i] = ReadParameter(parameters[i]);
         }
 
         return result;

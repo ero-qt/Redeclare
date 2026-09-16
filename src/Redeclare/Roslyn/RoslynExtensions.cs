@@ -122,7 +122,7 @@ internal static class RoslynExtensions
     /// </summary>
     public static ParameterDeclaration ToDeclaration(this IParameterSymbol parameter, ReadOptions? options = null)
     {
-        return SymbolReader.Create(options).ReadParameter(parameter, isThis: false);
+        return SymbolReader.Create(options).ReadParameter(parameter);
     }
 
     /// <summary>

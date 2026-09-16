@@ -135,7 +135,7 @@ internal sealed partial class SymbolReader
             Name: type.Name,
             ContainingType: type.ContainingType is { } outer ? ReadShape(outer) : null,
             TypeParameters: ReadTypeParameters(type.TypeParameters),
-            Parameters: primary is null ? default : ReadParameters(primary.Parameters, isExtension: false),
+            Parameters: primary is null ? default : ReadParameters(primary.Parameters),
             BaseType: baseType,
             BaseArguments: primary is null ? null : ReadBaseArguments(type),
             Interfaces: interfaces.ToEquatableArray(),
@@ -243,7 +243,7 @@ internal sealed partial class SymbolReader
             Name: type.Name,
             ContainingType: type.ContainingType is { } outer ? ReadShape(outer) : null,
             TypeParameters: ReadTypeParameters(type.TypeParameters),
-            Parameters: ReadParameters(invoke.Parameters, isExtension: false));
+            Parameters: ReadParameters(invoke.Parameters));
     }
 
     private static Accessibility ReadTypeAccessibility(INamedTypeSymbol type)
@@ -263,7 +263,7 @@ internal sealed partial class SymbolReader
         }
 
         return new ExtensionDeclaration(
-            Receiver: ReadParameter(receiver, isThis: false),
+            Receiver: ReadParameter(receiver),
             TypeParameters: ReadTypeParameters(extension.TypeParameters),
             Members: _options.IncludeMembers ? ReadMembers(extension) : default);
     }

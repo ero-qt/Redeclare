@@ -607,9 +607,14 @@ public sealed class SymbolReaderTests
     [Test]
     public void ToDeclaration_ExtensionMethod_MarksTheReceiver()
     {
-        var twice = Compilation.Type("Fixture.Extensions").ToTypeDeclaration().Members.OfType<MethodDeclaration>().Single();
+        var symbol = Compilation.Type("Fixture.Extensions").GetMembers("Twice").OfType<IMethodSymbol>().Single();
+        var twice = symbol.ToDeclaration();
 
-        Assert.That(twice.Parameters.Single().IsExtensionReceiver, Is.True);
+        using (Assert.EnterMultipleScope())
+        {
+            Assert.That(twice.Parameters.Single().IsExtensionReceiver, Is.True);
+            Assert.That(symbol.Parameters[0].ToDeclaration().IsExtensionReceiver, Is.True, "the parameter read alone says the same");
+        }
     }
 
     [Test]
@@ -1028,6 +1033,8 @@ public sealed class SymbolReaderTests
             Assert.That(() => level.ToDeclaration(), Throws.ArgumentException.With.Message.Contains("ToEnumMemberDeclaration"));
             Assert.That(level.ToEnumMemberDeclaration().Initializer?.ToString(), Is.EqualTo("5"));
             Assert.That(constructor.Parameters[1].ToDeclaration().Type.ToString(), Is.EqualTo("string?"));
+            Assert.That(() => repository.GetMembers("Count").OfType<IPropertySymbol>().First().GetMethod!.ToDeclaration(), Throws.ArgumentException.With.Message.Contains("get_Count"), "an accessor is part of its property");
+            Assert.That(() => repository.GetMembers("Limit").OfType<IFieldSymbol>().Single().ToEnumMemberDeclaration(), Throws.ArgumentException.With.Message.Contains("ToDeclaration"));
         }
     }
 
