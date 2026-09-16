@@ -61,9 +61,9 @@ internal readonly struct EquatableArray<T> : IEquatable<EquatableArray<T>>, IRea
     {
         get
         {
-            if (_items is null)
+            if (_items is null || (uint)index >= (uint)_items.Length)
             {
-                throw new ArgumentOutOfRangeException(nameof(index), index, "The array is empty.");
+                throw new ArgumentOutOfRangeException(nameof(index), index, $"The array has {Length} elements.");
             }
 
             return _items[index];

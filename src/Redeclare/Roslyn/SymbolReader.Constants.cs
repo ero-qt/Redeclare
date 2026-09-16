@@ -139,13 +139,17 @@ internal sealed partial class SymbolReader
     }
 
     /// <summary>
-    ///     Formats a primitive as a C# literal. Every numeric type but <c>int</c> takes its suffix, so that the literal
-    ///     keeps the type it had where an <c>object</c> would box it.
+    ///     Formats a primitive as a C# literal. Every numeric type but <c>int</c> takes its suffix, or a cast where C#
+    ///     has no suffix, so that the literal keeps the type it had where an <c>object</c> would box it.
     /// </summary>
     private static string FormatPrimitive(object value)
     {
         return value switch
         {
+            sbyte number => "(sbyte)" + number.ToString(CultureInfo.InvariantCulture),
+            byte number => "(byte)" + number.ToString(CultureInfo.InvariantCulture),
+            short number => "(short)" + number.ToString(CultureInfo.InvariantCulture),
+            ushort number => "(ushort)" + number.ToString(CultureInfo.InvariantCulture),
             float single => SymbolDisplay.FormatPrimitive(single, quoteStrings: false, useHexadecimalNumbers: false) + "f",
             double number => SymbolDisplay.FormatPrimitive(number, quoteStrings: false, useHexadecimalNumbers: false) + "D",
             decimal number => number.ToString(CultureInfo.InvariantCulture) + "m",

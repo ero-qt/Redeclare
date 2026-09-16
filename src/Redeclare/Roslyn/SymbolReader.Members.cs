@@ -248,6 +248,7 @@ internal sealed partial class SymbolReader
                 HasNotNullConstraint: parameter.HasNotNullConstraint,
                 HasConstructorConstraint: parameter.HasConstructorConstraint,
                 AllowsRefLikeType: parameter.AllowsRefLikeType,
+                HasDefaultConstraint: HasWrittenDefaultConstraint(parameter),
                 ConstraintTypes: constraintTypes,
                 Attributes: ReadAttributes(parameter));
         }
@@ -369,6 +370,35 @@ internal sealed partial class SymbolReader
             IsInitOnly: accessor.IsInitOnly,
             IsReadOnly: !propertyReadOnly && HasWrittenReadOnly(accessor),
             Attributes: ReadAttributes(accessor));
+    }
+
+    /// <summary>
+    ///     Checks for a <c>where T : default</c> written on the member that declares the type parameter. The symbol
+    ///     does not report this constraint, since it only tells an override apart from one constrained to
+    ///     <c>class</c> or <c>struct</c>.
+    /// </summary>
+    private static bool HasWrittenDefaultConstraint(ITypeParameterSymbol parameter)
+    {
+        foreach (var reference in parameter.DeclaringSyntaxReferences)
+        {
+            var clauses = reference.GetSyntax().Parent?.Parent switch
+            {
+                MethodDeclarationSyntax method => method.ConstraintClauses,
+                TypeDeclarationSyntax type => type.ConstraintClauses,
+                DelegateDeclarationSyntax @delegate => @delegate.ConstraintClauses,
+                _ => default,
+            };
+
+            foreach (var clause in clauses)
+            {
+                if (clause.Name.Identifier.ValueText == parameter.Name && clause.Constraints.Any(SyntaxKind.DefaultConstraint))
+                {
+                    return true;
+                }
+            }
+        }
+
+        return false;
     }
 
     /// <summary>
@@ -497,11 +527,13 @@ internal sealed partial class SymbolReader
 
     /// <summary>
     ///     Checks for <c>sealed</c> on an interface member. Roslyn reports <c>sealed void M() { }</c> in an interface
-    ///     as neither virtual, abstract nor sealed, so the member is sealed when it is none of the three.
+    ///     as neither virtual, abstract nor sealed, so the member is sealed when it is none of the three. A private
+    ///     member cannot be overridden and takes no <c>sealed</c>.
     /// </summary>
     private static bool IsSealedInterfaceMember(MemberFacts facts)
     {
         return facts.InInterface
+            && facts.Member.DeclaredAccessibility != Accessibility.Private
             && !facts.Member.IsStatic
             && !facts.Member.IsVirtual
             && !facts.Member.IsAbstract

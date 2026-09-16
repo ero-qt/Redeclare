@@ -70,6 +70,19 @@ public sealed class RoundTripTests
 
             file sealed class Hidden { }
 
+            public abstract record Node(int Id);
+            public sealed record Leaf(int Id, string Label) : Node(Id), IShape
+            {
+                public int Sides => 0;
+                public void Draw() { }
+                public event EventHandler? Drawn;
+            }
+
+            public sealed class Seeded(int seed) : Base(seed)
+            {
+                public override int Weight => seed;
+            }
+
             public static class Extensions
             {
                 public static int Twice(this int x) => x * 2;
@@ -114,6 +127,8 @@ public sealed class RoundTripTests
             Assert.That(text, Does.Contain("public static int Twice(this int x)"));
             Assert.That(text, Does.Contain("public static global::Trip.Shape operator +(global::Trip.Shape a, global::Trip.Shape b)"));
             Assert.That(text, Does.Contain("public void operator +=(int more)"));
+            Assert.That(text, Does.Contain("public sealed record Leaf(int Id, string Label) : global::Trip.Node(Id), global::Trip.IShape"));
+            Assert.That(text, Does.Contain("public sealed class Seeded(int seed) : global::Trip.Base(seed)"));
         }
 
         Compiling.AssertCompiles(text);

@@ -8,6 +8,10 @@ namespace Redeclare;
 /// <param name="Type">The delegate type.</param>
 /// <param name="Name">The name.</param>
 /// <param name="Accessors">The <c>add</c> and <c>remove</c> accessors, or <see langword="null"/> for a field-like event, <c>event T Name;</c>.</param>
+/// <param name="Initializer">
+///     The initializer of a field-like event, the part after <c>=</c>, or <see langword="null"/>. An event with
+///     accessors takes none.
+/// </param>
 /// <param name="ExplicitInterfaceSpecifier">
 ///     The interface for an explicit implementation, <c>event T IFoo.Name</c>, or <see langword="null"/>. C# requires
 ///     an explicit implementation to declare both accessors.
@@ -20,6 +24,7 @@ internal sealed record EventDeclaration(
     TypeReference Type,
     string Name,
     EventAccessors? Accessors = null,
+    Snippet? Initializer = null,
     TypeReference? ExplicitInterfaceSpecifier = null,
     Accessibility Accessibility = Accessibility.NotApplicable,
     Modifiers Modifiers = Modifiers.None,

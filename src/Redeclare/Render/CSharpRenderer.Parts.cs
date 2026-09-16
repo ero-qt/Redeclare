@@ -306,6 +306,11 @@ internal static partial class CSharpRenderer
             text.Append(" where ").AppendIdentifier(parameter.Name).Append(" : ");
             bool first = true;
 
+            if (parameter.HasDefaultConstraint)
+            {
+                separate().Append("default");
+            }
+
             if (parameter.HasReferenceTypeConstraint)
             {
                 bool annotated = parameter.ReferenceTypeConstraintNullableAnnotation == NullableAnnotation.Annotated

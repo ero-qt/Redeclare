@@ -91,7 +91,7 @@ public sealed class RenderTests
                                 Type: Types.String,
                                 Name: "Name",
                                 Initializer: "\"thing\""),
-                            new EventDeclaration(Accessibility: Accessibility.Public, Type: Types.Nullable(Types.EventHandler), Name: "Changed"),
+                            new EventDeclaration(Accessibility: Accessibility.Public, Type: Types.Nullable(Types.EventHandler), Name: "Changed", Initializer: "delegate { }"),
                             new ConstructorDeclaration(
                                 Accessibility: Accessibility.Public,
                                 Parameters: [new ParameterDeclaration(Type: Types.Int32, Name: "count", Default: "0")],
@@ -224,7 +224,7 @@ public sealed class RenderTests
             Assert.That(text, Does.Contain("public sealed partial class Thing<T> : global::System.IDisposable where T : class, new()"));
             Assert.That(text, Does.Contain("private readonly global::System.Collections.Generic.List<T> _items = [];"));
             Assert.That(text, Does.Contain("public const string Name = \"thing\";"));
-            Assert.That(text, Does.Contain("public event global::System.EventHandler? Changed;"));
+            Assert.That(text, Does.Contain("public event global::System.EventHandler? Changed = delegate { };"));
             Assert.That(text, Does.Contain("public Thing(int count = 0)\n    {\n        _ = count;\n    }"));
             Assert.That(text, Does.Contain("public int Count => _items.Count;"));
             Assert.That(text, Does.Contain("public string? Label { get; init; }"));
@@ -328,9 +328,39 @@ public sealed class RenderTests
     public void Render_ExpressionBodyWithNoExpression_Throws()
     {
         var method = new MethodDeclaration(Name: "M", ReturnType: Types.Void, Body: Snippet.Expression(""));
-        var unit = new CompilationUnit(Members: [new TypeDeclaration(Name: "C", Members: [method])], Header: Header);
+        var property = new PropertyDeclaration(Type: Types.Int32, Name: "P", Getter: new AccessorDeclaration(Body: Snippet.Expression("")), Setter: null);
 
-        Assert.That(() => unit.Render(), Throws.TypeOf<RenderException>().With.Message.Contains("no expression"));
+        using (Assert.EnterMultipleScope())
+        {
+            Assert.That(() => unit(method).Render(), Throws.TypeOf<RenderException>().With.Message.Contains("no expression"));
+            Assert.That(() => unit(property).Render(), Throws.TypeOf<RenderException>().With.Message.Contains("no expression"));
+        }
+
+        static CompilationUnit unit(MemberDeclaration member)
+        {
+            return new CompilationUnit(Members: [new TypeDeclaration(Name: "C", Members: [member])], Header: Header);
+        }
+    }
+
+    [Test]
+    public void Render_GetterWithAttributeOrReadOnly_KeepsTheBlockSoTheyHaveSomewhereToGo()
+    {
+        var marked = new AccessorDeclaration(Body: Snippet.Expression("1"), Attributes: [new AttributeSpecification(Type: Types.SerializableAttribute)]);
+        var readOnly = new AccessorDeclaration(Body: Snippet.Expression("1"), IsReadOnly: true);
+        var arrows = RenderOptions.Default with { Properties = ExpressionBodyPreference.WhenPossible };
+
+        using (Assert.EnterMultipleScope())
+        {
+            Assert.That(unit(marked).Render(arrows), Does.Contain("int P\n    {\n        [global::System.SerializableAttribute] get => 1;\n    }"));
+            Assert.That(unit(readOnly).Render(arrows), Does.Contain("int P\n    {\n        readonly get => 1;\n    }"));
+        }
+
+        static CompilationUnit unit(AccessorDeclaration getter)
+        {
+            var property = new PropertyDeclaration(Type: Types.Int32, Name: "P", Getter: getter, Setter: null);
+
+            return new CompilationUnit(Members: [new TypeDeclaration(Name: "S", TypeKind: TypeKind.Struct, Members: [property])], Header: Header);
+        }
     }
 
     [Test]

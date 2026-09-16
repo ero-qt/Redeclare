@@ -18,6 +18,10 @@ namespace Redeclare;
 /// <param name="HasNotNullConstraint">Whether there is a <c>notnull</c> constraint.</param>
 /// <param name="HasConstructorConstraint">Whether there is a <c>new()</c> constraint.</param>
 /// <param name="AllowsRefLikeType">Whether there is an <c>allows ref struct</c> anti-constraint. Needs C# 13.</param>
+/// <param name="HasDefaultConstraint">
+///     Whether there is a <c>default</c> constraint, which an override or explicit implementation writes to say
+///     its type parameter is neither <c>class</c> nor <c>struct</c>. It stands alone. Needs C# 9.
+/// </param>
 /// <param name="ConstraintTypes">The base class and interface constraints.</param>
 /// <param name="Attributes">The attributes.</param>
 internal sealed record TypeParameterDeclaration(
@@ -30,6 +34,7 @@ internal sealed record TypeParameterDeclaration(
     bool HasNotNullConstraint = false,
     bool HasConstructorConstraint = false,
     bool AllowsRefLikeType = false,
+    bool HasDefaultConstraint = false,
     EquatableArray<TypeReference> ConstraintTypes = default,
     EquatableArray<AttributeSpecification> Attributes = default)
 {
@@ -37,5 +42,5 @@ internal sealed record TypeParameterDeclaration(
     ///     Gets a value indicating whether any constraint is set, which is whether a <c>where</c> clause renders.
     /// </summary>
     public bool HasConstraints => HasReferenceTypeConstraint || HasValueTypeConstraint || HasUnmanagedTypeConstraint
-        || HasNotNullConstraint || HasConstructorConstraint || AllowsRefLikeType || !ConstraintTypes.IsEmpty;
+        || HasNotNullConstraint || HasConstructorConstraint || AllowsRefLikeType || HasDefaultConstraint || !ConstraintTypes.IsEmpty;
 }
