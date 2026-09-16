@@ -67,6 +67,20 @@ internal static partial class CSharpRenderer
         RenderDelegate(writer, @delegate);
     }
 
+    /// <summary>
+    ///     Renders an extension block inside a <c>partial</c> part of its containing class. A block cannot stand alone,
+    ///     so one without a containing type is a <see cref="RenderException"/>.
+    /// </summary>
+    public static void Render(SourceWriter writer, ExtensionDeclaration extension)
+    {
+        if (extension.ContainingType is not { } containing)
+        {
+            throw new RenderException("An extension block at the top level of a file or namespace. Set ContainingType to the static class it belongs in.");
+        }
+
+        RenderInside(writer, containing, extension);
+    }
+
     private static void RenderInside(SourceWriter writer, TypeDeclaration containing, MemberDeclaration type)
     {
         var part = containing with { Members = [type] };
@@ -372,6 +386,11 @@ internal static partial class CSharpRenderer
                 case DelegateDeclaration @delegate:
                 {
                     Render(writer, @delegate);
+                    break;
+                }
+                case ExtensionDeclaration extension:
+                {
+                    Render(writer, extension);
                     break;
                 }
                 default:

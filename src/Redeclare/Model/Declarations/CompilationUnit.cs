@@ -67,23 +67,12 @@ internal sealed record CompilationUnit(
                 member = inner[0];
             }
 
-            var (own, containing) = member switch
-            {
-                TypeDeclaration type => (type, type.ContainingType),
-                DelegateDeclaration @delegate => ((MemberDeclaration)@delegate, @delegate.ContainingType),
-                _ => (null, null),
-            };
-            if (own is null)
+            if (GetNamed(member) is not var (first, containing))
             {
                 return "Generated.g.cs";
             }
 
-            List<(string Name, int Arity)> chain = [own switch
-            {
-                TypeDeclaration type => (type.Name, type.TypeParameters.Length),
-                DelegateDeclaration @delegate => (@delegate.Name, @delegate.TypeParameters.Length),
-                _ => ("", 0),
-            }];
+            List<(string Name, int Arity)> chain = [first];
             for (var current = containing; current is not null; current = current.ContainingType)
             {
                 chain.Add((current.Name, current.TypeParameters.Length));
@@ -102,6 +91,22 @@ internal sealed record CompilationUnit(
 
             return name.Append("g.cs").ToString();
         }
+    }
+
+    /// <summary>
+    ///     Finds the name a member gives a file, with the arity that tells <c>List&lt;T&gt;</c> from <c>List</c>, and the
+    ///     type it is nested in. An extension block is named after its receiver type.
+    /// </summary>
+    private static ((string Name, int Arity) Own, TypeDeclaration? Containing)? GetNamed(MemberDeclaration member)
+    {
+        return member switch
+        {
+            TypeDeclaration type => ((type.Name, type.TypeParameters.Length), type.ContainingType),
+            DelegateDeclaration @delegate => ((@delegate.Name, @delegate.TypeParameters.Length), @delegate.ContainingType),
+            ExtensionDeclaration { ContainingType: { } outer, Receiver.Type: NamedTypeReference receiver } extension
+                => ((receiver.Name, extension.TypeParameters.Length), outer),
+            _ => null,
+        };
     }
 
     /// <summary>

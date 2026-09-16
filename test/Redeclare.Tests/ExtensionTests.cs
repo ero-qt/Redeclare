@@ -192,7 +192,27 @@ public sealed class ExtensionTests
             Assert.That(block.ToDeclaration(), Is.TypeOf<ExtensionDeclaration>());
             Assert.That(() => block.ToTypeDeclaration(), Throws.ArgumentException.With.Message.Contains("ToExtensionDeclaration"));
             Assert.That(block.ToExtensionDeclaration().Receiver.Type, Is.EqualTo(Types.Int32));
+            Assert.That(block.ToExtensionDeclaration().ContainingType?.Name, Is.EqualTo("E"));
             Assert.That(() => compilation.Type("E").ToExtensionDeclaration(), Throws.ArgumentException);
+        }
+    }
+
+    [Test]
+    public void Render_ExtensionBlockAlone_WrapsItInItsContainingClass()
+    {
+        var compilation = Compiling.AssertCompiles("namespace N { public static class E { extension(int x) { public int Twice => x * 2; } } }");
+        var block = compilation.Type("N.E").GetTypeMembers().Single().ToExtensionDeclaration();
+        var twice = (PropertyDeclaration)block.Members.Single();
+        block = block with { Members = [twice with { Getter = twice.Getter! with { Body = Snippet.Expression("x * 2") } }] };
+        var unit = new CompilationUnit(Header: Header, Members: [new NamespaceDeclaration(Name: "N", Members: [block])]);
+
+        string text = unit.Render();
+        Compiling.AssertCompiles(text);
+
+        using (Assert.EnterMultipleScope())
+        {
+            Assert.That(text, Does.Contain("static partial class E\n{\n    extension(int x)\n    {\n        public int Twice => x * 2;"));
+            Assert.That(unit.HintName, Is.EqualTo("N.E.Int32.g.cs"));
         }
     }
 }

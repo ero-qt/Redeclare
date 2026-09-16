@@ -31,6 +31,11 @@ internal static partial class CSharpRenderer
         var options = writer.Options;
 
         string what = $"Extension block for '{RenderType(extension.Receiver.Type, options)}' in '{containing.Name}'";
+        if (extension.ContainingType is { } named && (named.Name != containing.Name || named.TypeParameters.Length != containing.TypeParameters.Length))
+        {
+            throw new RenderException($"{what} names '{named.Name}' as its containing type but sits in '{containing.Name}'.");
+        }
+
         if (containing.TypeKind != TypeKind.Class || (containing.Modifiers & Modifiers.Static) == 0 || !containing.TypeParameters.IsEmpty)
         {
             throw new RenderException($"{what}. An extension block may only appear in a non-generic static class.");
