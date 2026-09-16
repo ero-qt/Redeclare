@@ -32,10 +32,18 @@ internal abstract partial record TypeReference(
     /// </summary>
     public abstract bool IsValueType { get; }
 
+    /// <summary>
+    ///     Renders the type as C# under <paramref name="options"/>.
+    /// </summary>
+    public string Render(RenderOptions? options = null)
+    {
+        return CSharpRenderer.RenderType(this, options ?? RenderOptions.Default);
+    }
+
     /// <inheritdoc/>
     public sealed override string ToString()
     {
-        return CSharpRenderer.RenderType(this, RenderOptions.Default);
+        return Render();
     }
 }
 

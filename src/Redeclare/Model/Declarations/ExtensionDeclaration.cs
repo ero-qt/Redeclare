@@ -24,4 +24,13 @@ internal sealed record ExtensionDeclaration(
     EquatableArray<TypeParameterDeclaration> TypeParameters = default,
     EquatableArray<MemberDeclaration> Members = default,
     TypeDeclaration? ContainingType = null)
-    : MemberDeclaration(Accessibility.NotApplicable, Modifiers.None, null, default);
+    : MemberDeclaration(Accessibility.NotApplicable, Modifiers.None, null, default)
+{
+    /// <summary>
+    ///     Returns this block with members appended.
+    /// </summary>
+    public ExtensionDeclaration AddMembers(params MemberDeclaration[] members)
+    {
+        return this with { Members = Members.AddRange(members) };
+    }
+}

@@ -144,6 +144,20 @@ internal sealed record Snippet
     }
 
     /// <summary>
+    ///     Joins a snippet made from each item on one line with a separator.
+    /// </summary>
+    public static Snippet Join<T>(string separator, IEnumerable<T> items, Func<T, Snippet> select)
+    {
+        List<Snippet> parts = [];
+        foreach (var item in items)
+        {
+            parts.Add(select(item));
+        }
+
+        return Join(separator, parts);
+    }
+
+    /// <summary>
     ///     Concatenates a snippet made from each item, each on its own line.
     /// </summary>
     public static Snippet Concat<T>(IEnumerable<T> items, Func<T, Snippet> select)
@@ -203,15 +217,15 @@ internal sealed record Snippet
     ///     Renders the text with every hole filled under <paramref name="options"/>, lines separated by
     ///     <c>\n</c>.
     /// </summary>
-    public string Render(RenderOptions options)
+    public string Render(RenderOptions? options = null)
     {
-        return new StringBuilder().AppendSnippet(this, options).ToString();
+        return new StringBuilder().AppendSnippet(this, options ?? RenderOptions.Default).ToString();
     }
 
     /// <inheritdoc/>
     public override string ToString()
     {
-        return Render(RenderOptions.Default);
+        return Render();
     }
 
     internal static Snippet Build(string text, List<SnippetHole> holes)

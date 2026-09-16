@@ -535,6 +535,14 @@ public sealed class SymbolReaderTests
     }
 
     [Test]
+    public void ToDeclaration_TypeParameterAlone_ReadsTheSameAsInItsType()
+    {
+        var window = Compilation.Type("Fixture.Window`1");
+
+        Assert.That(window.TypeParameters[0].ToDeclaration(), Is.EqualTo(window.ToTypeDeclaration().TypeParameters[0]));
+    }
+
+    [Test]
     public void ToDeclaration_OverrideWithDefaultConstraint_ReadsAndRendersIt()
     {
         var symbol = Compilation.Type("Fixture.Picked");

@@ -68,6 +68,15 @@ internal static partial class CSharpRenderer
     }
 
     /// <summary>
+    ///     Renders a namespace and its members as a block, the way a file's namespace renders when it cannot be
+    ///     file-scoped.
+    /// </summary>
+    public static void Render(SourceWriter writer, NamespaceDeclaration @namespace)
+    {
+        RenderTopLevel(writer, [@namespace], fileScoped: false);
+    }
+
+    /// <summary>
     ///     Renders an extension block inside a <c>partial</c> part of its containing class. A block cannot stand alone,
     ///     so one without a containing type is a <see cref="RenderException"/>.
     /// </summary>

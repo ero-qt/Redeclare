@@ -247,32 +247,38 @@ internal sealed partial class SymbolReader
         return result;
     }
 
-    private EquatableArray<TypeParameterDeclaration> ReadTypeParameters(
-        ImmutableArray<ITypeParameterSymbol> typeParameters)
+    /// <summary>
+    ///     Reads a type parameter with its variance and constraints.
+    /// </summary>
+    public TypeParameterDeclaration ReadTypeParameter(ITypeParameterSymbol parameter)
+    {
+        var constraintTypes = new TypeReference[parameter.ConstraintTypes.Length];
+        for (int i = 0; i < constraintTypes.Length; i++)
+        {
+            constraintTypes[i] = ReadTypeReference(parameter.ConstraintTypes[i]);
+        }
+
+        return new TypeParameterDeclaration(
+            Name: parameter.Name,
+            Variance: parameter.Variance,
+            HasReferenceTypeConstraint: parameter.HasReferenceTypeConstraint,
+            ReferenceTypeConstraintNullableAnnotation: parameter.ReferenceTypeConstraintNullableAnnotation,
+            HasValueTypeConstraint: parameter.HasValueTypeConstraint,
+            HasUnmanagedTypeConstraint: parameter.HasUnmanagedTypeConstraint,
+            HasNotNullConstraint: parameter.HasNotNullConstraint,
+            HasConstructorConstraint: parameter.HasConstructorConstraint,
+            AllowsRefLikeType: parameter.AllowsRefLikeType,
+            HasDefaultConstraint: HasWrittenDefaultConstraint(parameter),
+            ConstraintTypes: constraintTypes,
+            Attributes: ReadAttributes(parameter));
+    }
+
+    private EquatableArray<TypeParameterDeclaration> ReadTypeParameters(ImmutableArray<ITypeParameterSymbol> typeParameters)
     {
         var result = new TypeParameterDeclaration[typeParameters.Length];
         for (int i = 0; i < result.Length; i++)
         {
-            var parameter = typeParameters[i];
-            var constraintTypes = new TypeReference[parameter.ConstraintTypes.Length];
-            for (int j = 0; j < constraintTypes.Length; j++)
-            {
-                constraintTypes[j] = ReadTypeReference(parameter.ConstraintTypes[j]);
-            }
-
-            result[i] = new TypeParameterDeclaration(
-                Name: parameter.Name,
-                Variance: parameter.Variance,
-                HasReferenceTypeConstraint: parameter.HasReferenceTypeConstraint,
-                ReferenceTypeConstraintNullableAnnotation: parameter.ReferenceTypeConstraintNullableAnnotation,
-                HasValueTypeConstraint: parameter.HasValueTypeConstraint,
-                HasUnmanagedTypeConstraint: parameter.HasUnmanagedTypeConstraint,
-                HasNotNullConstraint: parameter.HasNotNullConstraint,
-                HasConstructorConstraint: parameter.HasConstructorConstraint,
-                AllowsRefLikeType: parameter.AllowsRefLikeType,
-                HasDefaultConstraint: HasWrittenDefaultConstraint(parameter),
-                ConstraintTypes: constraintTypes,
-                Attributes: ReadAttributes(parameter));
+            result[i] = ReadTypeParameter(typeParameters[i]);
         }
 
         return result;

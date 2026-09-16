@@ -110,6 +110,14 @@ internal sealed record CompilationUnit(
     }
 
     /// <summary>
+    ///     Returns this file with members appended.
+    /// </summary>
+    public CompilationUnit AddMembers(params MemberDeclaration[] members)
+    {
+        return this with { Members = Members.AddRange(members) };
+    }
+
+    /// <summary>
     ///     Renders the file to text.
     /// </summary>
     public string Render(RenderOptions? options = null)

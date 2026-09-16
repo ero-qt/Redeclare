@@ -126,6 +126,14 @@ internal static class RoslynExtensions
     }
 
     /// <summary>
+    ///     Reads a type parameter symbol into a declaration with its constraints. See <see cref="SymbolReader.ReadTypeParameter"/>.
+    /// </summary>
+    public static TypeParameterDeclaration ToDeclaration(this ITypeParameterSymbol typeParameter, ReadOptions? options = null)
+    {
+        return SymbolReader.Create(options).ReadTypeParameter(typeParameter);
+    }
+
+    /// <summary>
     ///     Reads an event symbol into a declaration.
     /// </summary>
     public static EventDeclaration ToDeclaration(this IEventSymbol @event, ReadOptions? options = null)

@@ -133,13 +133,10 @@ public sealed class ImplementGenerator : IIncrementalGenerator
         var definition = symbol.ToDeclaration(ReadOptions.Signature);
 
         string start = $"Echo {definition.Name}";
-        List<Snippet> parts = [Snippet.From($"{start:L}")];
-        foreach (var parameter in definition.Parameters)
-        {
-            parts.Add(Snippet.From($"{parameter.Name:I}"));
-        }
+        var names = Snippet.Join(" + \", \" + ", definition.Parameters, parameter => Snippet.From($"{parameter.Name:I}"));
+        var parts = names.IsEmpty ? Snippet.From($"{start:L}") : Snippet.From($"{start:L} + \", \" + {names}");
 
-        var body = Snippet.From($"{_console}.WriteLine({Snippet.Join(" + \", \" + ", parts)});");
+        var body = Snippet.From($"{_console}.WriteLine({parts});");
         if (definition.ReturnType is not NamedTypeReference { SpecialType: SpecialType.System_Void })
         {
             body = body.Append("return default;");
