@@ -225,7 +225,7 @@ internal sealed record Snippet
     /// </summary>
     internal static EquatableArray<string> Dedent(string text)
     {
-        var raw = text.Replace("\r\n", "\n").Split('\n');
+        var raw = text.Replace("\r\n", "\n").Replace('\r', '\n').Split('\n');
 
         int first = 0;
         int last = raw.Length - 1;

@@ -1,4 +1,5 @@
 using NUnit.Framework;
+using System;
 using System.Collections.Generic;
 using System.Linq;
 
@@ -19,6 +20,19 @@ public sealed class EquatableArrayTests
             Assert.That(a, Is.EqualTo(b));
             Assert.That(a.GetHashCode(), Is.EqualTo(b.GetHashCode()));
             Assert.That(a, Has.Length.EqualTo(0));
+        }
+    }
+
+    [Test]
+    public void Indexer_OutOfRange_ThrowsTheSameWhetherEmptyOrNot()
+    {
+        EquatableArray<int> empty = default;
+        EquatableArray<int> one = [1];
+
+        using (Assert.EnterMultipleScope())
+        {
+            Assert.That(() => empty[0], Throws.TypeOf<ArgumentOutOfRangeException>());
+            Assert.That(() => one[1], Throws.TypeOf<ArgumentOutOfRangeException>());
         }
     }
 

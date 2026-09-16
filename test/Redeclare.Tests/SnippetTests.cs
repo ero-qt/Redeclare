@@ -112,6 +112,17 @@ public sealed class SnippetTests
     }
 
     [Test]
+    public void From_TextWithAnyLineEnding_SplitsIntoLines()
+    {
+        using (Assert.EnterMultipleScope())
+        {
+            Assert.That(Snippet.From("a\r\nb").Lines, Is.EqualTo(new[] { "a", "b" }));
+            Assert.That(Snippet.From("a\rb").Lines, Is.EqualTo(new[] { "a", "b" }));
+            Assert.That(Snippet.From("a\nb").Lines, Is.EqualTo(new[] { "a", "b" }));
+        }
+    }
+
+    [Test]
     public void From_StringWithLiteralFormat_WritesAnEscapedCSharpLiteral()
     {
         string quoted = "say \"hi\"\n";
