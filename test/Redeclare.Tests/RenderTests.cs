@@ -91,7 +91,7 @@ public sealed class RenderTests
                                 Type: Types.String,
                                 Name: "Name",
                                 Initializer: "\"thing\""),
-                            new EventDeclaration(Accessibility: Accessibility.Public, Type: Types.Nullable(Types.EventHandler), Name: "Changed"),
+                            new EventDeclaration(Accessibility: Accessibility.Public, Type: Types.Nullable(Types.EventHandler), Name: "Changed", Initializer: "delegate { }"),
                             new ConstructorDeclaration(
                                 Accessibility: Accessibility.Public,
                                 Parameters: [new ParameterDeclaration(Type: Types.Int32, Name: "count", Default: "0")],
@@ -224,7 +224,7 @@ public sealed class RenderTests
             Assert.That(text, Does.Contain("public sealed partial class Thing<T> : global::System.IDisposable where T : class, new()"));
             Assert.That(text, Does.Contain("private readonly global::System.Collections.Generic.List<T> _items = [];"));
             Assert.That(text, Does.Contain("public const string Name = \"thing\";"));
-            Assert.That(text, Does.Contain("public event global::System.EventHandler? Changed;"));
+            Assert.That(text, Does.Contain("public event global::System.EventHandler? Changed = delegate { };"));
             Assert.That(text, Does.Contain("public Thing(int count = 0)\n    {\n        _ = count;\n    }"));
             Assert.That(text, Does.Contain("public int Count => _items.Count;"));
             Assert.That(text, Does.Contain("public string? Label { get; init; }"));

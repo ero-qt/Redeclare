@@ -248,6 +248,7 @@ internal sealed partial class SymbolReader
                 HasNotNullConstraint: parameter.HasNotNullConstraint,
                 HasConstructorConstraint: parameter.HasConstructorConstraint,
                 AllowsRefLikeType: parameter.AllowsRefLikeType,
+                HasDefaultConstraint: HasWrittenDefaultConstraint(parameter),
                 ConstraintTypes: constraintTypes,
                 Attributes: ReadAttributes(parameter));
         }
@@ -369,6 +370,35 @@ internal sealed partial class SymbolReader
             IsInitOnly: accessor.IsInitOnly,
             IsReadOnly: !propertyReadOnly && HasWrittenReadOnly(accessor),
             Attributes: ReadAttributes(accessor));
+    }
+
+    /// <summary>
+    ///     Checks for a <c>where T : default</c> written on the member that declares the type parameter. The symbol
+    ///     does not report this constraint, since it only tells an override apart from one constrained to
+    ///     <c>class</c> or <c>struct</c>.
+    /// </summary>
+    private static bool HasWrittenDefaultConstraint(ITypeParameterSymbol parameter)
+    {
+        foreach (var reference in parameter.DeclaringSyntaxReferences)
+        {
+            var clauses = reference.GetSyntax().Parent?.Parent switch
+            {
+                MethodDeclarationSyntax method => method.ConstraintClauses,
+                TypeDeclarationSyntax type => type.ConstraintClauses,
+                DelegateDeclarationSyntax @delegate => @delegate.ConstraintClauses,
+                _ => default,
+            };
+
+            foreach (var clause in clauses)
+            {
+                if (clause.Name.Identifier.ValueText == parameter.Name && clause.Constraints.Any(SyntaxKind.DefaultConstraint))
+                {
+                    return true;
+                }
+            }
+        }
+
+        return false;
     }
 
     /// <summary>

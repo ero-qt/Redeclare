@@ -362,9 +362,21 @@ internal static partial class CSharpRenderer
 
         if (@event.Accessors is not { } accessors)
         {
+            if (@event.Initializer is { } initializer)
+            {
+                head.Append(" = ");
+                writer.WriteInline(initializer);
+                head = writer.BeginLine();
+            }
+
             head.Append(';');
             writer.EndLine();
             return;
+        }
+
+        if (@event.Initializer is not null)
+        {
+            throw new RenderException($"{what} has an initializer but accessors. Only a field-like event takes an initializer.");
         }
 
         writer.EndLine();

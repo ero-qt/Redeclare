@@ -118,6 +118,16 @@ public sealed class SymbolReaderTests
                 ~Handle() { }
             }
 
+            public abstract class Loose
+            {
+                public abstract T? Pick<T>();
+            }
+
+            public sealed class Picked : Loose
+            {
+                public override T? Pick<T>() where T : default => default;
+            }
+
             public struct Mixed
             {
                 public int Count { readonly get => 0; set { } }
@@ -521,6 +531,20 @@ public sealed class SymbolReaderTests
             Assert.That(members["Seal"].Modifiers, Is.EqualTo(Modifiers.Sealed), "without sealed a bodiless interface method is abstract");
             Assert.That(members["Loose"].Modifiers, Is.EqualTo(Modifiers.None), "virtual is implied on an instance member with a body");
             Assert.That(members["Hide"].Modifiers, Is.EqualTo(Modifiers.None), "a private interface member cannot be overridden, so sealed is an error on it");
+        }
+    }
+
+    [Test]
+    public void ToDeclaration_OverrideWithDefaultConstraint_ReadsAndRendersIt()
+    {
+        var symbol = Compilation.Type("Fixture.Picked");
+        var pick = symbol.ToTypeDeclaration().Members.OfType<MethodDeclaration>().Single();
+
+        using (Assert.EnterMultipleScope())
+        {
+            Assert.That(pick.TypeParameters.Single().HasDefaultConstraint, Is.True);
+            Assert.That(Compilation.Type("Fixture.Loose").ToTypeDeclaration().Members.OfType<MethodDeclaration>().Single().TypeParameters.Single().HasDefaultConstraint, Is.False);
+            Assert.That(symbol.ToFile().Render(), Does.Contain("public override T? Pick<T>() where T : default;"));
         }
     }
 
