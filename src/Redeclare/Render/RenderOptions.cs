@@ -169,10 +169,10 @@ internal enum NamespaceDeclarationPreference
 /// </summary>
 /// <remarks>
 ///     <para>
-///         Style preferences degrade when the language version cannot express them: a file-scoped namespace
+///         Style preferences fall back when the language version cannot express them: a file-scoped namespace
 ///         becomes block-scoped under C# 9, an arrow becomes a block under C# 5, a <c>?</c> on a reference type
-///         disappears under C# 7. Features with meaning, a <c>record struct</c> under C# 9, throw
-///         <see cref="RenderException"/>.
+///         disappears under C# 7. A feature with meaning, such as a <c>record struct</c> under C# 9, is written
+///         anyway. The consumer's compiler reports it better than a generator can.
 ///     </para>
 ///     <para>
 ///         The defaults for expression bodies are Roslyn's defaults for the matching editorconfig keys. Every

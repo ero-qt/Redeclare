@@ -24,6 +24,7 @@ public sealed class ConstantTests
                 public Type? Kind { get; set; }
                 public string[]? Tags { get; set; }
                 public object? Boxed { get; set; }
+                public object? Small { get; set; }
             }
 
             [Mark("repo", Level.High, 1, 2, Kind = typeof(List<int>), Tags = new[] { "a", "b" })]
@@ -32,6 +33,9 @@ public sealed class ConstantTests
             {
                 [Mark("open", Kind = typeof(Nullable<>), Boxed = 6L)]
                 public int Open;
+
+                [Mark("small", Boxed = (byte)7, Small = (short)-2)]
+                public int Narrow;
 
                 public void G<T>(T unconstrained = default) { }
                 public void H<T>(T reference = default) where T : class { }
@@ -67,6 +71,14 @@ public sealed class ConstantTests
         var mark = Compilation.Type("Fixture.Marked").GetMembers("Open").Single().GetAttributes().Single().ToSpecification()!;
 
         Assert.That(mark.Arguments.Select(a => a.ToString()), Has.Member("Boxed = 6L"), "without the suffix the argument boxes an int");
+    }
+
+    [Test]
+    public void ToSpecification_BoxedSmallIntegers_CastSinceTheyHaveNoSuffix()
+    {
+        var mark = Compilation.Type("Fixture.Marked").GetMembers("Narrow").Single().GetAttributes().Single().ToSpecification()!;
+
+        Assert.That(mark.Arguments.Select(a => a.ToString()), Is.SupersetOf(new[] { "Boxed = (byte)7", "Small = (short)-2" }));
     }
 
     [Test]
