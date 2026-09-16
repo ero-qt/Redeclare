@@ -88,6 +88,8 @@ public sealed class SymbolReaderTests
 
                 public readonly record struct Key(int Id, string Text);
                 public record Entry(T Value) { public int Extra { get; init; } }
+                public record Tagged(T Value, int Tag) : Entry(Value);
+                public class Plain(int seed) { public int Seed => seed; }
                 public sealed class Nested<TInner> { public TInner? Value; }
                 public enum State { Idle, Busy }
             }
@@ -457,10 +459,15 @@ public sealed class SymbolReaderTests
             Assert.That(nested["Key"].TypeKind, Is.EqualTo(TypeKind.Struct));
             Assert.That(nested["Key"].IsRecord, Is.True);
             Assert.That(nested["Key"].Modifiers, Is.EqualTo(Modifiers.ReadOnly));
-            Assert.That(nested["Key"].Members.OfType<ConstructorDeclaration>().Single().Parameters.Select(p => p.Name), Is.EqualTo(new[] { "Id", "Text" }));
+            Assert.That(nested["Key"].ParameterList.Select(p => p.Name), Is.EqualTo(new[] { "Id", "Text" }));
+            Assert.That(nested["Key"].Members.OfType<ConstructorDeclaration>(), Is.Empty, "the primary constructor is the parameter list");
             Assert.That(nested["Key"].Members.OfType<MethodDeclaration>(), Is.Empty, "synthesized record members are implicit");
+            Assert.That(nested["Key"].Interfaces, Is.Empty, "the compiler adds IEquatable<Key> itself");
             Assert.That(nested["Entry"].TypeKind, Is.EqualTo(TypeKind.Class));
-            Assert.That(nested["Entry"].Members.OfType<PropertyDeclaration>().Select(p => p.Name), Is.EqualTo(new[] { "Value", "Extra" }));
+            Assert.That(nested["Entry"].Members.OfType<PropertyDeclaration>().Select(p => p.Name), Is.EqualTo(new[] { "Extra" }), "a positional property is declared by the parameter list");
+            Assert.That(nested["Tagged"].BaseArguments?.ToString(), Is.EqualTo("Value"));
+            Assert.That(nested["Plain"].ParameterList.Single().Name, Is.EqualTo("seed"), "a class primary constructor is a parameter list too");
+            Assert.That(nested["Plain"].Members.OfType<ConstructorDeclaration>(), Is.Empty);
             Assert.That(nested["Nested"].Members.OfType<FieldDeclaration>().Single().Type.ToString(), Is.EqualTo("TInner?"));
             Assert.That(Repository.Members.OfType<DelegateDeclaration>().Single().Parameters.Single().Type, Is.EqualTo(Types.T), "a nested delegate is a member like any other");
             Assert.That(nested["State"].Members.OfType<EnumMemberDeclaration>().Select(m => m.Value?.ToString()), Is.EqualTo(new[] { "0", "1" }));
@@ -703,8 +710,8 @@ public sealed class SymbolReaderTests
     [Test]
     public void ToDeclaration_WithAttributesAsAPart_IsDuplicateAttribute()
     {
-        // A symbol does not know which constructor was primary, and the reader never fills ParameterList for a record, so the
-        // only thing a careless part repeats is the attribute.
+        // The parameter list is read with the members, so a shape leaves it off and the only thing a careless part repeats
+        // is the attribute.
         var positional = Compilation.Type("Fixture.Positional");
         var shape = positional.ToTypeDeclaration(new ReadOptions(IncludeMembers: false));
         var unit = new CompilationUnit(Members: [positional.ContainingNamespace.ToDeclaration() with

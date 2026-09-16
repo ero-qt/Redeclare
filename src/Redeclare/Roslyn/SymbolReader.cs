@@ -1,4 +1,5 @@
 using Microsoft.CodeAnalysis;
+using Microsoft.CodeAnalysis.CSharp.Syntax;
 using System;
 using System.Collections.Generic;
 
@@ -111,9 +112,14 @@ internal sealed partial class SymbolReader
         {
             foreach (var @interface in type.Interfaces)
             {
-                interfaces.Add(ReadTypeReference(@interface));
+                if (!IsSynthesizedEquatable(type, @interface))
+                {
+                    interfaces.Add(ReadTypeReference(@interface));
+                }
             }
         }
+
+        var primary = _options.IncludeMembers ? FindPrimaryConstructor(type) : null;
 
         var underlying = type.TypeKind == TypeKind.Enum && type.EnumUnderlyingType is { SpecialType: not SpecialType.System_Int32 } enumType
             ? ReadTypeReference(enumType)
@@ -129,10 +135,81 @@ internal sealed partial class SymbolReader
             Name: type.Name,
             ContainingType: type.ContainingType is { } outer ? ReadShape(outer) : null,
             TypeParameters: ReadTypeParameters(type.TypeParameters),
+            ParameterList: primary is null ? default : ReadParameters(primary.Parameters, isExtension: false),
             BaseType: baseType,
+            BaseArguments: primary is null ? null : ReadBaseArguments(type),
             Interfaces: interfaces.ToEquatableArray(),
             EnumUnderlyingType: underlying,
             Members: _options.IncludeMembers ? ReadMembers(type) : default);
+    }
+
+    /// <summary>
+    ///     Finds the constructor a primary constructor parameter list declares. Its syntax is the type itself, where
+    ///     any other constructor has a constructor declaration.
+    /// </summary>
+    private static IMethodSymbol? FindPrimaryConstructor(INamedTypeSymbol type)
+    {
+        foreach (var constructor in type.InstanceConstructors)
+        {
+            if (IsDeclaredBy<TypeDeclarationSyntax>(constructor))
+            {
+                return constructor;
+            }
+        }
+
+        return null;
+    }
+
+    /// <summary>
+    ///     Reads the arguments a primary constructor passes to the base class, the text inside the parentheses of
+    ///     <c>: Base(a, b)</c>, or <see langword="null"/> when the base list has none.
+    /// </summary>
+    private static Snippet? ReadBaseArguments(INamedTypeSymbol type)
+    {
+        foreach (var reference in type.DeclaringSyntaxReferences)
+        {
+            if (reference.GetSyntax() is TypeDeclarationSyntax { BaseList: { } baseList })
+            {
+                foreach (var baseType in baseList.Types)
+                {
+                    if (baseType is PrimaryConstructorBaseTypeSyntax { ArgumentList: { } arguments })
+                    {
+                        return Snippet.From(arguments.Arguments.ToFullString());
+                    }
+                }
+            }
+        }
+
+        return null;
+    }
+
+    /// <summary>
+    ///     Checks whether a symbol was declared by a syntax node of type <typeparamref name="TSyntax"/>. A primary
+    ///     constructor is declared by the type, a positional property by a parameter.
+    /// </summary>
+    private static bool IsDeclaredBy<TSyntax>(ISymbol symbol)
+        where TSyntax : SyntaxNode
+    {
+        foreach (var reference in symbol.DeclaringSyntaxReferences)
+        {
+            if (reference.GetSyntax() is TSyntax)
+            {
+                return true;
+            }
+        }
+
+        return false;
+    }
+
+    /// <summary>
+    ///     Checks for the <c>IEquatable&lt;T&gt;</c> the compiler adds to every record, which a declaration does not
+    ///     write.
+    /// </summary>
+    private static bool IsSynthesizedEquatable(INamedTypeSymbol type, INamedTypeSymbol @interface)
+    {
+        return type.IsRecord
+            && @interface is { Name: "IEquatable", Arity: 1, ContainingNamespace: { Name: "System", ContainingNamespace.IsGlobalNamespace: true } }
+            && SymbolEqualityComparer.Default.Equals(@interface.TypeArguments[0], type);
     }
 
     /// <summary>
@@ -203,9 +280,11 @@ internal sealed partial class SymbolReader
             INamedTypeSymbol { TypeKind: TypeKind.Delegate } nested => ReadDelegate(nested),
             INamedTypeSymbol { TypeKind: TypeKind.Class or TypeKind.Struct or TypeKind.Interface or TypeKind.Enum } nested => ReadType(nested),
             IMethodSymbol { AssociatedSymbol: not null } => null,
+            IMethodSymbol { MethodKind: MethodKind.Constructor } primary when IsDeclaredBy<TypeDeclarationSyntax>(primary) => null,
             IMethodSymbol { MethodKind: MethodKind.Constructor or MethodKind.StaticConstructor } constructor => ReadConstructor(constructor),
             IMethodSymbol { MethodKind: MethodKind.Ordinary or MethodKind.ExplicitInterfaceImplementation or MethodKind.Destructor } method => ReadMethod(method),
             IMethodSymbol { MethodKind: MethodKind.UserDefinedOperator or MethodKind.Conversion } @operator => ReadMethod(@operator),
+            IPropertySymbol positional when IsDeclaredBy<ParameterSyntax>(positional) => null,
             IPropertySymbol property => ReadProperty(property),
             IFieldSymbol { AssociatedSymbol: not null } => null,
             IFieldSymbol { ContainingType.TypeKind: TypeKind.Enum } field => ReadEnumMember(field),
