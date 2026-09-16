@@ -171,7 +171,7 @@ internal sealed partial class SymbolReader
             DocumentationComment: ReadDocumentation(field),
             Attributes: ReadAttributes(field),
             Name: field.Name,
-            Value: field.HasConstantValue && field.ConstantValue is { } value
+            Initializer: field.HasConstantValue && field.ConstantValue is { } value
                 ? Snippet.From(Convert.ToString(value, CultureInfo.InvariantCulture) ?? "0")
                 : null);
     }
@@ -205,7 +205,7 @@ internal sealed partial class SymbolReader
             Attributes: ReadAttributes(parameter),
             RefKind: parameter.RefKind,
             IsParams: parameter.IsParams,
-            IsThis: isThis,
+            IsExtensionReceiver: isThis,
             IsScoped: HasExplicitScoped(parameter),
             Type: ReadTypeReference(parameter.Type),
             Name: parameter.Name,

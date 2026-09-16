@@ -68,7 +68,7 @@ internal static class TypeReferenceExtensions
                 GetTypeReferences(@event.Accessors?.Add),
                 GetTypeReferences(@event.Accessors?.Remove),
                 Optional(@event.ExplicitInterfaceSpecifier)),
-            EnumMemberDeclaration enumMember => GetTypeReferences(enumMember.Value),
+            EnumMemberDeclaration enumMember => GetTypeReferences(enumMember.Initializer),
             RawMemberDeclaration raw => GetTypeReferences(raw.Text),
             _ => [],
         };
@@ -112,7 +112,7 @@ internal static class TypeReferenceExtensions
             Optional(type.BaseType),
             GetTypeReferences(type.BaseArguments),
             type.Interfaces,
-            GetTypeReferences(type.ParameterList),
+            GetTypeReferences(type.Parameters),
             GetTypeReferences(type.TypeParameters),
             Optional(type.EnumUnderlyingType),
             GetTypeReferences(type.Members),

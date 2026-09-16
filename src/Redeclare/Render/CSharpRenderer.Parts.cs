@@ -10,16 +10,8 @@ namespace Redeclare;
 internal static partial class CSharpRenderer
 {
     /// <summary>
-    ///     Writes a name as C# must spell it. A symbol's name is bare text, so a type, member or parameter called
+    ///     Appends a name as C# must spell it. A symbol's name is bare text, so a type, member or parameter called
     ///     <c>class</c> or <c>event</c> takes the <c>@</c> that makes it an identifier again.
-    /// </summary>
-    public static string Identifier(string name)
-    {
-        return SyntaxFacts.GetKeywordKind(name) != SyntaxKind.None ? "@" + name : name;
-    }
-
-    /// <summary>
-    ///     Appends <paramref name="name"/> the way <see cref="Identifier"/> spells it.
     /// </summary>
     private static StringBuilder AppendIdentifier(this StringBuilder text, string name)
     {
@@ -32,7 +24,7 @@ internal static partial class CSharpRenderer
     }
 
     /// <summary>
-    ///     Appends a dotted name with every part spelled the way <see cref="Identifier"/> spells one.
+    ///     Appends a dotted name with every part spelled the way <see cref="AppendIdentifier"/> spells one.
     /// </summary>
     private static StringBuilder AppendQualifiedName(this StringBuilder text, string name)
     {
@@ -208,7 +200,7 @@ internal static partial class CSharpRenderer
                 text.Append('[').AppendAttribute(attribute, options).Append("] ");
             }
 
-            if (parameter.IsThis)
+            if (parameter.IsExtensionReceiver)
             {
                 text.Append("this ");
             }

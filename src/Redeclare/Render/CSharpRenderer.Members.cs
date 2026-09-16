@@ -102,10 +102,10 @@ internal static partial class CSharpRenderer
         RenderAttributes(writer, member.Attributes);
 
         writer.BeginLine().AppendIdentifier(member.Name);
-        if (member.Value is { } value)
+        if (member.Initializer is { } initializer)
         {
             writer.BeginLine().Append(" = ");
-            writer.WriteInline(value);
+            writer.WriteInline(initializer);
         }
 
         writer.BeginLine().Append(',');

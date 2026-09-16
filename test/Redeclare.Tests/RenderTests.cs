@@ -188,7 +188,7 @@ public sealed class RenderTests
                                 EnumUnderlyingType: Types.Byte,
                                 Members: [
                                     new EnumMemberDeclaration(Name: "Off"),
-                                    new EnumMemberDeclaration(Name: "On", Value: "3", DocumentationComment: "<summary>On.</summary>"),
+                                    new EnumMemberDeclaration(Name: "On", Initializer: "3", DocumentationComment: "<summary>On.</summary>"),
                                 ]),
                             new TypeDeclaration(
                                 Accessibility: Accessibility.Public,
@@ -196,7 +196,7 @@ public sealed class RenderTests
                                 IsRecord: true,
                                 Modifiers: Modifiers.ReadOnly,
                                 Name: "Point",
-                                ParameterList: [
+                                Parameters: [
                                     new ParameterDeclaration(Type: Types.Int32, Name: "X"),
                                     new ParameterDeclaration(Type: Types.Int32, Name: "Y"),
                                 ]),
@@ -493,7 +493,7 @@ public sealed class RenderTests
         var derived = new TypeDeclaration(
             Accessibility: Accessibility.Public,
             Name: "D",
-            ParameterList: [new ParameterDeclaration(Type: Types.Int32, Name: "x")],
+            Parameters: [new ParameterDeclaration(Type: Types.Int32, Name: "x")],
             BaseType: @base,
             BaseArguments: Snippet.From("x"));
         var unit = new CompilationUnit(

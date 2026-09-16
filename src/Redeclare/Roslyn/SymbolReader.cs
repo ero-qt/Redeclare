@@ -135,7 +135,7 @@ internal sealed partial class SymbolReader
             Name: type.Name,
             ContainingType: type.ContainingType is { } outer ? ReadShape(outer) : null,
             TypeParameters: ReadTypeParameters(type.TypeParameters),
-            ParameterList: primary is null ? default : ReadParameters(primary.Parameters, isExtension: false),
+            Parameters: primary is null ? default : ReadParameters(primary.Parameters, isExtension: false),
             BaseType: baseType,
             BaseArguments: primary is null ? null : ReadBaseArguments(type),
             Interfaces: interfaces.ToEquatableArray(),

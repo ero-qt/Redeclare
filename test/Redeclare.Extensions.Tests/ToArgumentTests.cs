@@ -31,7 +31,7 @@ public sealed class ToArgumentTests
     {
         EquatableArray<ParameterDeclaration> parameters =
         [
-            new(Type: TypeReference.String, Name: "self", IsThis: true),
+            new(Type: TypeReference.String, Name: "self", IsExtensionReceiver: true),
             new(Type: TypeReference.Int32, Name: "count", RefKind: RefKind.Out),
             new(Type: TypeReference.Int32, Name: "rest", IsParams: true),
         ];

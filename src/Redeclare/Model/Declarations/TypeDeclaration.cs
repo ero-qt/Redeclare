@@ -23,7 +23,7 @@ namespace Redeclare;
 /// <param name="Accessibility">The accessibility.</param>
 /// <param name="Modifiers">The modifiers other than accessibility.</param>
 /// <param name="TypeParameters">The type parameters, constraints included.</param>
-/// <param name="ParameterList">
+/// <param name="Parameters">
 ///     The primary constructor parameter list, rendered as <c>Name(parameters)</c> when non-empty. Records need
 ///     C# 9, other types need C# 12.
 /// </param>
@@ -50,7 +50,7 @@ internal sealed record TypeDeclaration(
     Accessibility Accessibility = Accessibility.NotApplicable,
     Modifiers Modifiers = Modifiers.None,
     EquatableArray<TypeParameterDeclaration> TypeParameters = default,
-    EquatableArray<ParameterDeclaration> ParameterList = default,
+    EquatableArray<ParameterDeclaration> Parameters = default,
     TypeReference? BaseType = null,
     Snippet? BaseArguments = null,
     EquatableArray<TypeReference> Interfaces = default,

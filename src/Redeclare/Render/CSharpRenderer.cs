@@ -134,9 +134,9 @@ internal static partial class CSharpRenderer
 
         head.AppendIdentifier(type.Name).AppendTypeParameters(type.TypeParameters, options);
 
-        if (!type.ParameterList.IsEmpty)
+        if (!type.Parameters.IsEmpty)
         {
-            head.Append('(').AppendParameters(type.ParameterList, options, what).Append(')');
+            head.Append('(').AppendParameters(type.Parameters, options, what).Append(')');
         }
 
         if (type.TypeKind == TypeKind.Enum)
