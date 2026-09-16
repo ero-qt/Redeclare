@@ -251,7 +251,7 @@ internal static partial class CSharpRenderer
         }
 
         var kind = property.IsIndexer ? BodyKind.Indexer : BodyKind.Property;
-        if (setter is null && getter is { Body: { IsExpression: true } expression } && Arrow(expression, kind, options))
+        if (setter is null && getter is { Body: { IsExpression: true, IsEmpty: false } expression } && IsBare(getter) && Arrow(expression, kind, options))
         {
             WriteArrow(writer, expression);
             return;
@@ -375,6 +375,15 @@ internal static partial class CSharpRenderer
             AppendAccessorHead(writer.BeginLine(), accessors.Remove, "remove", options);
             RenderBody(writer, accessors.Remove.Body, BodyKind.Accessor, returnsValue: false, what);
         }
+    }
+
+    /// <summary>
+    ///     Checks whether an accessor is only its keyword and body. A property whose getter is bare can fold into
+    ///     <c>=&gt; expression;</c>, because there is nothing on the getter that the property head would lose.
+    /// </summary>
+    private static bool IsBare(AccessorDeclaration accessor)
+    {
+        return accessor is { Attributes.IsEmpty: true, Accessibility: Accessibility.NotApplicable, IsReadOnly: false };
     }
 
     private static StringBuilder AppendAccessorHead(StringBuilder text, AccessorDeclaration accessor, string keyword, RenderOptions options)

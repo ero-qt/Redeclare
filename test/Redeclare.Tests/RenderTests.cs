@@ -328,9 +328,39 @@ public sealed class RenderTests
     public void Render_ExpressionBodyWithNoExpression_Throws()
     {
         var method = new MethodDeclaration(Name: "M", ReturnType: Types.Void, Body: Snippet.Expression(""));
-        var unit = new CompilationUnit(Members: [new TypeDeclaration(Name: "C", Members: [method])], Header: Header);
+        var property = new PropertyDeclaration(Type: Types.Int32, Name: "P", Getter: new AccessorDeclaration(Body: Snippet.Expression("")), Setter: null);
 
-        Assert.That(() => unit.Render(), Throws.TypeOf<RenderException>().With.Message.Contains("no expression"));
+        using (Assert.EnterMultipleScope())
+        {
+            Assert.That(() => unit(method).Render(), Throws.TypeOf<RenderException>().With.Message.Contains("no expression"));
+            Assert.That(() => unit(property).Render(), Throws.TypeOf<RenderException>().With.Message.Contains("no expression"));
+        }
+
+        static CompilationUnit unit(MemberDeclaration member)
+        {
+            return new CompilationUnit(Members: [new TypeDeclaration(Name: "C", Members: [member])], Header: Header);
+        }
+    }
+
+    [Test]
+    public void Render_GetterWithAttributeOrReadOnly_KeepsTheBlockSoTheyHaveSomewhereToGo()
+    {
+        var marked = new AccessorDeclaration(Body: Snippet.Expression("1"), Attributes: [new AttributeSpecification(Type: Types.SerializableAttribute)]);
+        var readOnly = new AccessorDeclaration(Body: Snippet.Expression("1"), IsReadOnly: true);
+        var arrows = RenderOptions.Default with { Properties = ExpressionBodyPreference.WhenPossible };
+
+        using (Assert.EnterMultipleScope())
+        {
+            Assert.That(unit(marked).Render(arrows), Does.Contain("int P\n    {\n        [global::System.SerializableAttribute] get => 1;\n    }"));
+            Assert.That(unit(readOnly).Render(arrows), Does.Contain("int P\n    {\n        readonly get => 1;\n    }"));
+        }
+
+        static CompilationUnit unit(AccessorDeclaration getter)
+        {
+            var property = new PropertyDeclaration(Type: Types.Int32, Name: "P", Getter: getter, Setter: null);
+
+            return new CompilationUnit(Members: [new TypeDeclaration(Name: "S", TypeKind: TypeKind.Struct, Members: [property])], Header: Header);
+        }
     }
 
     [Test]
