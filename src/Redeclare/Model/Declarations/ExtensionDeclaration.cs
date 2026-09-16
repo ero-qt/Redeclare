@@ -19,4 +19,4 @@ internal sealed record ExtensionDeclaration(
     ParameterDeclaration Receiver,
     EquatableArray<TypeParameterDeclaration> TypeParameters = default,
     EquatableArray<MemberDeclaration> Members = default)
-    : MemberDeclaration(null, default, Accessibility.NotApplicable, Modifiers.None);
+    : MemberDeclaration(Accessibility.NotApplicable, Modifiers.None, null, default);

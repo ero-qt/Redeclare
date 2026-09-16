@@ -13,4 +13,4 @@ internal sealed record RawMemberDeclaration(
     Snippet Text,
     string? DocumentationComment = null,
     EquatableArray<AttributeSpecification> Attributes = default)
-    : MemberDeclaration(DocumentationComment, Attributes, Accessibility.NotApplicable, Modifiers.None);
+    : MemberDeclaration(Accessibility.NotApplicable, Modifiers.None, DocumentationComment, Attributes);

@@ -25,4 +25,4 @@ internal sealed record ConstructorDeclaration(
     Modifiers Modifiers = Modifiers.None,
     string? DocumentationComment = null,
     EquatableArray<AttributeSpecification> Attributes = default)
-    : MemberDeclaration(DocumentationComment, Attributes, Accessibility, Modifiers);
+    : MemberDeclaration(Accessibility, Modifiers, DocumentationComment, Attributes);
