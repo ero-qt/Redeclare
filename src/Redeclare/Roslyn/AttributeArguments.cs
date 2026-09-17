@@ -77,7 +77,22 @@ internal readonly struct AttributeArguments
     /// </summary>
     public bool TryGetConstructorArgument<T>(string parameterName, out T value)
     {
-        if (TryFindConstructor(parameterName, out var raw, out var type) && TryConvert(raw, type, out value))
+        if (TryFindPosition(parameterName, out int position))
+        {
+            return TryGetConstructorArgument(position, out value);
+        }
+
+        value = default!;
+        return false;
+    }
+
+    /// <summary>
+    ///     Tries to get the constructor argument at <paramref name="position"/> as <typeparamref name="T"/>, converted
+    ///     as the one by name is.
+    /// </summary>
+    public bool TryGetConstructorArgument<T>(int position, out T value)
+    {
+        if (TryFindConstructor(position, out var raw, out var type) && TryConvert(raw, type, out value))
         {
             return true;
         }
@@ -114,15 +129,7 @@ internal readonly struct AttributeArguments
     /// </summary>
     public T GetConstructorArgument<T>(int position, T fallback = default!)
     {
-        var arguments = Data.ConstructorArguments;
-        if (position < 0 || position >= arguments.Length)
-        {
-            return fallback;
-        }
-
-        var constant = arguments[position];
-
-        return TryConvert<T>(GetRawValue(constant), constant.Type, out var value) ? value : fallback;
+        return TryGetConstructorArgument<T>(position, out var value) ? value : fallback;
     }
 
     /// <summary>
@@ -139,7 +146,16 @@ internal readonly struct AttributeArguments
     /// </summary>
     public EquatableArray<T> GetConstructorArray<T>(string parameterName)
     {
-        return TryFindConstructorConstant(parameterName, out var constant) ? ConvertElements<T>(constant) : default;
+        return TryFindPosition(parameterName, out int position) ? GetConstructorArray<T>(position) : default;
+    }
+
+    /// <summary>
+    ///     Gets the constructor argument at <paramref name="position"/> that is an array, element by element. The
+    ///     array is empty when the argument is absent or not an array.
+    /// </summary>
+    public EquatableArray<T> GetConstructorArray<T>(int position)
+    {
+        return TryFindConstructorConstant(position, out var constant) ? ConvertElements<T>(constant) : default;
     }
 
     /// <summary>
@@ -156,12 +172,21 @@ internal readonly struct AttributeArguments
     /// </summary>
     public Snippet? GetConstructorExpression(string parameterName)
     {
-        if (TryFindConstructorConstant(parameterName, out var constant))
+        return TryFindPosition(parameterName, out int position) ? GetConstructorExpression(position) : null;
+    }
+
+    /// <summary>
+    ///     Gets the constructor argument at <paramref name="position"/> as a C# expression, for passing it through
+    ///     into generated code.
+    /// </summary>
+    public Snippet? GetConstructorExpression(int position)
+    {
+        if (TryFindConstructorConstant(position, out var constant))
         {
             return SymbolReader.FormatConstant(constant);
         }
 
-        return TryFindConstructor(parameterName, out var raw, out var type) && type is not null
+        return TryFindConstructor(position, out var raw, out var type) && type is not null
             ? SymbolReader.FormatConstant(raw, type)
             : null;
     }
@@ -253,19 +278,36 @@ internal readonly struct AttributeArguments
         }
     }
 
-    private bool TryFindConstructorConstant(string parameterName, out TypedConstant constant)
+    /// <summary>
+    ///     Finds the position of the constructor parameter named <paramref name="parameterName"/>. Names match exactly,
+    ///     as C# does.
+    /// </summary>
+    private bool TryFindPosition(string parameterName, out int position)
     {
         if (Data.AttributeConstructor is { } constructor)
         {
             var parameters = constructor.Parameters;
-            for (int i = 0; i < parameters.Length && i < Data.ConstructorArguments.Length; i++)
+            for (int i = 0; i < parameters.Length; i++)
             {
                 if (string.Equals(parameters[i].Name, parameterName, StringComparison.Ordinal))
                 {
-                    constant = Data.ConstructorArguments[i];
+                    position = i;
                     return true;
                 }
             }
+        }
+
+        position = -1;
+        return false;
+    }
+
+    private bool TryFindConstructorConstant(int position, out TypedConstant constant)
+    {
+        var arguments = Data.ConstructorArguments;
+        if (position >= 0 && position < arguments.Length)
+        {
+            constant = arguments[position];
+            return true;
         }
 
         constant = default;
@@ -275,26 +317,21 @@ internal readonly struct AttributeArguments
     /// <summary>
     ///     Finds a constructor argument's value, falling back to the parameter's default when the argument was omitted.
     /// </summary>
-    private bool TryFindConstructor(string parameterName, out object? value, out ITypeSymbol? type)
+    private bool TryFindConstructor(int position, out object? value, out ITypeSymbol? type)
     {
-        if (TryFindConstructorConstant(parameterName, out var constant))
+        if (TryFindConstructorConstant(position, out var constant))
         {
             value = GetRawValue(constant);
             type = constant.Type;
             return true;
         }
 
-        if (Data.AttributeConstructor is { } constructor)
+        if (Data.AttributeConstructor is { } constructor && position >= 0 && position < constructor.Parameters.Length
+            && constructor.Parameters[position] is { HasExplicitDefaultValue: true } parameter)
         {
-            foreach (var parameter in constructor.Parameters)
-            {
-                if (parameter.HasExplicitDefaultValue && string.Equals(parameter.Name, parameterName, StringComparison.Ordinal))
-                {
-                    value = parameter.ExplicitDefaultValue;
-                    type = parameter.Type;
-                    return true;
-                }
-            }
+            value = parameter.ExplicitDefaultValue;
+            type = parameter.Type;
+            return true;
         }
 
         value = null;

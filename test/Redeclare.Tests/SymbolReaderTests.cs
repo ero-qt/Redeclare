@@ -469,18 +469,18 @@ public sealed class SymbolReaderTests
             Assert.That(nested["Key"].TypeKind, Is.EqualTo(TypeKind.Struct));
             Assert.That(nested["Key"].IsRecord, Is.True);
             Assert.That(nested["Key"].Modifiers, Is.EqualTo(Modifiers.ReadOnly));
-            Assert.That(nested["Key"].ParameterList.Select(p => p.Name), Is.EqualTo(new[] { "Id", "Text" }));
+            Assert.That(nested["Key"].Parameters.Select(p => p.Name), Is.EqualTo(new[] { "Id", "Text" }));
             Assert.That(nested["Key"].Members.OfType<ConstructorDeclaration>(), Is.Empty, "the primary constructor is the parameter list");
             Assert.That(nested["Key"].Members.OfType<MethodDeclaration>(), Is.Empty, "synthesized record members are implicit");
             Assert.That(nested["Key"].Interfaces, Is.Empty, "the compiler adds IEquatable<Key> itself");
             Assert.That(nested["Entry"].TypeKind, Is.EqualTo(TypeKind.Class));
             Assert.That(nested["Entry"].Members.OfType<PropertyDeclaration>().Select(p => p.Name), Is.EqualTo(new[] { "Extra" }), "a positional property is declared by the parameter list");
             Assert.That(nested["Tagged"].BaseArguments?.ToString(), Is.EqualTo("Value"));
-            Assert.That(nested["Plain"].ParameterList.Single().Name, Is.EqualTo("seed"), "a class primary constructor is a parameter list too");
+            Assert.That(nested["Plain"].Parameters.Single().Name, Is.EqualTo("seed"), "a class primary constructor is a parameter list too");
             Assert.That(nested["Plain"].Members.OfType<ConstructorDeclaration>(), Is.Empty);
             Assert.That(nested["Nested"].Members.OfType<FieldDeclaration>().Single().Type.ToString(), Is.EqualTo("TInner?"));
             Assert.That(Repository.Members.OfType<DelegateDeclaration>().Single().Parameters.Single().Type, Is.EqualTo(Types.T), "a nested delegate is a member like any other");
-            Assert.That(nested["State"].Members.OfType<EnumMemberDeclaration>().Select(m => m.Value?.ToString()), Is.EqualTo(new[] { "0", "1" }));
+            Assert.That(nested["State"].Members.OfType<EnumMemberDeclaration>().Select(m => m.Initializer?.ToString()), Is.EqualTo(new[] { "0", "1" }));
         }
     }
 
@@ -493,7 +493,7 @@ public sealed class SymbolReaderTests
         {
             Assert.That(level.EnumUnderlyingType, Is.EqualTo(Types.Byte));
             Assert.That(
-                level.Members.OfType<EnumMemberDeclaration>().Select(m => (m.Name, m.Value?.ToString())),
+                level.Members.OfType<EnumMemberDeclaration>().Select(m => (m.Name, m.Initializer?.ToString())),
                 Is.EqualTo(new[] { ("Low", "0"), ("High", "5") }));
         }
     }
@@ -532,6 +532,14 @@ public sealed class SymbolReaderTests
             Assert.That(members["Loose"].Modifiers, Is.EqualTo(Modifiers.None), "virtual is implied on an instance member with a body");
             Assert.That(members["Hide"].Modifiers, Is.EqualTo(Modifiers.None), "a private interface member cannot be overridden, so sealed is an error on it");
         }
+    }
+
+    [Test]
+    public void ToDeclaration_TypeParameterAlone_ReadsTheSameAsInItsType()
+    {
+        var window = Compilation.Type("Fixture.Window`1");
+
+        Assert.That(window.TypeParameters[0].ToDeclaration(), Is.EqualTo(window.ToTypeDeclaration().TypeParameters[0]));
     }
 
     [Test]
@@ -607,9 +615,14 @@ public sealed class SymbolReaderTests
     [Test]
     public void ToDeclaration_ExtensionMethod_MarksTheReceiver()
     {
-        var twice = Compilation.Type("Fixture.Extensions").ToTypeDeclaration().Members.OfType<MethodDeclaration>().Single();
+        var symbol = Compilation.Type("Fixture.Extensions").GetMembers("Twice").OfType<IMethodSymbol>().Single();
+        var twice = symbol.ToDeclaration();
 
-        Assert.That(twice.Parameters.Single().IsThis, Is.True);
+        using (Assert.EnterMultipleScope())
+        {
+            Assert.That(twice.Parameters.Single().IsExtensionReceiver, Is.True);
+            Assert.That(symbol.Parameters[0].ToDeclaration().IsExtensionReceiver, Is.True, "the parameter read alone says the same");
+        }
     }
 
     [Test]
@@ -1026,8 +1039,10 @@ public sealed class SymbolReaderTests
             Assert.That(() => constructor.ToDeclaration(), Throws.ArgumentException.With.Message.Contains("ToConstructorDeclaration"));
             Assert.That(constructor.ToConstructorDeclaration().Parameters, Has.Length.EqualTo(4));
             Assert.That(() => level.ToDeclaration(), Throws.ArgumentException.With.Message.Contains("ToEnumMemberDeclaration"));
-            Assert.That(level.ToEnumMemberDeclaration().Value?.ToString(), Is.EqualTo("5"));
+            Assert.That(level.ToEnumMemberDeclaration().Initializer?.ToString(), Is.EqualTo("5"));
             Assert.That(constructor.Parameters[1].ToDeclaration().Type.ToString(), Is.EqualTo("string?"));
+            Assert.That(() => repository.GetMembers("Count").OfType<IPropertySymbol>().First().GetMethod!.ToDeclaration(), Throws.ArgumentException.With.Message.Contains("get_Count"), "an accessor is part of its property");
+            Assert.That(() => repository.GetMembers("Limit").OfType<IFieldSymbol>().Single().ToEnumMemberDeclaration(), Throws.ArgumentException.With.Message.Contains("ToDeclaration"));
         }
     }
 

@@ -188,7 +188,7 @@ public sealed class RenderTests
                                 EnumUnderlyingType: Types.Byte,
                                 Members: [
                                     new EnumMemberDeclaration(Name: "Off"),
-                                    new EnumMemberDeclaration(Name: "On", Value: "3", DocumentationComment: "<summary>On.</summary>"),
+                                    new EnumMemberDeclaration(Name: "On", Initializer: "3", DocumentationComment: "<summary>On.</summary>"),
                                 ]),
                             new TypeDeclaration(
                                 Accessibility: Accessibility.Public,
@@ -196,7 +196,7 @@ public sealed class RenderTests
                                 IsRecord: true,
                                 Modifiers: Modifiers.ReadOnly,
                                 Name: "Point",
-                                ParameterList: [
+                                Parameters: [
                                     new ParameterDeclaration(Type: Types.Int32, Name: "X"),
                                     new ParameterDeclaration(Type: Types.Int32, Name: "Y"),
                                 ]),
@@ -493,7 +493,7 @@ public sealed class RenderTests
         var derived = new TypeDeclaration(
             Accessibility: Accessibility.Public,
             Name: "D",
-            ParameterList: [new ParameterDeclaration(Type: Types.Int32, Name: "x")],
+            Parameters: [new ParameterDeclaration(Type: Types.Int32, Name: "x")],
             BaseType: @base,
             BaseArguments: Snippet.From("x"));
         var unit = new CompilationUnit(
@@ -560,6 +560,29 @@ public sealed class RenderTests
             Header: Header);
 
         Assert.That(() => misplaced.Render(), Throws.TypeOf<RenderException>().With.Message.Contains("only appear in a file or a namespace"));
+    }
+
+    [Test]
+    public void Render_NamespaceAlone_WritesABlock()
+    {
+        var writer = new SourceWriter();
+        CSharpRenderer.Render(writer, new NamespaceDeclaration(Name: "A", Members: [new TypeDeclaration(Name: "X")]));
+
+        Assert.That(writer.ToString(), Is.EqualTo("namespace A\n{\n    class X\n    {\n    }\n}\n"));
+    }
+
+    [Test]
+    public void AddMembers_OnFileNamespaceAndExtension_Appends()
+    {
+        var block = new ExtensionDeclaration(Receiver: new ParameterDeclaration(Type: Types.Int32, Name: "x"));
+        var unit = new CompilationUnit().AddMembers(new NamespaceDeclaration(Name: "A").AddMembers(new TypeDeclaration(Name: "X")));
+
+        using (Assert.EnterMultipleScope())
+        {
+            Assert.That(unit.HintName, Is.EqualTo("A.X.g.cs"));
+            Assert.That(block.AddMembers(new FieldDeclaration(Type: Types.Int32, Name: "_n")).Members, Has.Length.EqualTo(1));
+            Assert.That(Types.List.Construct(Types.Int32).Render(RenderOptions.Default with { Qualification = Qualification.Minimal }), Is.EqualTo("List<int>"));
+        }
     }
 
     [Test]

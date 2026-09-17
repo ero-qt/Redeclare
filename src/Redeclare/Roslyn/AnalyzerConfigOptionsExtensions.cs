@@ -22,7 +22,7 @@ internal static class AnalyzerConfigOptionsExtensions
     ///     Gets the value of <c>build_property.<paramref name="name"/></c>, or <see langword="null"/> when it is absent
     ///     or empty.
     /// </summary>
-    public static string? MSBuildProperty(this AnalyzerConfigOptions options, string name)
+    public static string? GetMSBuildProperty(this AnalyzerConfigOptions options, string name)
     {
         return options.TryGetValue("build_property." + name, out var value) && !string.IsNullOrWhiteSpace(value)
             ? value
@@ -33,7 +33,7 @@ internal static class AnalyzerConfigOptionsExtensions
     ///     Gets the value of <c>build_metadata.<paramref name="itemType"/>.<paramref name="name"/></c>, or
     ///     <see langword="null"/>.
     /// </summary>
-    public static string? MSBuildMetadata(this AnalyzerConfigOptions options, string itemType, string name)
+    public static string? GetMSBuildMetadata(this AnalyzerConfigOptions options, string itemType, string name)
     {
         return options.TryGetValue("build_metadata." + itemType + "." + name, out var value) && !string.IsNullOrWhiteSpace(value)
             ? value
@@ -44,17 +44,17 @@ internal static class AnalyzerConfigOptionsExtensions
     ///     Gets a property as MSBuild reads booleans: <c>true</c> or <c>false</c> in any casing, or
     ///     <see langword="null"/> otherwise.
     /// </summary>
-    public static bool? MSBuildBoolean(this AnalyzerConfigOptions options, string name)
+    public static bool? GetMSBuildBoolean(this AnalyzerConfigOptions options, string name)
     {
-        return options.MSBuildProperty(name) is { } value && bool.TryParse(value, out bool result) ? result : null;
+        return options.GetMSBuildProperty(name) is { } value && bool.TryParse(value, out bool result) ? result : null;
     }
 
     /// <summary>
     ///     Gets a property as an integer, or <see langword="null"/> when it is absent or not a number.
     /// </summary>
-    public static int? MSBuildInt32(this AnalyzerConfigOptions options, string name)
+    public static int? GetMSBuildInt32(this AnalyzerConfigOptions options, string name)
     {
-        return options.MSBuildProperty(name) is { } value
+        return options.GetMSBuildProperty(name) is { } value
             && int.TryParse(value, NumberStyles.Integer, CultureInfo.InvariantCulture, out int result)
             ? result
             : null;
@@ -63,19 +63,19 @@ internal static class AnalyzerConfigOptionsExtensions
     /// <summary>
     ///     Gets a property as an enum member by name, in any casing, or <see langword="null"/>.
     /// </summary>
-    public static TEnum? MSBuildEnum<TEnum>(this AnalyzerConfigOptions options, string name)
+    public static TEnum? GetMSBuildEnum<TEnum>(this AnalyzerConfigOptions options, string name)
         where TEnum : struct, Enum
     {
-        return options.MSBuildProperty(name) is { } value && Enum.TryParse(value, ignoreCase: true, out TEnum result) ? result : null;
+        return options.GetMSBuildProperty(name) is { } value && Enum.TryParse(value, ignoreCase: true, out TEnum result) ? result : null;
     }
 
     /// <summary>
     ///     Gets a property that is an MSBuild list, split on <c>;</c> with blanks dropped and entries trimmed. The list
     ///     is empty when the property is absent.
     /// </summary>
-    public static EquatableArray<string> MSBuildList(this AnalyzerConfigOptions options, string name)
+    public static EquatableArray<string> GetMSBuildList(this AnalyzerConfigOptions options, string name)
     {
-        if (options.MSBuildProperty(name) is not { } value)
+        if (options.GetMSBuildProperty(name) is not { } value)
         {
             return default;
         }

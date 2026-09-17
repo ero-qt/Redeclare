@@ -206,6 +206,14 @@ public sealed class SnippetTests
     }
 
     [Test]
+    public void Join_ItemsWithSelector_JoinsWhatTheSelectorMakes()
+    {
+        var joined = Snippet.Join(", ", new[] { Types.Int32, Types.String }, type => Snippet.From($"default({type})"));
+
+        Assert.That(joined.Render(), Is.EqualTo("default(int), default(string)"));
+    }
+
+    [Test]
     public void Join_SnippetsWithSeparator_JoinsOnOneLine()
     {
         var inner = Snippet.From($"({Types.String})x");

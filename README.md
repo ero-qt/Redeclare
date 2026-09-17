@@ -18,6 +18,8 @@ The package ships sources, not an assembly. They compile into your generator as 
 
 The sources are C# 12, so the project needs `<LangVersion>latest</LangVersion>` or a version from 12 up. Without one the build stops at `REDECLARE0001`.
 
+Requires `Microsoft.CodeAnalysis.CSharp` version 5.0 or later. The reader uses the Roslyn symbol API for C# 14 extension blocks and operators.
+
 `IsExternalInit`, `InterpolatedStringHandlerAttribute` and `CollectionBuilderAttribute` ship along for frameworks that lack them. If your project already declares them, set `<RedeclarePolyfills>false</RedeclarePolyfills>`.
 
 ## The model

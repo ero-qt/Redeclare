@@ -135,7 +135,7 @@ internal sealed partial class SymbolReader
             Name: type.Name,
             ContainingType: type.ContainingType is { } outer ? ReadShape(outer) : null,
             TypeParameters: ReadTypeParameters(type.TypeParameters),
-            ParameterList: primary is null ? default : ReadParameters(primary.Parameters, isExtension: false),
+            Parameters: primary is null ? default : ReadParameters(primary.Parameters),
             BaseType: baseType,
             BaseArguments: primary is null ? null : ReadBaseArguments(type),
             Interfaces: interfaces.ToEquatableArray(),
@@ -243,7 +243,7 @@ internal sealed partial class SymbolReader
             Name: type.Name,
             ContainingType: type.ContainingType is { } outer ? ReadShape(outer) : null,
             TypeParameters: ReadTypeParameters(type.TypeParameters),
-            Parameters: ReadParameters(invoke.Parameters, isExtension: false));
+            Parameters: ReadParameters(invoke.Parameters));
     }
 
     private static Accessibility ReadTypeAccessibility(INamedTypeSymbol type)
@@ -263,9 +263,10 @@ internal sealed partial class SymbolReader
         }
 
         return new ExtensionDeclaration(
-            Receiver: ReadParameter(receiver, isThis: false),
+            Receiver: ReadParameter(receiver),
             TypeParameters: ReadTypeParameters(extension.TypeParameters),
-            Members: _options.IncludeMembers ? ReadMembers(extension) : default);
+            Members: _options.IncludeMembers ? ReadMembers(extension) : default,
+            ContainingType: ReadShape(extension.ContainingType));
     }
 
     /// <summary>
@@ -305,7 +306,7 @@ internal sealed partial class SymbolReader
 
     /// <summary>
     ///     Reads the shape of a containing type: kind, name and the names of its type parameters. That is all a part of
-    ///     the type has to repeat.
+    ///     the type has to repeat. A static class keeps <c>static</c>, since an extension block needs its class to say so.
     /// </summary>
     private static TypeDeclaration ReadShape(INamedTypeSymbol type)
     {
@@ -319,7 +320,7 @@ internal sealed partial class SymbolReader
             Name: type.Name,
             TypeKind: type.TypeKind,
             IsRecord: type.IsRecord,
-            Modifiers: Modifiers.Partial,
+            Modifiers: type.IsStatic ? Modifiers.Static | Modifiers.Partial : Modifiers.Partial,
             TypeParameters: typeParameters,
             ContainingType: type.ContainingType is { } outer ? ReadShape(outer) : null);
     }

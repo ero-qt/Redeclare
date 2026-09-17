@@ -107,7 +107,7 @@ public sealed class EnumHelpersGenerator : IIncrementalGenerator
             Modifiers: Modifiers.Static,
             ReturnType: TypeReference.String,
             Name: "ToStringFast",
-            Parameters: [new ParameterDeclaration(IsThis: true, Type: e, Name: "value")],
+            Parameters: [new ParameterDeclaration(IsExtensionReceiver: true, Type: e, Name: "value")],
             Body: Snippet.Expression($$"""
                 value switch
                 {
@@ -122,7 +122,7 @@ public sealed class EnumHelpersGenerator : IIncrementalGenerator
             Modifiers: Modifiers.Static,
             ReturnType: TypeReference.Boolean,
             Name: "IsDefined",
-            Parameters: [new ParameterDeclaration(IsThis: true, Type: e, Name: "value")],
+            Parameters: [new ParameterDeclaration(IsExtensionReceiver: true, Type: e, Name: "value")],
             Body: Snippet.Expression($$"""
                 value switch
                 {
@@ -177,7 +177,7 @@ public sealed class EnumHelpersGenerator : IIncrementalGenerator
         HashSet<string> values = new(StringComparer.Ordinal);
         foreach (var member in members)
         {
-            if (member is EnumMemberDeclaration { Value: { } value } enumMember && values.Add(value.ToString()))
+            if (member is EnumMemberDeclaration { Initializer: { } value } enumMember && values.Add(value.ToString()))
             {
                 names.Add(enumMember.Name);
             }

@@ -41,7 +41,7 @@ public sealed class CollectNamespacesTests
                 new TypeDeclaration(
                     Name: "E",
                     TypeKind: TypeKind.Enum,
-                    Members: [new EnumMemberDeclaration(Name: "One", Value: Snippet.From($"(int){Types.Byte}.MaxValue"))]),
+                    Members: [new EnumMemberDeclaration(Name: "One", Initializer: Snippet.From($"(int){Types.Byte}.MaxValue"))]),
             ]));
 
         Assert.That(

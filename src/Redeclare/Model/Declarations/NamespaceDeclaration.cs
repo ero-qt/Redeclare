@@ -20,4 +20,13 @@ namespace Redeclare;
 internal sealed record NamespaceDeclaration(
     string Name,
     EquatableArray<MemberDeclaration> Members = default)
-    : MemberDeclaration(null, default, Accessibility.NotApplicable, Modifiers.None);
+    : MemberDeclaration(Accessibility.NotApplicable, Modifiers.None, null, default)
+{
+    /// <summary>
+    ///     Returns this namespace with members appended.
+    /// </summary>
+    public NamespaceDeclaration AddMembers(params MemberDeclaration[] members)
+    {
+        return this with { Members = Members.AddRange(members) };
+    }
+}

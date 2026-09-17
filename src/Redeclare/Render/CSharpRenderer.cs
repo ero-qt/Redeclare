@@ -67,6 +67,29 @@ internal static partial class CSharpRenderer
         RenderDelegate(writer, @delegate);
     }
 
+    /// <summary>
+    ///     Renders a namespace and its members as a block, the way a file's namespace renders when it cannot be
+    ///     file-scoped.
+    /// </summary>
+    public static void Render(SourceWriter writer, NamespaceDeclaration @namespace)
+    {
+        RenderTopLevel(writer, [@namespace], fileScoped: false);
+    }
+
+    /// <summary>
+    ///     Renders an extension block inside a <c>partial</c> part of its containing class. A block cannot stand alone,
+    ///     so one without a containing type is a <see cref="RenderException"/>.
+    /// </summary>
+    public static void Render(SourceWriter writer, ExtensionDeclaration extension)
+    {
+        if (extension.ContainingType is not { } containing)
+        {
+            throw new RenderException("An extension block at the top level of a file or namespace. Set ContainingType to the static class it belongs in.");
+        }
+
+        RenderInside(writer, containing, extension);
+    }
+
     private static void RenderInside(SourceWriter writer, TypeDeclaration containing, MemberDeclaration type)
     {
         var part = containing with { Members = [type] };
@@ -134,9 +157,9 @@ internal static partial class CSharpRenderer
 
         head.AppendIdentifier(type.Name).AppendTypeParameters(type.TypeParameters, options);
 
-        if (!type.ParameterList.IsEmpty)
+        if (!type.Parameters.IsEmpty)
         {
-            head.Append('(').AppendParameters(type.ParameterList, options, what).Append(')');
+            head.Append('(').AppendParameters(type.Parameters, options, what).Append(')');
         }
 
         if (type.TypeKind == TypeKind.Enum)
@@ -372,6 +395,11 @@ internal static partial class CSharpRenderer
                 case DelegateDeclaration @delegate:
                 {
                     Render(writer, @delegate);
+                    break;
+                }
+                case ExtensionDeclaration extension:
+                {
+                    Render(writer, extension);
                     break;
                 }
                 default:

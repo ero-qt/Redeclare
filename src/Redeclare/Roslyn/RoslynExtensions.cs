@@ -122,7 +122,15 @@ internal static class RoslynExtensions
     /// </summary>
     public static ParameterDeclaration ToDeclaration(this IParameterSymbol parameter, ReadOptions? options = null)
     {
-        return SymbolReader.Create(options).ReadParameter(parameter, isThis: false);
+        return SymbolReader.Create(options).ReadParameter(parameter);
+    }
+
+    /// <summary>
+    ///     Reads a type parameter symbol into a declaration with its constraints. See <see cref="SymbolReader.ReadTypeParameter"/>.
+    /// </summary>
+    public static TypeParameterDeclaration ToDeclaration(this ITypeParameterSymbol typeParameter, ReadOptions? options = null)
+    {
+        return SymbolReader.Create(options).ReadTypeParameter(typeParameter);
     }
 
     /// <summary>

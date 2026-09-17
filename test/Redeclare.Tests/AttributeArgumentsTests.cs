@@ -70,6 +70,10 @@ public sealed class AttributeArgumentsTests
             Assert.That(Mark.GetConstructorArgument<string>(0), Is.EqualTo("repo"));
             Assert.That(Mark.GetConstructorArgument<LevelMirror>(1), Is.EqualTo(LevelMirror.High));
             Assert.That(Mark.GetConstructorArgument(7, 9), Is.EqualTo(9));
+            Assert.That(Mark.TryGetConstructorArgument<string>(0, out var name) && name == "repo", Is.True);
+            Assert.That(Mark.TryGetConstructorArgument<string>(7, out _), Is.False);
+            Assert.That(Mark.GetConstructorArray<int>(2), Is.EqualTo((EquatableArray<int>)[1, 2]));
+            Assert.That(Mark.GetConstructorExpression(1)!.ToString(), Is.EqualTo("global::Fixture.Level.High"));
         }
     }
 
@@ -109,6 +113,8 @@ public sealed class AttributeArgumentsTests
         {
             Assert.That(positional.GetConstructorArgument<LevelMirror>("level"), Is.EqualTo(LevelMirror.Low));
             Assert.That(positional.TryGetConstructorArgument<LevelMirror>("level", out _), Is.True, "a default counts as present");
+            Assert.That(positional.GetConstructorArgument<LevelMirror>(1), Is.EqualTo(LevelMirror.Low), "by position falls back the same way");
+            Assert.That(positional.GetConstructorExpression(1)!.ToString(), Is.EqualTo("global::Fixture.Level.Low"));
             Assert.That(positional.GetConstructorArray<int>("codes"), Is.EqualTo((EquatableArray<int>)[7]));
             Assert.That(positional.TryGetNamedArgument<TypeReference>("Kind", out _), Is.False, "a property never set has no default to fall back to");
             Assert.That(positional.GetNamedArgument<TypeReference>("Kind"), Is.Null);

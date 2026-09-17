@@ -6,12 +6,12 @@ namespace Redeclare;
 ///     Represents a member of an enum. Accessibility and modifiers are ignored.
 /// </summary>
 /// <param name="Name">The name.</param>
-/// <param name="Value">The value, the part after <c>=</c>, or <see langword="null"/> to let the compiler count.</param>
+/// <param name="Initializer">The initializer, the part after <c>=</c>, or <see langword="null"/> to let the compiler count.</param>
 /// <param name="DocumentationComment">The documentation comment.</param>
 /// <param name="Attributes">The attributes.</param>
 internal sealed record EnumMemberDeclaration(
     string Name,
-    Snippet? Value = null,
+    Snippet? Initializer = null,
     string? DocumentationComment = null,
     EquatableArray<AttributeSpecification> Attributes = default)
-    : MemberDeclaration(DocumentationComment, Attributes, Accessibility.NotApplicable, Modifiers.None);
+    : MemberDeclaration(Accessibility.NotApplicable, Modifiers.None, DocumentationComment, Attributes);
